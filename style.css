@@ -3,10 +3,18 @@ body{
     background: #cccccc;
 }
 
+#banner {
+    width: 80%;
+}
+
 #fontealterar {
     font-size: 20px;
 }
 
 em strong {
     color: red;
+}
+
+.itens {
+    font-style: italic;
 }
