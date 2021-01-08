@@ -7,42 +7,11 @@
     <title>ALL-AN</title>
     <link rel="stylesheet" href="/style.css">
     <link href="/game.html">
-    <script type="application/javascript">
-        var ctx = null;
-        var x_icon = 0;
-        var y_icon = 0;
-        var stepX = 2;
-        var stepY = 2;
-        var size_x = 23;
-        var size_y = 22;
-        var canvas_size_x = 480;
-        var canvas_size_y = 320;
-        var anim_img = null;
-        
-        function draw() {
-          var canvas = document.getElementById("canvas");
-          ctx = canvas.getContext("2d");
-          anim_img = new Image(size_x, size_y);
-          anim_img.onload = function() { setInterval('myAnimation()', 10); }
-          anim_img.src = 'https://is3-ssl.mzstatic.com/image/thumb/Purple123/v4/12/5a/12/125a12fe-e733-a5f0-815a-4d79074ebfb2/pr_source.jpg/256x256bb.jpg';
-        }
-        function myAnimation() {
-          ctx.clearRect(0, 0, canvas_size_x, canvas_size_y);
-         if (x_icon < 0 || x_icon > canvas_size_x - size_x) {stepX = -stepX; }
-         if (y_icon < 0 || y_icon > canvas_size_y - size_y) {stepY = -stepY; }
-            x_icon += stepX;
-            y_icon += stepY;
-         ctx.drawImage(anim_img, x_icon, y_icon);
-        }
-      </script>
-    </head>
-    <body onload="draw();">
-      <canvas id="canvas" width="480" height="320" style="border:solid 1px;"></canvas>
-    </body>
+    
 </head>
 
 <body>
-        <img id="banner" src="banner.jpg">
+        <img id="banner" src="/banner.png">
         <br>
         <a href="/game.html">CLIQUE AQUI</a>
     
