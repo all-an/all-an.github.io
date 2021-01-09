@@ -1,4 +1,14 @@
+body {
+  background-color: #2d2e2d;
+  margin: 3;
+  display: flex;
+  font-size: 20px;
+  width: 90vw;
+  height: 90vh;
+}
+
 .myDiv {
+  
   background-color: rgb(235, 241, 241);
   border: 2px solid gray;
   padding: 5px;
@@ -22,27 +32,23 @@
   letter-spacing: 3px;
 }
 
-body, text {
-  background-color: #2d2e2d;
-  margin: 3;
+.button1, .button2, .button3, .button4 {
+  padding-right: 20px;
+  padding-left: 20px;
   display: flex;
-  font-size: 20px;
-  width: 96vw;
-  height: 96vh;
 }
 
-button {
+.btn1, .btn2, .btn3, .btn4 {
+  flex: 1 100%;
   background-color: hsl(200, 100%, 50%);
-  align-items: center;
   justify-content: center;
   font-size: 28px;
   border-radius: 60px;
   box-shadow: 0 0 10px 2px;
   color: white;
+  text-align: ;   
 }
 
-.option-buttons {
-  align-items: center;
-  width: 96vw;
-  height:96vh;
-}
+
+
+
