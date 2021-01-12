@@ -8,12 +8,10 @@ body {
 }
 
 .myDiv {
-  
   background-color: rgb(235, 241, 241);
   border: 2px solid gray;
   padding: 5px;
-  border-radius: 60px;
-  box-shadow: 0 0 10px 2px;
+  border-radius: 25px;
 }
 
 .TitleMain {
@@ -25,6 +23,7 @@ body {
 }
 
 .MainParagraph {
+  font-size: 25px;
   padding-right: 20px;
   padding-left: 20px;
   text-indent: 30px;
@@ -36,17 +35,17 @@ body {
   padding-right: 20px;
   padding-left: 20px;
   display: flex;
+  
 }
 
 .btn1, .btn2, .btn3, .btn4 {
   flex: 1 100%;
-  background-color: hsl(200, 100%, 50%);
+  background-color: hsl(201, 77%, 86%);
   justify-content: center;
   font-size: 28px;
-  border-radius: 60px;
-  box-shadow: 0 0 10px 2px;
-  color: white;
-  text-align: ;   
+  border-radius: 18px;
+  box-shadow: 0 0 10px 4px;
+  color: rgb(34, 33, 33);
 }
 
 
