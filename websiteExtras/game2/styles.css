@@ -1,11 +1,11 @@
 h1 {
-    justify-content: center;
+    text-justify:auto;
     font-size: 30px;
-    display: flex;
     padding: 5px;
     position: relative;
-    width: 50%;
-    left: 70px;
+    width: 80%;
+    top: 40px;
+    left: 40px;
 }
 
 input {
@@ -15,6 +15,7 @@ input {
     padding: 5px;
     position: relative;
     width: 50%;
+    top: 30px;
     left: 30px;
 }
 
@@ -25,5 +26,6 @@ input {
     padding: 5px;
     position: relative;
     width: 50%;
+    top: 20px;
     left: 38px;
 }
