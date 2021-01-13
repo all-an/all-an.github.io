@@ -1,11 +1,11 @@
 h1 {
     text-justify:auto;
-    font-size: 30px;
-    padding: 5px;
+    font-size: 25px;
+    padding: 2px;
     position: relative;
     width: 80%;
     top: 40px;
-    left: 40px;
+    left: 20px;
 }
 
 input {
