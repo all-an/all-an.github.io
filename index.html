@@ -10,36 +10,43 @@
 </head>
 
 <body>
-        <img id="banner" src="banner.png">
-        <br>
-        <a href="websiteExtras/game/game.html">clicking AQUI 1</a>
-        <br><br><br>
-        <a href="websiteExtras/learning/1_0_1 JSLearning/index.html">CLIQUE AQUI 2</a>
-    <div>
-        <h1>Lorem ipsum dolor sit amet</h1>
-
-        <h2>Consectetur adipiscing elit.
-            <br>Curabitur ut dolor in libero volutpat semper.
-        </h2>
-
-        <p>Donec porttitor, purus in rutrum <strong>VENERATIS</strong>,<br> ligula eros eleifend leo, volutpat
-            condimentum nulla metus nec leo. </p>
-
-        <p id="fontealterar"><em>Integer eu aliquet sem, <strong>non mattis risus.</strong></em></p>
-
-        <p> Cras dapibus mauris arcu. Etiam at placerat quam.</p>
-
-    </div>
-    <div class="proin">
-        <h2>Proin nibh lacus</h2>
-
-        <ul>
-            <li class="itens">Ut egestas eleifend diam et imperdiet</li>
-            <li class="itens">Vivamus sodales justo a mauris eleifend</li>
-            <li class="itens">eget rutrum ipsum porttitor</li>
-            <li class="itens">Etiam dictum scelerisque mauris quis placerat</li>
-        </ul>
-    </div>
+	<div id="mylog"></div>
+	<script>
+		(function () {
+		    "use strict";
+		
+		    var baseLogFunction = console.log;
+		    console.log = function(){
+		        baseLogFunction.apply(console, arguments);
+		
+		        var args = Array.prototype.slice.call(arguments);
+		        for(var i=0;i<args.length;i++){
+		            var node = createLogNode(args[i]);
+		            document.querySelector("#mylog").appendChild(node);
+		        }
+		        
+		    }
+		
+		    function createLogNode(message){
+		        var node = document.createElement("div");
+		        var textNode = document.createTextNode(message);
+		        node.appendChild(textNode);
+		        return node;
+		    }
+		
+		    window.onerror = function(message, url, linenumber) {
+		        console.log("JavaScript error: " + message + " on line " +
+		            linenumber + " for " + url);
+		    };
+		
+		})();
+		
+		console.log("test");
+		console.log("test");
+		console.log("the error below is intentional to test error handling");
+		throw new Error("Test Error");
+		
+	</script>
 
 </body>
 
