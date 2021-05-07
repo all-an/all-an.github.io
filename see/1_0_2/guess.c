@@ -1,13 +1,16 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 int main(){
-	printf("guess game\n");
-
-	int number = 42;
-
-	int attempt;
-
-	printf("Your first attempt please!\n");
-	scanf("%d", &attempt);
-	printf("Your attempt is %d\n", attempt);
+	int *p;
+	p = (int *) malloc(4);
+	if(p == NULL){
+		printf("Erro!\n");
+	}
+	else{
+		*p = 10;
+		printf("p: %d\n", *p);
+		printf("%p\n",p);
+		free(p);
+	}
 }
