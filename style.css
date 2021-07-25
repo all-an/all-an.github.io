@@ -1,15 +1,23 @@
 body {
-    background-color: black;
+    background-color: rgb(235, 235, 235);
 }
 
 h2 {
     padding-top: 10px;
     text-align: left;
-    color: white;
+    color: rgb(71, 75, 77);
     font-family:Verdana, Geneva, Tahoma, sans-serif;
 }
 
 .heading {
     padding-top: 150px;
     padding-left: 170px;
+}
+
+.nome {
+    font-size: 27px;
+}
+
+.img1 {
+    
 }
