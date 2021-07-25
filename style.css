@@ -10,14 +10,12 @@ h2 {
 }
 
 .heading {
+    width: 100%;
+    text-align: left ;
     padding-top: 150px;
-    padding-left: 170px;
+    padding-left: 40px;
 }
 
 .nome {
     font-size: 27px;
-}
-
-.img1 {
-    
 }
