@@ -37,8 +37,9 @@ body{
   font-family: 'Nunito-Bold';
   font-size: 4em;
   text-transform: capitalize;
-  color: #31b1a6;
+  color: #58e2d7;
   padding: 0.5em 0 0 0;
+  text-shadow: rgb(67, 70, 68) 0.5px 0 20px;
 }
 .header-section span {
   color: #00cfbd;
@@ -46,7 +47,7 @@ body{
 }
 .about p {
   font-family: 'Nunito-Bold';
-  font-size: 1.3em;
+  font-size: 2em;
   color: #393b3a;
 }
 span.glyphicon.glyphicon-triangle-bottom {
@@ -447,7 +448,7 @@ font-size: 2em;
   	padding-top: 10px;
 }
 .panel-default>.panel-heading {
-    background-color: #db0f31;
+    background-color: #ade7b0;
 }
 .navbar-inverse .navbar-nav>li:hover {
     background-color: #9d9d9d;
