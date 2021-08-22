@@ -107,7 +107,7 @@ span.glyphicon.glyphicon-triangle-bottom {
 .skills{
 }
 .experience{
-	background-color: rgba(255,244,1,0.4);	height: 100vh;
+	background-color: rgba(255,244,1,0.4);	height: 20vh;
 	text-align: center;	
 }
 .experience h3{
@@ -116,6 +116,7 @@ span.glyphicon.glyphicon-triangle-bottom {
   	text-transform: capitalize;
   	color: #393b3a;
 }
+
 .projects{
 	background-color: rgba(25,244,1,0.4);
 	padding: 5%;
@@ -318,7 +319,7 @@ h1{
 	 box-shadow: none;
 }
 .progress-bar-success {
-  background-color: #DEECDF;
+  background-color: #baebbc;
    box-shadow: none;
 }
 .progress-bar-info {
