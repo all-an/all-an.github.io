@@ -41,7 +41,7 @@ body{
 .header-section h2 {
   font-family: 'Nunito-Bold';
   font-size: 4em;
-  text-transform: capitalize;
+  /*text-transform: capitalize;*/
   color: #58e2d7;
   padding: 0.5em 0 0 0;
   text-shadow: rgb(67, 70, 68) 0.5px 0 20px;
@@ -71,6 +71,7 @@ span.glyphicon.glyphicon-triangle-bottom {
 	text-align: center;
 }
 .about h3{
+  padding-right: 6%;
 	font-family: 'Nunito-Bold';
   	font-size: 2.5em;
   	text-transform: capitalize;
