@@ -594,17 +594,6 @@ form {
     background: url(../images/sprite_download.png) no-repeat top right
 }
 
-#contact {
-    margin: 2px;
-    font-size: 30px;
-    color: white;
-    padding-left: 5%;
-    background: #212121;
-}
-
-#contact2 {
-    color: white;
-}
 
 #main_content_wrap {
     background: #f2f2f2;
@@ -614,6 +603,22 @@ form {
 
 #main_content {
     padding-top: 20px
+}
+
+#contact {
+    text-shadow:#111;
+    position: relative;
+    text-align: center;
+    margin: 2px;
+    font-size: 30px;
+    color: white;
+    background: #212121;
+    padding-bottom: 2%;
+}
+
+#contact :hover {
+    font-size: 30.6px;
+    color: rgb(54, 107, 168);
 }
 
 #footer_wrap {
