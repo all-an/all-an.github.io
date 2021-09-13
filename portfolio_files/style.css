@@ -535,21 +535,32 @@ form {
 }
 
 #project_title {
+    padding-top: 5%;
+    font-family: 'Satisfy', cursive;
+    letter-spacing: 1.5px;
     margin: 0;
     color: #ffffff;
-    font-size: 42px;
+    font-size: 50px;
     font-weight: 700;
     text-shadow: rgb(99, 97, 97) 0px 0px 10px
 }
 
 #project_tagline {
+    font-family: 'Comfortaa', cursive;
+    letter-spacing: .5px;
     padding-top: 4%;
     text-align: center;
     color: #fff;
     font-size: 26px;
-    font-weight: 350;
+    font-weight: bold;
+    font-weight: 400;
     background: none;
     text-shadow: #111 0px 0px 10px
+}
+
+#linkedin-logo {
+    position: relative;
+    box-sizing: content-box;
 }
 
 #downloads {
@@ -609,7 +620,9 @@ form {
 	width: 100%;
 }
 .contact-title{
+    font-family: 'Comfortaa', cursive;
 	color: white;
+    text-shadow: #111 0px 0px 10px
 }
 .contact-content{
 	text-align: center;
@@ -678,6 +691,10 @@ textarea{
  	box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
  }
 
+#linkedin {
+    font-size: 25px;
+}
+
 #footer_wrap {
     background: #212121
 }
@@ -701,6 +718,7 @@ textarea{
         max-width: 480px
     }
     #project_title {
+        font-family: 'Satisfy', cursive;
         padding-top: 10%;
         text-align: center;
         font-size: 32px
