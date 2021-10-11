@@ -526,7 +526,7 @@ form {
 }
 
 #header_wrap {
-    background: #00bcd4;;
+    background: #212121;
     
 }
 
@@ -615,7 +615,7 @@ form {
 
 #contact{
 	min-height: 100vh;
-	background: #00BCD4;
+	background: #212121;
 	position: relative;
 	width: 100%;
 }
