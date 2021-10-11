@@ -520,7 +520,7 @@ form {
     color: #fff;
     background: url("../images/blacktocat.png") #0090ff no-repeat 95% 50%;
     font-weight: 700;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 10px rgb(255, 255, 255);
     border-bottom-left-radius: 10px;
     border-bottom-right-radius: 10px;
 }
