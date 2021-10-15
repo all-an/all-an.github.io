@@ -295,6 +295,13 @@ table {
     border-spacing: 0
 }
 
+.vid1,.vid2 {
+    padding: 8%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    }
+
 body {
     box-sizing: border-box;
     color: #373737;
@@ -713,6 +720,10 @@ textarea{
     #downloads {
         display: none
     }
+    .video1, .video2 {
+        min-width: 240px;
+        max-width: 320px
+    }
     .inner {
         min-width: 320px;
         max-width: 480px
@@ -760,6 +771,11 @@ textarea{
         display: none
     }
     .inner {
+        min-width: 240px;
+        max-width: 320px
+    }
+
+    .video1, .video2 {
         min-width: 240px;
         max-width: 320px
     }
