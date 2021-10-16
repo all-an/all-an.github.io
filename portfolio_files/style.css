@@ -313,7 +313,7 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6 {
-    margin: 10px 0;
+    margin: 2px 0;
     font-weight: 700;
     color: #222222;
     font-family: 'Lucida Grande', 'Calibri', Helvetica, Arial, sans-serif;
@@ -327,7 +327,7 @@ h1 {
 }
 
 h2 {
-    padding-bottom: 10px;
+    padding-bottom: 5px;
     font-size: 32px;
     background: url("../images/bg_hr.png") repeat-x bottom
 }
@@ -541,8 +541,17 @@ form {
     padding: 50px 10px 30px 10px
 }
 
+#header_wrap2 {
+    background: #2d3133;
+    
+}
+
+#header_wrap2 .inner2 {
+    padding: 25px 10px 30px 10px
+}
+
 #project_title {
-    padding-top: 5%;
+    padding-top: 2%;
     font-family: 'Satisfy', cursive;
     letter-spacing: 1.5px;
     margin: 0;
@@ -552,18 +561,115 @@ form {
     text-shadow: rgb(99, 97, 97) 0px 0px 10px
 }
 
-#project_tagline {
+#project_tagline1 {
     font-family: 'Comfortaa', cursive;
     letter-spacing: .5px;
-    padding-top: 4%;
+    padding-top:8%;
     text-align: center;
     color: #fff;
-    font-size: 26px;
+    font-size: 18px;
     font-weight: bold;
     font-weight: 400;
     background: none;
     text-shadow: #111 0px 0px 10px
 }
+
+#project_tagline {
+    font-family: 'Comfortaa', cursive;
+    letter-spacing: .5px;
+    padding-top:5%;
+    text-align: center;
+    color: #fff;
+    font-size: 18px;
+    font-weight: bold;
+    font-weight: 400;
+    background: none;
+    text-shadow: #111 0px 0px 10px
+}
+
+#project_tagline2 {
+    font-family: 'Comfortaa', cursive;
+    letter-spacing: .5px;
+    padding-top: 1%;
+    text-align: center;
+    color: #fff;
+    font-size: 16px;
+    font-weight: bold;
+    font-weight: 400;
+    background: none;
+    text-shadow: #111 0px 0px 10px
+}
+
+.h-divider {
+    margin: auto;
+    margin-top: 5px;
+    width: 80%;
+    position: relative;
+  }
+  
+  .h-divider .shadow {
+    overflow: hidden;
+    height: 20px;
+  }
+  
+  .h-divider .shadow:after {
+    content: '';
+    display: block;
+    margin: -25px auto 0;
+    width: 100%;
+    height: 25px;
+    border-radius: 125px/12px;
+    box-shadow: 0 0 8px rgb(255, 255, 255);
+  }
+  
+  .h-divider .text {
+    width: 100px;
+    height: 45px;
+    padding: 5px;
+    position: absolute;
+    bottom: 100%;
+    margin-bottom: -33px;
+    left: 50%;
+    margin-left: -60px;
+    border-radius: 100%;
+    box-shadow: 0 2px 4px #999;
+    background: white;
+  }
+  
+  .h-divider .text i {
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    left: 4px;
+    right: 4px;
+    border-radius: 100%;
+    border: 1px dashed #aaa;
+    text-align: center;
+    line-height: 50px;
+    font-style: normal;
+    color: #999;
+  }
+  
+  .h-divider .text2 {
+    width: 70px;
+    height: 70px;
+    position: absolute;
+    bottom: 100%;
+    margin-bottom: -35px;
+    left: 50%;
+    margin-left: -25px;
+    border-radius: 100%;
+    box-shadow: 0 2px 4px #999;
+    background: white;
+  }
+  
+  .h-divider img {
+    position: absolute;
+    margin: 4px;
+    max-width: 60px;
+    border-radius: 100%;
+    border: 1px dashed #aaa;
+  }
 
 #linkedin-logo {
     position: relative;
@@ -728,11 +834,19 @@ textarea{
         min-width: 320px;
         max-width: 480px
     }
+
+    #project_tagline1 {
+        font-family: 'Satisfy', cursive;
+        padding-top: 8%;
+        text-align: center;
+        font-size: 45px
+    }
+
     #project_title {
         font-family: 'Satisfy', cursive;
-        padding-top: 10%;
+        padding-top: 1%;
         text-align: center;
-        font-size: 32px
+        font-size: 45px
     }
     h1 {
         font-size: 28px
