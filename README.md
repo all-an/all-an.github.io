@@ -1,4 +1,4 @@
-<span style="color:orange; background: gray;" >
+<body style="color:orange; background: gray;" >
 # Welcome to my Portfolio 🖐
 
 
@@ -67,4 +67,4 @@ Reach out to me at one of the following places!
 
 - **[MIT license](http://opensource.org/licenses/mit-license.php)**
 - Copyright 2021 © <a href="https://github.com/all-an/" target="_blank">Allan Pereira Abrahão</a>
-Word up</span>
+Word up</body>
