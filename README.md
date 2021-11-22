@@ -21,7 +21,7 @@
 <!-- 
 ![GIF](assets/gg.gif) -->
 
-💻 Come see my [Linkedin page](https://hrpaul.web.app/)
+💻 Come see my [Linkedin page](https://www.linkedin.com/in/all-an/)
 
 ---
 
@@ -38,13 +38,13 @@
 
 ## Information 
 
-### Dependencies
+### Test
 Etiam lacinia nisl at tortor facilisis, id ullamcorper urna lacinia. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Ut et molestie est, fermentum rutrum lacus. Curabitur neque massa, congue id molestie non, laoreet dictum massa.
 
 - test
 - test
 
-### Clone
+### More test
 
 Etiam lacinia nisl at tortor facilisis, id ullamcorper urna lacinia. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Ut et molestie est, fermentum rutrum lacus. Curabitur neque massa, congue id molestie non, laoreet dictum massa.
 ```shell
