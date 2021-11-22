@@ -1,6 +1,6 @@
 # Welcome to my Portfolio 🖐
 
-<span style="color:orange;">Word up</span>
+<span style="color:orange; background: black;" >Word up</span>
 
 > My name is Allan Pereira Abrahão and this is my minimalist  personal website.
 
