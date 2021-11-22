@@ -1,6 +1,7 @@
+<span style="color:orange; background: gray;" >
 # Welcome to my Portfolio 🖐
 
-<span style="color:orange; background: black;" >Word up</span>
+
 
 > My name is Allan Pereira Abrahão and this is my minimalist  personal website.
 
@@ -66,3 +67,4 @@ Reach out to me at one of the following places!
 
 - **[MIT license](http://opensource.org/licenses/mit-license.php)**
 - Copyright 2021 © <a href="https://github.com/all-an/" target="_blank">Allan Pereira Abrahão</a>
+Word up</span>
