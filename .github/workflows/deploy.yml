@@ -48,10 +48,9 @@ jobs:
       - name: Copy files for deployment
         run: |
           mkdir -p dist
-          cp index-yew.html dist/index.html
+          cp index.html dist/
+          cp terminal.css dist/
           cp -r pkg dist/
-          cp -r js dist/ || true
-          cp -r css dist/ || true
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
