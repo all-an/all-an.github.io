@@ -7,7 +7,7 @@ proc fibonacci(n: int): int =
     return fibonacci(n - 1) + fibonacci(n - 2)
 
 proc stringProcessing(): int =
-  let text = "Hello world this is a test string for processing".repeat(10000)
+  let text = "Hello world this is a test string for processing Hello world this is a test string for processing Hello world this is a test string for processing Hello world this is a test string for processing".repeat(10000)
   var count = 0
   let words = text.split(' ')
   

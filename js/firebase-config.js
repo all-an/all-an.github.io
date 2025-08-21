@@ -182,7 +182,7 @@ window.listFiles = async function() {
         }
         
         const filesRef = collection(db, 'files');
-        const q = query(filesRef, where('userId', '==', user.uid), orderBy('lastModified', 'desc'));
+        const q = query(filesRef, where('userId', '==', user.uid));
         const querySnapshot = await getDocs(q);
         
         const files = [];
@@ -193,6 +193,9 @@ window.listFiles = async function() {
                 lastModified: data.lastModified.toDate()
             });
         });
+        
+        // Sort files by lastModified in JavaScript instead of Firestore
+        files.sort((a, b) => b.lastModified - a.lastModified);
         
         return { success: true, files: files };
     } catch (error) {

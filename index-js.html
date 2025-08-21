@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Allan - Software Engineer</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='%23000'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='monospace' font-size='10' fill='%2300ff00'>$</text></svg>">
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div class="terminal-container">
@@ -21,7 +22,16 @@
                 <div class="terminal-content" id="terminalContent">
                     <div class="welcome-message" id="welcomeMessage">
                         <div class="welcome-text">
+                            <pre style="color: #00ff00; font-size: 10px; line-height: 1.1; margin: 0 0 8px 0;">
+██     ██ ███████ ██████     ████████ ███████ ██████  ███    ███ 
+██     ██ ██      ██   ██       ██    ██      ██   ██ ████  ████ 
+██  █  ██ █████   ██████        ██    █████   ██████  ██ ████ ██ 
+██ ███ ██ ██      ██   ██       ██    ██      ██   ██ ██  ██  ██ 
+ ███ ███  ███████ ██████        ██    ███████ ██   ██ ██      ██ 
+                            </pre>
                             <p>Welcome ! My name is Allan. Type '<span style="color: #0080ff; font-weight: bold;">help</span>' for available commands.</p>
+                            <br>
+                            <p>Type '<span style="color: #0080ff; font-weight: bold;">message</span>' to send me a message.</p>
                         </div>
                     </div>
                     <br>
@@ -71,7 +81,8 @@
             console.error("Failed to load Pyodide:", error);
         });
     </script>
-    <script src="/static/vim.js"></script>
-    <script src="/static/terminal.js"></script>
+    <script type="module" src="js/firebase-config.js"></script>
+    <script src="js/vim.js"></script>
+    <script src="js/terminal.js"></script>
 </body>
 </html>

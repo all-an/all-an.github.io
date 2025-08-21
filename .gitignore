@@ -42,3 +42,25 @@ Thumbs.db
 # Firebase hosting cache (if using Firebase hosting)
 .firebase/
 firebase-debug.log
+
+draft.md
+CLAUDE.md
+roadmap.md
+
+temp/
+
+coverage_html/
+coverage_src_only.info
+coverage.info
+
+# Rust/Cargo files
+target/
+Cargo.lock
+*.pdb
+
+# WASM build artifacts
+pkg/
+dist/
+
+# Rust backup files
+**/*.rs.bk

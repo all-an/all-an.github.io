@@ -1,0 +1,2 @@
+# Exclude all generated JavaScript files from language statistics
+*.js linguist-vendored=true

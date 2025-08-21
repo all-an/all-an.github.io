@@ -205,25 +205,9 @@ async function listDirectorySync() {
     
     // Show login message if user is not logged in and in home directory
     if (!terminalState.isLoggedIn && terminalState.currentDirectory === '~') {
-        // Fetch guest files from database
-        let guestFiles = '';
-        try {
-            const response = await fetch('/api/files/list', {
-                credentials: 'include'
-            });
-            if (response.ok) {
-                const fileList = await response.json();
-                if (fileList.length > 0) {
-                    const fileNames = fileList.map(file => file.filename);
-                    guestFiles = fileNames.join('  ');
-                }
-            }
-        } catch (error) {
-            console.log('Could not fetch guest files:', error);
-        }
-        
+        // No guest files for non-logged in users in Firebase version
         const tempFiles = files.length > 0 ? files.join('  ') : '';
-        const allFiles = [guestFiles, tempFiles].filter(f => f).join('  ');
+        const allFiles = tempFiles;
         
         return `📁 Your Files:
    Please login to see your saved files.
@@ -241,26 +225,42 @@ async function listDirectorySync() {
 
 async function listDirectoryAsync() {
     try {
+        // Add debugging info
+        const currentUser = window.getCurrentUser();
+        console.log('Current Firebase user:', currentUser);
+        console.log('Terminal state logged in:', terminalState.isLoggedIn);
+        console.log('Terminal username:', terminalState.userName);
+        
         const result = await window.listFiles();
+        console.log('listFiles result:', result);
         
         if (result.success && result.files.length > 0) {
             const userFileNames = result.files.map(file => file.filename).join('  ');
             addOutput(`📁 Your Saved Files:
-   ${userFileNames}
-   
-   Use 'vim filename' to edit files`);
+${userFileNames}
+
+Use 'vim filename' to edit files`);
         } else {
-            addOutput(`📁 Your Saved Files:
-   No saved files yet.
-   
-   Use 'vim filename.py' to create and edit files`);
+            // Show more detailed info about why no files are found
+            if (!currentUser) {
+                addOutput(`📁 Your Saved Files:
+❌ Not authenticated with Firebase. Please try logging in again.
+
+Use 'login <username> <password>' to authenticate`);
+            } else {
+                addOutput(`📁 Your Saved Files:
+Directory appears to be empty.
+
+Use 'vim filename.py' to create and edit files
+Current user: ${currentUser.email || currentUser.uid}`);
+            }
         }
     } catch (error) {
         console.error('Error fetching user files:', error);
         addOutput(`📁 Your Saved Files:
-   Directory appears to be empty.
-   
-   Use 'vim filename.py' to create and edit files`);
+❌ Error: ${error.message}
+
+Use 'vim filename.py' to create and edit files`);
     }
 }
 
@@ -468,24 +468,15 @@ async function catFile(filename) {
         return homeFiles[filename];
     }
     
-    // Check database for the file (for guest files with account_id = null)
-    if (terminalState.currentDirectory === '~') {
+    // Check Firebase for the file
+    if (terminalState.currentDirectory === '~' && terminalState.isLoggedIn) {
         try {
-            const response = await fetch('/api/files/load', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'include',
-                body: JSON.stringify({ filename: filename })
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                return data.content;
+            const result = await window.loadFile(filename);
+            if (result.success) {
+                return result.content;
             }
         } catch (error) {
-            console.log('File not found in database:', filename);
+            console.log('File not found in Firebase:', filename);
         }
     }
     
@@ -1861,16 +1852,11 @@ function openVimEditor(filename) {
 
 async function loadFileIntoVimEditor(filename, vimEditor) {
     try {
-        const response = await fetch(`/api/files/load?filename=${encodeURIComponent(filename)}`, {
-            credentials: 'include'
-        });
-        if (response.ok) {
-            const fileData = await response.json();
-            vimEditor.initializeContent(fileData.content);
-        } else if (response.status === 404) {
-            // New file - use default content
-            vimEditor.initializeContent();
+        const result = await window.loadFile(filename);
+        if (result.success) {
+            vimEditor.initializeContent(result.content);
         } else {
+            // New file - use default content
             vimEditor.initializeContent();
         }
     } catch (error) {

@@ -7,7 +7,7 @@ function fibonacci(n) {
 }
 
 function stringProcessing() {
-    const text = "Hello world this is a test string for processing".repeat(10000);
+    const text = "Hello world this is a test string for processing Hello world this is a test string for processing Hello world this is a test string for processing Hello world this is a test string for processing".repeat(10000);
     let count = 0;
     const words = text.split(' ');
     

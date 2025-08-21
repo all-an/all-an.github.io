@@ -84,7 +84,7 @@ class VimEditor {
         
         const commands = document.createElement('span');
         commands.style.cssText = 'font-size: 16px; color: #888;';
-        commands.textContent = 'ESC :w=save :q=quit :wq=save&quit :py=execute python :py -l=execute line i=insert h/j/k/l=navigate';
+        commands.textContent = 'ESC :w=save :q=quit :wq=save&quit Ctrl+E=exec line Ctrl+X=exec file :t=focus terminal :c=focus code i=insert h/j/k/l=navigate';
         
         header.appendChild(this.title);
         header.appendChild(commands);
@@ -93,8 +93,18 @@ class VimEditor {
     }
 
     createEditingArea() {
-        const editingArea = document.createElement('div');
-        editingArea.style.cssText = `
+        const mainArea = document.createElement('div');
+        mainArea.style.cssText = `
+            flex: 1;
+            display: flex;
+            position: relative;
+            overflow: hidden;
+        `;
+        
+        // Create editor pane (left side)
+        const editorPane = document.createElement('div');
+        editorPane.className = 'vim-editor-pane';
+        editorPane.style.cssText = `
             flex: 1;
             display: flex;
             position: relative;
@@ -104,10 +114,111 @@ class VimEditor {
         this.lineNumbers = this.createLineNumbers();
         const textContainer = this.createTextContainer();
         
-        editingArea.appendChild(this.lineNumbers);
-        editingArea.appendChild(textContainer);
+        editorPane.appendChild(this.lineNumbers);
+        editorPane.appendChild(textContainer);
         
-        return editingArea;
+        // Create terminal pane (right side)
+        this.terminalPane = document.createElement('div');
+        this.terminalPane.className = 'vim-terminal-pane';
+        this.terminalPane.style.cssText = `
+            flex: 1;
+            display: none;
+            flex-direction: column;
+            border-left: 1px solid #555;
+            background: #1a1a1a;
+        `;
+        
+        // Terminal header
+        const terminalHeader = document.createElement('div');
+        terminalHeader.className = 'vim-terminal-header';
+        terminalHeader.style.cssText = `
+            padding: 5px 10px;
+            background: #2a2a2a;
+            color: #ccc;
+            border-bottom: 1px solid #555;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        `;
+        terminalHeader.innerHTML = `
+            <span>Python Output</span>
+            <button class="vim-terminal-close" style="background: none; border: none; color: #ccc; cursor: pointer; font-size: 16px;">&times;</button>
+        `;
+        
+        // Terminal content (output area)
+        this.terminalContent = document.createElement('div');
+        this.terminalContent.className = 'vim-terminal-content';
+        this.terminalContent.style.cssText = `
+            flex: 1;
+            padding: 10px;
+            color: #00ff00;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 20px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            background: #000;
+        `;
+        
+        // Terminal input area
+        this.terminalInputArea = document.createElement('div');
+        this.terminalInputArea.style.cssText = `
+            padding: 10px;
+            background: #000;
+            border-top: 1px solid #555;
+            display: flex;
+            align-items: center;
+        `;
+        
+        const promptSpan = document.createElement('span');
+        promptSpan.textContent = '>>> ';
+        promptSpan.style.cssText = `
+            color: #00ff00;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 20px;
+        `;
+        
+        this.terminalInput = document.createElement('input');
+        this.terminalInput.type = 'text';
+        this.terminalInput.style.cssText = `
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #00ff00;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 20px;
+            margin-left: 5px;
+        `;
+        
+        this.terminalInputArea.appendChild(promptSpan);
+        this.terminalInputArea.appendChild(this.terminalInput);
+        
+        this.terminalPane.appendChild(terminalHeader);
+        this.terminalPane.appendChild(this.terminalContent);
+        this.terminalPane.appendChild(this.terminalInputArea);
+        
+        // Setup terminal input handling
+        this.terminalInput.addEventListener('keydown', async (e) => {
+            if (e.key === 'Enter') {
+                const command = this.terminalInput.value.trim();
+                if (command) {
+                    await this.executeTerminalCommand(command);
+                    this.terminalInput.value = '';
+                }
+            }
+        });
+        
+        mainArea.appendChild(editorPane);
+        mainArea.appendChild(this.terminalPane);
+        
+        // Setup terminal close button
+        const closeBtn = terminalHeader.querySelector('.vim-terminal-close');
+        closeBtn.addEventListener('click', () => {
+            this.hideTerminal();
+        });
+        
+        return mainArea;
     }
 
     createLineNumbers() {
@@ -349,14 +460,7 @@ class VimEditor {
     }
 
     initializeContent(initialContent = '') {
-        this.content = initialContent || `#!/usr/bin/env python3
-
-def main():
-    print("Hello, World!")
-
-if __name__ == "__main__":
-    main()
-`;
+        this.content = initialContent || '';
         this.updateDisplay();
         this.moveCursor(0, 0);
     }
@@ -377,10 +481,10 @@ if __name__ == "__main__":
             lineElement.style.cssText = 'margin: 0; padding: 0; line-height: 1.4; white-space: pre;';
             
             // Check if line has execution output
-            const dollarMatch = line.match(/^(.*)( \$ .* \$)$/);
-            if (dollarMatch && index === this.cursorRow) {
+            const outputMatch = line.match(/^(.*)( → .*)$/);
+            if (outputMatch && index === this.cursorRow) {
                 // Only highlight the output part and only when cursor is on this line
-                const [, codepart, outputPart] = dollarMatch;
+                const [, codepart, outputPart] = outputMatch;
                 
                 const codeSpan = document.createElement('span');
                 codeSpan.textContent = codepart;
@@ -600,6 +704,20 @@ if __name__ == "__main__":
     }
 
     async handleKeydown(e) {
+        // Handle Ctrl shortcuts (work in any mode)
+        if (e.ctrlKey && (e.key === 'e' || e.key === 'E' || e.code === 'KeyE')) {
+            e.preventDefault();
+            await this.executeCurrentLineToTerminal();
+            return;
+        }
+        
+        if (e.ctrlKey && (e.key === 'x' || e.key === 'X' || e.code === 'KeyX')) {
+            e.preventDefault();
+            console.log('Ctrl+X pressed - executing all code');
+            await this.executeAllCodeToTerminal();
+            return;
+        }
+        
         if (this.mode === 'insert') {
             this.handleInsertMode(e);
         } else if (this.mode === 'normal') {
@@ -830,6 +948,12 @@ if __name__ == "__main__":
         } else if (cmd === 'py -l' || cmd === 'python -l') {
             // Execute Python code on current line
             await this.executePythonLine();
+        } else if (cmd === 't' || cmd === 'terminal') {
+            // Focus terminal
+            this.focusTerminal();
+        } else if (cmd === 'c' || cmd === 'code') {
+            // Focus code editor
+            this.focusCode();
         } else {
             // Unknown command
             this.statusLeft.textContent = `Unknown command: ${cmd}`;
@@ -856,9 +980,12 @@ if __name__ == "__main__":
             }, 2000);
             return true; // Success
         } catch (error) {
-            let errorMessage = 'Error: Failed to save file.';
+            console.error('Save error details:', error);
+            let errorMessage = `Error: Failed to save file. ${error.message}`;
             if (error.message.includes('logged in')) {
                 errorMessage = 'Error: Please login first to save files.';
+            } else if (error.message.includes('network')) {
+                errorMessage = 'Error: Network connection failed. Check your internet connection.';
             }
             if (window.addOutput) {
                 window.addOutput(errorMessage);
@@ -881,30 +1008,16 @@ if __name__ == "__main__":
                 this.updateDisplay();
                 this.moveCursor(0, 0);
             } else {
-                // New file
-                this.content = `#!/usr/bin/env python3
-
-def main():
-    print("Hello, World!")
-
-if __name__ == "__main__":
-    main()
-`;
+                // New file - start empty
+                this.content = '';
                 this.currentFilename = filename;
                 this.title.textContent = filename;
                 this.updateDisplay();
                 this.moveCursor(0, 0);
             }
         } catch (error) {
-            // New file or error - start with template
-            this.content = `#!/usr/bin/env python3
-
-def main():
-    print("Hello, World!")
-
-if __name__ == "__main__":
-    main()
-`;
+            // New file or error - start empty
+            this.content = '';
             this.currentFilename = filename;
             this.title.textContent = filename;
             this.updateDisplay();
@@ -1069,9 +1182,9 @@ sys.stderr = sys.__stderr__
             // Add the result as a $ marker at the end of the current line
             if (output) {
                 const cleanOutput = output.replace(/\n/g, ' ').trim();
-                const newLine = currentLine.includes(' $') 
-                    ? currentLine.replace(/ \$.*\$$/, ` $ ${cleanOutput} $`)
-                    : `${currentLine} $ ${cleanOutput} $`;
+                const newLine = currentLine.includes(' →') 
+                    ? currentLine.replace(/ →.*$/, ` → ${cleanOutput}`)
+                    : `${currentLine} → ${cleanOutput}`;
                     
                 lines[this.cursorRow] = newLine;
                 this.content = lines.join('\n');
@@ -1088,8 +1201,267 @@ sys.stderr = sys.__stderr__
     }
 
     clearExecutionComments(line) {
-        // Remove $ execution output $ markers from the line
-        return line.replace(/ \$.*\$$/, '');
+        // Remove → execution output markers from the line
+        return line.replace(/ →.*$/, '');
+    }
+
+    showTerminal() {
+        this.terminalPane.style.display = 'flex';
+        // Adjust editor pane width when terminal is shown
+        const editorPane = this.terminalPane.previousElementSibling;
+        editorPane.style.flex = '1';
+    }
+
+    hideTerminal() {
+        this.terminalPane.style.display = 'none';
+        // Restore editor pane to full width
+        const editorPane = this.terminalPane.previousElementSibling;
+        editorPane.style.flex = 'none';
+        editorPane.style.width = '100%';
+    }
+
+    addTerminalOutput(output, isError = false) {
+        const outputDiv = document.createElement('div');
+        outputDiv.style.cssText = `
+            margin: 2px 0;
+            color: ${isError ? '#ff5555' : '#00ff00'};
+        `;
+        outputDiv.textContent = output;
+        this.terminalContent.appendChild(outputDiv);
+        
+        // Auto-scroll to bottom
+        this.terminalContent.scrollTop = this.terminalContent.scrollHeight;
+    }
+
+    clearTerminal() {
+        this.terminalContent.innerHTML = '';
+    }
+
+    async executeCurrentLineToTerminal() {
+        const lines = this.content.split('\n');
+        const currentLine = lines[this.cursorRow] || '';
+        const cleanLine = this.clearExecutionComments(currentLine);
+        
+        if (!cleanLine.trim()) {
+            return;
+        }
+        
+        let output = '';
+        
+        try {
+            if (!window.pyodide) {
+                output = 'Error: Python environment not loaded';
+            } else {
+                // First, set up stdout capture
+                await window.pyodide.runPython(`
+import sys
+import io
+old_stdout = sys.stdout
+sys.stdout = captured_output = io.StringIO()
+                `);
+                
+                // Try to execute the line
+                let result;
+                try {
+                    // Try as expression first
+                    result = await window.pyodide.runPython(cleanLine);
+                } catch {
+                    // If that fails, it was probably a statement
+                    result = null;
+                }
+                
+                // Get any printed output
+                const printedOutput = await window.pyodide.runPython(`
+output = captured_output.getvalue()
+sys.stdout = old_stdout
+output
+                `);
+                
+                // Determine what to show
+                if (printedOutput && printedOutput.trim()) {
+                    output = printedOutput.trim();
+                } else if (result !== undefined && result !== null) {
+                    output = String(result);
+                } else {
+                    output = 'executed';
+                }
+            }
+        } catch (error) {
+            // Restore stdout on error
+            try {
+                await window.pyodide.runPython('sys.stdout = old_stdout');
+            } catch {}
+            output = `Error: ${error.message}`;
+        }
+        
+        // Add the result inline in the editor
+        if (output && output.trim() && output !== 'None') {
+            const cleanOutput = output.replace(/\n/g, ' ').trim();
+            const newLine = currentLine.includes(' →') 
+                ? currentLine.replace(/ →.*$/, ` → ${cleanOutput}`)
+                : `${currentLine} → ${cleanOutput}`;
+                
+            lines[this.cursorRow] = newLine;
+            this.content = lines.join('\n');
+            this.updateDisplay();
+        }
+        
+        this.statusLeft.textContent = 'Line executed';
+        setTimeout(() => this.updateStatus(), 2000);
+    }
+
+    async executeAllCodeToTerminal() {
+        console.log('executeAllCodeToTerminal called');
+        const cleanContent = this.content
+            .split('\n')
+            .map(line => this.clearExecutionComments(line))
+            .join('\n')
+            .trim();
+        
+        console.log('Clean content:', cleanContent);
+        
+        if (!cleanContent) {
+            console.log('No content to execute');
+            return;
+        }
+        
+        console.log('Showing terminal and executing...');
+        this.showTerminal();
+        this.clearTerminal(); // Clear previous output
+        this.addTerminalOutput('>>> Executing file...', false);
+        this.addTerminalOutput('', false);
+        
+        try {
+            if (!window.pyodide) {
+                this.addTerminalOutput('Error: Python environment not loaded', true);
+                return;
+            }
+            
+            // Capture stdout to show print statements and execution
+            await window.pyodide.runPython(`
+                import sys
+                import io
+                
+                # Redirect stdout to capture prints
+                old_stdout = sys.stdout
+                sys.stdout = captured_output = io.StringIO()
+            `);
+            
+            // Clear Python globals to start fresh
+            await window.pyodide.runPython(`
+                # Clear user-defined variables but keep builtins and our capture variables
+                user_vars = [var for var in globals().keys() if not var.startswith('_') and var not in dir(__builtins__) and var not in ['old_stdout', 'captured_output', 'sys', 'io']]
+                for var in user_vars:
+                    del globals()[var]
+            `);
+            
+            // Execute the code
+            const result = await window.pyodide.runPython(cleanContent);
+            
+            // Get captured output (print statements)
+            const capturedOutput = await window.pyodide.runPython(`
+                output = captured_output.getvalue()
+                sys.stdout = old_stdout
+                output
+            `);
+            
+            // Show captured print statements
+            if (capturedOutput && capturedOutput.trim()) {
+                capturedOutput.split('\n').forEach(line => {
+                    if (line.trim()) {
+                        this.addTerminalOutput(line, false);
+                    }
+                });
+            }
+            
+            // Show final result if there's a return value
+            if (result !== undefined && result !== null) {
+                if (capturedOutput && capturedOutput.trim()) {
+                    this.addTerminalOutput('', false); // Add space between prints and result
+                }
+                this.addTerminalOutput(`=> ${String(result)}`, false);
+            }
+            
+            // If no output at all, show completion message
+            if ((!capturedOutput || !capturedOutput.trim()) && (result === undefined || result === null)) {
+                this.addTerminalOutput('(no output)', false);
+            }
+            
+        } catch (error) {
+            // Restore stdout even on error
+            try {
+                await window.pyodide.runPython('sys.stdout = old_stdout');
+            } catch {}
+            this.addTerminalOutput(`Error: ${error.message}`, true);
+        }
+    }
+
+    focusTerminal() {
+        this.showTerminal();
+        this.terminalInput.focus();
+        this.statusLeft.textContent = 'Terminal focused';
+        setTimeout(() => this.updateStatus(), 2000);
+    }
+
+    focusCode() {
+        this.textarea.focus();
+        this.statusLeft.textContent = 'Code editor focused';
+        setTimeout(() => this.updateStatus(), 2000);
+    }
+
+    async executeTerminalCommand(command) {
+        // Echo the command
+        this.addTerminalOutput(`>>> ${command}`, false);
+        
+        try {
+            if (!window.pyodide) {
+                this.addTerminalOutput('Error: Python environment not loaded', true);
+                return;
+            }
+            
+            // Set up stdout capture
+            await window.pyodide.runPython(`
+import sys
+import io
+old_stdout = sys.stdout
+sys.stdout = captured_output = io.StringIO()
+            `);
+            
+            // Execute the command
+            let result;
+            try {
+                result = await window.pyodide.runPython(command);
+            } catch {
+                result = null;
+            }
+            
+            // Get printed output
+            const printedOutput = await window.pyodide.runPython(`
+output = captured_output.getvalue()
+sys.stdout = old_stdout
+output
+            `);
+            
+            // Show results
+            if (printedOutput && printedOutput.trim()) {
+                printedOutput.split('\n').forEach(line => {
+                    if (line.trim()) {
+                        this.addTerminalOutput(line, false);
+                    }
+                });
+            }
+            
+            if (result !== undefined && result !== null) {
+                this.addTerminalOutput(String(result), false);
+            }
+            
+        } catch (error) {
+            // Restore stdout on error
+            try {
+                await window.pyodide.runPython('sys.stdout = old_stdout');
+            } catch {}
+            this.addTerminalOutput(`Error: ${error.message}`, true);
+        }
     }
 }
 

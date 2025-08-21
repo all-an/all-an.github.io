@@ -20,7 +20,7 @@ curl https://nim-lang.org/choosenim/init.sh -sSf | sh
 cd benchmarking
 
 # Compile Nim to JavaScript
-nim js -o:bench-nim.js bench.nim
+nim js -o:benchnim.js bench.nim
 
 # The generated JavaScript will be in bench-nim.js
 ```
