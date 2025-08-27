@@ -74,7 +74,7 @@ const {
     loginUser,
     handleProjectSelection,
     getPrompt
-} = require('../js/terminal.js');
+} = require('../terminal.js');
 
 describe('Terminal State Management', function() {
     beforeEach(function() {

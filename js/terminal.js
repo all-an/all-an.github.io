@@ -51,6 +51,16 @@ const terminalState = {
 
 // Available commands
 const commands = {
+    cloudsimulator: {
+        description: 'Open CloudSimulator webpage',
+        execute: () => {
+            addOutput('Opening CloudSimulator...');
+            setTimeout(() => {
+                window.open('cloudlogin.html', '_blank');
+            }, 1000);
+            return '';
+        }
+    },
     message: {
         description: 'Send me a message',
         execute: () => startMessageMode()

@@ -1,7 +1,7 @@
 const { expect } = require('chai');
 
 // Load the VimEditor class
-const VimEditor = require('../js/vim.js');
+const VimEditor = require('../vim.js');
 
 describe('VimEditor', function() {
     let editor;

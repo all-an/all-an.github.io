@@ -1,15 +1,42 @@
-// Flashcards Game State
+// Text Adventure Game State and Types
+
+// Text Adventure Types
+class TextAdventure {
+    constructor(adventurename, id, storyevents = []) {
+        this.adventurename = adventurename;
+        this.id = id;
+        this.storyevents = storyevents;
+    }
+}
+
+class StoryEvent {
+    constructor(description, time, eventnumber, commands, adventureid) {
+        this.description = description;
+        this.time = time;
+        this.eventnumber = eventnumber;
+        this.commands = commands;
+        this.adventureid = adventureid;
+    }
+}
+
+class Command {
+    constructor(action_description, nexteventnumber, command_call) {
+        this.action_description = action_description;
+        this.nexteventnumber = nexteventnumber;
+        this.command_call = command_call;
+    }
+}
+
+// Game State
 let gameState = {
-    courseId: null,
-    sessionId: null,
-    questions: [],
-    currentQuestionIndex: 0,
-    score: 0,
+    currentAdventure: null,
+    currentEventNumber: 1,
+    history: [],
     startTime: null,
-    questionStartTime: null,
-    answers: [],
+    eventStartTime: null,
     timer: null,
-    timeLeft: 30
+    timeLeft: 30,
+    gameActive: false
 };
 
 // DOM Elements

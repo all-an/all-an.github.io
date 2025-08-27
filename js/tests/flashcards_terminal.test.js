@@ -64,7 +64,7 @@ const {
     isValidCourseSelection,
     exitFlashcards,
     handleNextCommand
-} = require('../js/terminal.js');
+} = require('../terminal.js');
 
 describe('Flashcards Terminal Integration', function() {
     beforeEach(function() {

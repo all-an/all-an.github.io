@@ -35,7 +35,7 @@ const {
     commands,
     terminalState,
     getDirectoryFiles
-} = require('../js/terminal.js');
+} = require('../terminal.js');
 
 describe('Tab Completion Functions', function() {
     beforeEach(function() {

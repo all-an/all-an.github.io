@@ -5,11 +5,8 @@ yarn-debug.log*
 yarn-error.log*
 
 # Coverage reports
-coverage/
+# coverage/
 .nyc_output/
-
-# Test reports
-FAILING_TESTS_REPORT.md
 
 # OS generated files
 .DS_Store
@@ -64,3 +61,6 @@ dist/
 
 # Rust backup files
 **/*.rs.bk
+
+.claude/
+failing_tests_report.log

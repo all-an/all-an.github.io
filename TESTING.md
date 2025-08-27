@@ -1,191 +1,319 @@
 # Testing Guide
 
 ## Overview
-This document describes how to run tests and generate coverage reports for the Nim codebase using lcov to track entire files, functions, and types.
+This document describes how to run JavaScript tests using Mocha, generate coverage reports, and monitor test failures.
 
 ## Prerequisites
 
 ### Required Tools
-- Nim compiler (with gc:arc support)
-- lcov (Linux Coverage Validation)
-- genhtml (part of lcov package)
-- gcc with coverage support
+- Node.js (v16 or higher)
+- npm
+- Mocha test framework
+- nyc for coverage
+- chai for assertions
+- sinon for mocking
 
 ### Installation
 ```bash
-# Ubuntu/Debian
-sudo apt-get install lcov nim
+# Install dependencies
+npm install
 
-# Fedora/RHEL
-sudo dnf install lcov nim
-
-# macOS
-brew install lcov nim
+# Dependencies are automatically installed from package.json:
+# - mocha: JavaScript test framework
+# - nyc: Coverage tool
+# - chai: Assertion library  
+# - sinon: Mocking library
 ```
 
-## Setup
+## JavaScript Testing
 
-### 1. Make the test script executable
+### 1. Running All Tests with Coverage
 ```bash
-chmod +x run-nim-tests.sh
+./run_js_tests.sh
 ```
 
-### 2. Verify lcov installation
+### 2. What the script does:
+1. **Cleans previous test data**
+   - Removes old coverage reports
+   - Clears previous test outputs
+
+2. **Runs tests with coverage**
+   - Executes all test files in `js/tests/`
+   - Generates HTML coverage report
+   - Creates failing tests log
+
+3. **Generates reports**
+   - **Coverage Report**: `coverage/index.html`
+   - **Failing Tests Log**: `failing_tests_report.log`
+
+### 3. Test Output Files
+- **`coverage/index.html`** - Interactive HTML coverage report
+- **`failing_tests_report.log`** - Simple log with failing test names
+- **Console output** - Real-time test results
+
+## Checking Test Results
+
+### 1. View Failing Tests Log
 ```bash
-lcov --version
-genhtml --version
+cat failing_tests_report.log
 ```
 
-## Running Tests with Coverage
+**Example output:**
+```
+JavaScript Test Results - Tue Aug 26 06:19:02 PM -03 2025
+============================================
 
-### Basic Usage
-```bash
-./run-nim-tests.sh
+115 passing (174ms)
+101 failing
+
+FAILING TESTS:
+============================================
+"before each" hook for "should validate firebase configuration structure"
+should handle guest choice
+should handle login choice when not logged in
+should handle login choice when logged in
+...
 ```
 
-### What the script does:
-1. **Cleans previous coverage data**
-   - Removes old HTML reports
-   - Deletes previous `.gcda` and `.gcno` files
-   - Clears old coverage info files
-
-2. **Compiles tests with coverage flags**
-   - Uses `--gc:arc` for better performance
-   - Adds `--profiler:on` and `--stackTrace:on` for debugging
-   - Includes GCC coverage flags: `-fprofile-arcs -ftest-coverage`
-   - Links with gcov library: `-lgcov`
-
-3. **Runs all test files**
-   - Executes each compiled test
-   - Generates coverage data during execution
-
-4. **Generates coverage reports**
-   - Captures coverage information with `lcov --capture`
-   - Filters to include only project source files
-   - Excludes system/Nim standard library files
-   - Removes test files from coverage metrics
-   - Generates HTML report with `genhtml`
-
-## Coverage Output
-
-### Files Generated
-- `coverage.info` - Raw coverage data
-- `coverage_src_only.info` - Filtered coverage data (source only)
-- `coverage_html/` - HTML coverage report directory
-- `coverage_html/index.html` - Main coverage report
-
-### Viewing Results
+### 2. View Coverage Report
 ```bash
 # Open in browser
-firefox coverage_html/index.html
+firefox coverage/index.html
 
-# Or use any browser
-open coverage_html/index.html
+# Or serve locally
+python -m http.server 8080
+# Then open: http://localhost:8080/coverage/
 ```
 
-### Command Line Summary
-The script automatically displays a coverage summary at the end:
-```
-=== Coverage Summary ===
-Reading tracefile coverage_src_only.info
-Summary coverage rate:
-  lines......: 85.2% (23 of 27 lines)
-  functions..: 100.0% (3 of 3 functions)
-  branches...: no data found
-```
-
-## Adding New Tests
-
-### 1. Create test file
-Add your test file to the project directory (e.g., `test_mymodule.nim`)
-
-### 2. Update test runner
-Edit `run-nim-tests.sh` and add your test file to the `TEST_FILES` array:
+### 3. Monitor Test Changes
 ```bash
-TEST_FILES=(
-    "temp.nim"
-    "test_mymodule.nim"  # Add new test here
-)
+# Before making changes
+./run_js_tests.sh
+cp failing_tests_report.log failing_tests_before.log
+
+# After making changes  
+./run_js_tests.sh
+diff failing_tests_before.log failing_tests_report.log
 ```
 
-### 3. Test file structure
-```nim
-import unittest, mymodule
+## Running Individual Tests
 
-suite "My Module Tests":
-  test "function should work correctly":
-    check myfunction() == expected_result
+### 1. Run Specific Test File
+```bash
+# Single test file with setup
+npx mocha --require js/tests/setup.js js/tests/terminal.test.js
+
+# Run specific test file
+npx mocha --require js/tests/setup.js js/tests/firebase-config.test.js
+
+# Multiple specific files
+npx mocha --require js/tests/setup.js js/tests/firebase-config.test.js js/tests/terminal.test.js
+
+# Run just one test file (shortest command)
+npx mocha js/tests/firebase-config.test.js
 ```
 
-## Coverage Targets
+### 2. Run Tests by Pattern
+```bash
+# All tests matching pattern
+npx mocha --require js/tests/setup.js js/tests/**/*firebase*.test.js
+
+# Grep for specific test names
+npx mocha --require js/tests/setup.js --grep "Firebase Config" js/tests/**/*.test.js
+
+# Run only specific test by name
+npx mocha --require js/tests/setup.js --grep "should handle guest choice" js/tests/**/*.test.js
+
+# Run only tests from a specific describe block
+npx mocha --require js/tests/setup.js --grep "VimEditor" js/tests/**/*.test.js
+```
+
+### 3. Debug Individual Tests
+```bash
+# Verbose output with setup
+npx mocha --require js/tests/setup.js --reporter spec js/tests/terminal.test.js
+
+# With stack traces
+npx mocha --require js/tests/setup.js --full-trace js/tests/terminal.test.js
+
+# Timeout adjustment for slow tests
+npx mocha --require js/tests/setup.js --timeout 10000 js/tests/vim.test.js
+
+# Run just one specific test
+npx mocha --require js/tests/setup.js --grep "should validate firebase configuration structure" js/tests/**/*.test.js
+```
+
+## Test File Structure
+
+### Current Test Files
+```
+js/tests/
+├── setup.js                    # Test environment setup
+├── firebase-config.test.js      # Firebase functionality tests
+├── firebaseconfig-nim.test.js   # Firebase Nim tests 
+├── terminal.test.js             # Terminal functionality tests
+├── flashcards.test.js           # Flashcards functionality tests
+├── flashcards_terminal.test.js  # Flashcards integration tests
+├── tab_completion.test.js       # Tab completion tests
+└── vim.test.js                  # Vim editor tests
+```
+
+### Adding New Tests
+1. **Create test file** in `js/tests/` directory:
+```javascript
+const { expect } = require('chai');
+const myModule = require('../my-module.js');
+
+describe('My Module', function() {
+    beforeEach(function() {
+        // Setup before each test
+    });
+
+    it('should work correctly', function() {
+        expect(myModule.myFunction()).to.equal('expected');
+    });
+});
+```
+
+2. **Tests are automatically discovered** - No need to update any config
+
+## Common Test Issues & Solutions
+
+### 1. DOM Mocking Issues
+**Problem**: `TypeError: Cannot set properties of undefined (setting 'cssText')`
+
+**Solution**: Enhance DOM mocks in `js/tests/setup.js`:
+```javascript
+global.document = {
+    createElement: (tag) => ({
+        tagName: tag.toUpperCase(),
+        style: { cssText: '' },
+        appendChild: () => {},
+        querySelector: () => ({ style: { cssText: '' } }),
+        querySelectorAll: () => []
+    })
+};
+```
+
+### 2. Module Import Errors  
+**Problem**: `ReferenceError: function is not defined`
+
+**Solution**: Check exports in source files:
+```javascript
+// In js/terminal.js - make sure functions are exported
+module.exports = {
+    terminalState,
+    commands,
+    handleFlashcardChoice,  // Make sure this is exported
+    // ... other functions
+};
+```
+
+### 3. ES Module vs CommonJS
+**Problem**: `require is not defined in ES module scope`
+
+**Solutions**:
+```bash
+# Option 1: Rename test file to .cjs
+mv firebaseconfig-nim.test.js firebaseconfig-nim.test.cjs
+
+# Option 2: Convert to ES modules (update imports)
+# import { expect } from 'chai';
+```
+
+## Test Coverage Targets
 
 ### Recommended Coverage Levels
-- **Lines**: ≥ 80%
+- **Statements**: ≥ 80%
+- **Branches**: ≥ 70% 
 - **Functions**: ≥ 90%
-- **Types**: All public types should be tested
+- **Lines**: ≥ 80%
 
-### Excluding Files from Coverage
-To exclude specific files, edit the `lcov --remove` command in the script:
-```bash
-lcov --remove coverage_src_only.info "*test_*" "*exclude_me*" --output-file coverage_src_only.info
-```
+### Current Test Status
+- **Total Tests**: 216
+- **Passing**: 115 ✅
+- **Failing**: 101 ❌
+- **Main Issues**: DOM mocking, missing exports
 
-## Troubleshooting
+## Continuous Integration
 
-### Common Issues
-
-#### "lcov: command not found"
-```bash
-# Install lcov
-sudo apt-get install lcov
-```
-
-#### "No coverage data found"
-- Ensure tests are actually running
-- Check that GCC coverage flags are properly set
-- Verify test files contain executable code
-
-#### "Permission denied"
-```bash
-chmod +x run-nim-tests.sh
-```
-
-#### Coverage data appears empty
-- Make sure test functions are being called
-- Check that the Nim compiler supports coverage flags
-- Verify gcov is properly installed
-
-### Debug Mode
-Add debug output to the script:
-```bash
-# Add after compilation
-ls -la *.gcno *.gcda
-```
-
-## CI/CD Integration
-
-### GitHub Actions
+### GitHub Actions Setup
 ```yaml
-- name: Run tests with coverage
-  run: |
-    sudo apt-get install lcov
-    chmod +x run-nim-tests.sh
-    ./run-nim-tests.sh
+name: Test Suite
+on: [push, pull_request]
 
-- name: Upload coverage reports
-  uses: actions/upload-artifact@v3
-  with:
-    name: coverage-report
-    path: coverage_html/
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - run: npm install
+      - run: ./run_js_tests.sh
+      - uses: actions/upload-artifact@v3
+        with:
+          name: test-results
+          path: |
+            coverage/
+            failing_tests_report.log
 ```
-
-### Coverage Badges
-Use lcov summary output to generate coverage badges in README.md
 
 ## Best Practices
 
-1. **Run tests before commits**: Always run the full test suite
-2. **Monitor coverage trends**: Track coverage over time
-3. **Test edge cases**: Focus on boundary conditions
-4. **Document test cases**: Use descriptive test names
-5. **Review coverage reports**: Identify untested code paths
+### 1. Test Organization
+- **Group related tests** in describe blocks
+- **Use descriptive test names** that explain expected behavior
+- **Setup and teardown** properly in beforeEach/afterEach
+
+### 2. Debugging Failed Tests
+```bash
+# Step 1: Run failing test individually
+npx mocha js/tests/terminal.test.js --grep "specific failing test"
+
+# Step 2: Check the failing_tests_report.log
+grep -A 5 -B 5 "test name" failing_tests_report.log
+
+# Step 3: Add console.log debugging
+console.log('Debug info:', variable);
+
+# Step 4: Check source code exports
+node -e "console.log(Object.keys(require('./js/terminal.js')))"
+```
+
+### 3. Maintaining Tests
+- **Run tests before commits**: `./run_js_tests.sh`
+- **Fix failing tests promptly**: Don't let them accumulate
+- **Update mocks**: Keep DOM/browser mocks current with usage
+- **Review coverage**: Identify untested code paths
+
+### 4. Mock Management
+- **Keep mocks minimal**: Only mock what's necessary
+- **Use sinon for spies/stubs**: More powerful than basic mocks
+- **Reset mocks between tests**: Avoid test interference
+
+## Quick Reference
+
+```bash
+# Full test suite with reports
+./run_js_tests.sh
+
+# Just run tests (no coverage)
+npm test
+
+# View failing tests
+cat failing_tests_report.log
+
+# View coverage
+firefox coverage/index.html
+
+# Single test file
+npx mocha js/tests/firebase-config.test.js
+
+# Debug specific test
+npx mocha --grep "specific test name" --reporter spec
+
+# Test with timeout
+npx mocha --timeout 10000 js/tests/vim.test.js
+```
