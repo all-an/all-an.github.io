@@ -138,6 +138,23 @@ window.getUserProfile = async function(userId) {
 // File storage functions
 window.saveFile = async function(filename, content) {
     try {
+        // Check if we're in local directory
+        if ((window.terminalState && window.terminalState.currentDirectory === 'local') ||
+            (typeof terminalState !== 'undefined' && terminalState.currentDirectory === 'local')) {
+            // Save to localStorage for local
+            localStorage.setItem(`local:${filename}`, content);
+            
+            // Also track files for ls command
+            const existingFiles = JSON.parse(localStorage.getItem('local-files') || '[]');
+            if (!existingFiles.includes(filename)) {
+                existingFiles.push(filename);
+                localStorage.setItem('local-files', JSON.stringify(existingFiles));
+            }
+            
+            return { success: true, message: 'File saved to local!' };
+        }
+        
+        // Default behavior: save to Firebase
         const user = auth.currentUser;
         if (!user) {
             throw new Error('You must be logged in to save files');
@@ -158,6 +175,19 @@ window.saveFile = async function(filename, content) {
 
 window.loadFile = async function(filename) {
     try {
+        // Check if we're in local directory
+        if ((window.terminalState && window.terminalState.currentDirectory === 'local') ||
+            (typeof terminalState !== 'undefined' && terminalState.currentDirectory === 'local')) {
+            // Load from localStorage for local
+            const content = localStorage.getItem(`local:${filename}`);
+            if (content !== null) {
+                return { success: true, content: content };
+            } else {
+                return { success: false, content: '', message: 'File not found in local' };
+            }
+        }
+        
+        // Default behavior: load from Firebase
         const user = auth.currentUser;
         if (!user) {
             throw new Error('You must be logged in to load files');

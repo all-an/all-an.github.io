@@ -22,30 +22,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          targets: wasm32-unknown-unknown
+          node-version: '18'
+          cache: 'npm'
 
-      - name: Install wasm-pack
-        run: cargo install wasm-pack
-
-      - name: Cache cargo dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Install dependencies
+        run: npm install
 
       - name: Run tests
-        run: |
-          cargo test
-          wasm-pack test --headless --firefox
+        run: npm test
 
-      - name: Build WASM
-        run: wasm-pack build --target web --out-dir pkg
+      - name: Build project
+        run: npm run build
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -55,7 +45,8 @@ jobs:
           mkdir -p dist
           cp index.html dist/
           cp terminal.css dist/
-          cp -r pkg dist/
+          cp -r js dist/
+          cp -r css dist/ || true
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

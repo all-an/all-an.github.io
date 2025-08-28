@@ -5,7 +5,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # Coverage reports
-# coverage/
+coverage/
 .nyc_output/
 
 # OS generated files
@@ -50,17 +50,9 @@ coverage_html/
 coverage_src_only.info
 coverage.info
 
-# Rust/Cargo files
-target/
-Cargo.lock
-*.pdb
-
 # WASM build artifacts
 pkg/
 dist/
-
-# Rust backup files
-**/*.rs.bk
 
 .claude/
 failing_tests_report.log

@@ -27,6 +27,65 @@ class Command {
     }
 }
 
+// Sample Adventure Data
+const sampleAdventure = new TextAdventure("The Mysterious Terminal", 1, []);
+
+// Story Events
+const storyEvents = [
+    new StoryEvent(
+        "You wake up in front of a glowing computer terminal in a dark room. The screen shows a blinking cursor and the text 'SYSTEM BREACH DETECTED - CHOOSE YOUR ACTION'. You notice three cables connected to the terminal: RED, BLUE, and GREEN.",
+        25,
+        1,
+        [
+            new Command("Pull the RED cable", 2, "red"),
+            new Command("Pull the BLUE cable", 3, "blue"), 
+            new Command("Pull the GREEN cable", 4, "green")
+        ],
+        1
+    ),
+    new StoryEvent(
+        "You pull the RED cable and alarms start blaring! The screen flashes 'SECURITY PROTOCOL ACTIVATED'. Suddenly, the lights come on revealing you're in a high-tech laboratory. A voice announces: 'Intruder detected. Choose your escape route!'",
+        20,
+        2,
+        [
+            new Command("Run to the EXIT door", 4, "exit"),
+            new Command("Hide behind the server racks", 5, "hide")
+        ],
+        1
+    ),
+    new StoryEvent(
+        "You pull the BLUE cable and the terminal screen turns blue, displaying 'DIAGNOSTIC MODE ACTIVATED'. The room's ventilation system kicks in, and you hear a soft hum. A panel opens in the wall revealing a secret passage.",
+        20,
+        3,
+        [
+            new Command("Enter the secret passage", 4, "passage"),
+            new Command("Stay and investigate the terminal", 6, "investigate")
+        ],
+        1
+    ),
+    new StoryEvent(
+        "GAME OVER - You successfully escaped! Whether through the exit, the secret passage, or by hiding until security left, you made it out of the mysterious facility. Your quick thinking saved the day!",
+        10,
+        4,
+        [],
+        1
+    ),
+    new StoryEvent(
+        "GAME OVER - You were caught! The security team found your hiding spot. But they turned out to be friendly researchers who were just testing their new security system. You helped them improve it!",
+        10,
+        5,
+        [],
+        1
+    ),
+    new StoryEvent(
+        "GAME OVER - Investigation complete! You discovered this was actually a training simulation for new security personnel. Your curiosity helped you complete the training perfectly!",
+        10,
+        6,
+        [],
+        1
+    )
+];
+
 // Game State
 let gameState = {
     currentAdventure: null,

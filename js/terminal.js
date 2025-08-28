@@ -12,7 +12,7 @@ let typedText = document.getElementById('typedText');
 
 // Terminal state
 const terminalState = {
-    currentDirectory: '~',
+    currentDirectory: 'local',
     userName: 'guest',
     isLoggedIn: false,
     awaitingFlashcardChoice: false,
@@ -46,7 +46,12 @@ const terminalState = {
     vimCursorCol: 0,
     vimCurrentMode: 'normal', // 'normal', 'insert', 'command'
     vimCommandBuffer: '',
-    vimLastKey: ''
+    vimLastKey: '',
+    textAdventureActive: false,
+    currentEventNumber: 1,
+    textAdventureStartTime: null,
+    textAdventureTimer: null,
+    textAdventureTimeLeft: 0
 };
 
 // Available commands
@@ -72,10 +77,6 @@ const commands = {
     contact: {
         description: 'Show contact information',
         execute: () => showContact()
-    },
-    projects: {
-        description: 'Show available projects',
-        execute: () => showProjects()
     },
     register: {
         description: 'Register a new account',
@@ -124,10 +125,231 @@ const commands = {
     clear: {
         description: 'Clear terminal screen',
         execute: () => clearTerminal()
+    },
+    'download-files': {
+        description: 'Download files to Downloads folder',
+        execute: () => downloadFiles()
+    },
+    textadventure: {
+        description: 'Start text adventure game',
+        execute: () => startTextAdventure()
     }
 };
 
 // Command execution functions
+function downloadFiles() {
+    if (terminalState.currentDirectory === 'local') {
+        return downloadLocalFiles();
+    } else if (terminalState.currentDirectory === 'firebase') {
+        return downloadFirebaseFiles();
+    } else {
+        return 'download-files: Command only available in local or firebase mode.';
+    }
+}
+
+function downloadLocalFiles() {
+    try {
+        const files = JSON.parse(localStorage.getItem('local-files') || '[]');
+        
+        if (files.length === 0) {
+            return 'No local files found to download.';
+        }
+        
+        let downloadedCount = 0;
+        files.forEach(filename => {
+            const content = localStorage.getItem(`local:${filename}`);
+            if (content !== null) {
+                // Create and trigger download
+                const blob = new Blob([content], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                downloadedCount++;
+            }
+        });
+        
+        return `Downloaded ${downloadedCount} local files to Downloads folder.`;
+    } catch (error) {
+        return `Error downloading local files: ${error.message}`;
+    }
+}
+
+async function downloadFirebaseFiles() {
+    try {
+        if (!terminalState.isLoggedIn) {
+            return 'You must be logged in to download Firebase files.';
+        }
+        
+        const result = await window.listFiles();
+        if (!result.success || result.files.length === 0) {
+            return 'No Firebase files found to download.';
+        }
+        
+        let downloadedCount = 0;
+        for (const file of result.files) {
+            try {
+                const fileResult = await window.loadFile(file.filename);
+                if (fileResult.success) {
+                    // Create and trigger download
+                    const blob = new Blob([fileResult.content], { type: 'text/plain' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = file.filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    downloadedCount++;
+                }
+            } catch (error) {
+                console.error(`Error downloading ${file.filename}:`, error);
+            }
+        }
+        
+        return `Downloaded ${downloadedCount} Firebase files to Downloads folder.`;
+    } catch (error) {
+        return `Error downloading Firebase files: ${error.message}`;
+    }
+}
+
+function startTextAdventure() {
+    // Set terminal state to text adventure mode
+    terminalState.textAdventureActive = true;
+    terminalState.currentEventNumber = 1;
+    terminalState.textAdventureStartTime = Date.now();
+    
+    // Get the first story event
+    const firstEvent = getStoryEvent(1);
+    if (!firstEvent) {
+        return 'Error: Could not load text adventure. Please try again later.';
+    }
+    
+    // Start the timer for this event
+    startEventTimer(firstEvent.time);
+    
+    // Format and display the story event
+    return formatStoryEvent(firstEvent);
+}
+
+function getStoryEvent(eventNumber) {
+    // This will eventually get data from Firebase, for now use the sample data
+    if (typeof storyEvents !== 'undefined') {
+        return storyEvents.find(event => event.eventnumber === eventNumber);
+    }
+    return null;
+}
+
+function formatStoryEvent(event) {
+    let output = `\n📖 TEXT ADVENTURE: The Mysterious Terminal\n\n`;
+    output += `${event.description}\n\n`;
+    
+    if (event.commands && event.commands.length > 0) {
+        output += `⏰ Choose quickly! You have ${event.time} seconds:\n\n`;
+        event.commands.forEach((command, index) => {
+            output += `${index + 1}. ${command.action_description}\n`;
+        });
+        output += `\nType the number (1-${event.commands.length}) to make your choice.`;
+    } else {
+        output += `🎭 Story Complete! Type any key to return to terminal.`;
+    }
+    
+    return output;
+}
+
+function startEventTimer(timeLimit) {
+    // Clear any existing timer
+    if (terminalState.textAdventureTimer) {
+        clearInterval(terminalState.textAdventureTimer);
+    }
+    
+    terminalState.textAdventureTimeLeft = timeLimit;
+    
+    // Create timer that updates every second
+    terminalState.textAdventureTimer = setInterval(() => {
+        terminalState.textAdventureTimeLeft--;
+        
+        // Update progress bar (similar to flashcards)
+        updateTimeBar(terminalState.textAdventureTimeLeft, timeLimit);
+        
+        if (terminalState.textAdventureTimeLeft <= 0) {
+            clearInterval(terminalState.textAdventureTimer);
+            handleTextAdventureTimeout();
+        }
+    }, 1000);
+}
+
+function updateTimeBar(timeLeft, totalTime) {
+    // Create a simple ASCII progress bar
+    const barLength = 20;
+    const percentage = timeLeft / totalTime;
+    const filledLength = Math.floor(percentage * barLength);
+    const emptyLength = barLength - filledLength;
+    
+    const bar = '█'.repeat(filledLength) + '░'.repeat(emptyLength);
+    const timeDisplay = `⏰ ${timeLeft}s [${bar}] ${Math.round(percentage * 100)}%`;
+    
+    // Update status in terminal (this would need DOM manipulation)
+    console.log(timeDisplay); // For now, log to console
+}
+
+function handleTextAdventureTimeout() {
+    addOutput('\n⏰ Time\'s up! You hesitated too long...');
+    addOutput('The story continues without your input. Sometimes inaction is also a choice.');
+    
+    // End the text adventure
+    terminalState.textAdventureActive = false;
+    terminalState.currentEventNumber = 1;
+}
+
+function handleTextAdventureChoice(choice) {
+    if (!terminalState.textAdventureActive) {
+        return 'No active text adventure. Type "textadventure" to start.';
+    }
+    
+    const currentEvent = getStoryEvent(terminalState.currentEventNumber);
+    if (!currentEvent) {
+        return 'Error: Could not find current story event.';
+    }
+    
+    const choiceIndex = parseInt(choice) - 1;
+    if (choiceIndex < 0 || choiceIndex >= currentEvent.commands.length) {
+        return `Invalid choice. Please choose 1-${currentEvent.commands.length}.`;
+    }
+    
+    // Clear the timer
+    if (terminalState.textAdventureTimer) {
+        clearInterval(terminalState.textAdventureTimer);
+    }
+    
+    // Get the selected command
+    const selectedCommand = currentEvent.commands[choiceIndex];
+    terminalState.currentEventNumber = selectedCommand.nexteventnumber;
+    
+    // Get the next event
+    const nextEvent = getStoryEvent(terminalState.currentEventNumber);
+    if (!nextEvent) {
+        terminalState.textAdventureActive = false;
+        return 'Adventure complete! Thanks for playing.';
+    }
+    
+    // If it's a game over event (no commands), end the game
+    if (!nextEvent.commands || nextEvent.commands.length === 0) {
+        terminalState.textAdventureActive = false;
+        return `\n${nextEvent.description}\n\n🎭 Adventure complete! Thanks for playing.`;
+    }
+    
+    // Start timer for next event
+    startEventTimer(nextEvent.time);
+    
+    return formatStoryEvent(nextEvent);
+}
+
 function showHelp() {
     let helpText = 'Available commands:\n\n';
     Object.keys(commands).forEach(cmd => {
@@ -138,6 +360,12 @@ function showHelp() {
 
 function getHomeDirectoryFiles() {
     return [];
+}
+
+function getLocalFiles() {
+    // Get files from localStorage for local directory
+    const files = JSON.parse(localStorage.getItem('local-files') || '[]');
+    return files.sort();
 }
 
 function getFlashcardsDirectoryFiles() {
@@ -194,39 +422,41 @@ function getDirectoryFiles(directory) {
             return getTextAdventureDirectoryFiles();
         case 'projects/portfolio-terminal':
             return getPortfolioTerminalDirectoryFiles();
+        case 'local':
+            return getLocalFiles();
+        case 'firebase':
+            return []; // Firebase files are handled asynchronously
         default:
             return [];
     }
 }
 
 async function executeListDirectory() {
-    // If not logged in or not in home directory, use sync version
-    if (!terminalState.isLoggedIn || terminalState.currentDirectory !== '~') {
-        return await listDirectorySync();
+    // For logged in users in firebase directory, fetch files async
+    if (terminalState.isLoggedIn && terminalState.currentDirectory === 'firebase') {
+        listDirectoryAsync();
+        return ''; // Return empty, let async function handle output
     }
     
-    // For logged in users in home directory, fetch files async
-    listDirectoryAsync();
-    return ''; // Return empty, let async function handle output
+    // For all other cases, use sync version
+    return await listDirectorySync();
 }
 
 async function listDirectorySync() {
     const files = getDirectoryFiles(terminalState.currentDirectory);
     
-    // Show login message if user is not logged in and in home directory
-    if (!terminalState.isLoggedIn && terminalState.currentDirectory === '~') {
-        // No guest files for non-logged in users in Firebase version
-        const tempFiles = files.length > 0 ? files.join('  ') : '';
-        const allFiles = tempFiles;
+    // Show login message if user is not logged in and in local directory
+    if (!terminalState.isLoggedIn && terminalState.currentDirectory === 'local') {
+        const localFiles = files.length > 0 ? files.join('  ') : '';
         
-        return `📁 Your Files:
-   Please login to see your saved files.
+        return `📁 Local Files:
+   ${localFiles || 'No files found in local storage.'}
    
-   📄 Temporary Files:
-   ${allFiles || 'No files found.'}
+   ℹ️  Note: Files are stored in browser localStorage
+   📝 Use 'vim filename' to create/edit files
    
    Commands:
-   • login <username> <password>     - Login to your account
+   • login <username> <password>     - Login to access Firebase storage
    • register <username> <password>  - Create a new account`;
     }
     
@@ -547,32 +777,6 @@ Tools & Practices:
   • Code review processes`;
 }
 
-function showProjects() {
-    return `🚀 Featured Projects:
-
-1. CloudSimulator
-   - AWS services in retro BIOS interface style
-   - Practice AWS CLI commands in safe simulation environment
-   - Features: 12 AWS services, interactive commands, BIOS navigation, mock responses
-   - Status: Active
-
-2. Interactive Flashcards System
-   - Timed learning application with score tracking
-   - Built with Go backend and vanilla JavaScript
-   - Features: User accounts, course management, leaderboards
-
-3. Text Adventure Game Engine
-   - Interactive story-based game platform
-   - Branching narratives with save/load functionality
-   - Status: Coming Soon
-   
-4. Portfolio Terminal Interface
-   - You're using it right now! 
-   - Interactive terminal-style portfolio
-   - Built with HTML5, CSS3, and vanilla JavaScript
-
-Type the project number (1-4) to open it, or visit /projects for all details.`;
-}
 
 function showContact() {
     return `Contact Information:
@@ -596,6 +800,7 @@ function loginUser(username) {
     // For demo purposes, accept any username
     terminalState.userName = username.toLowerCase();
     terminalState.isLoggedIn = true;
+    terminalState.currentDirectory = 'firebase';
     updatePrompt();
     return `Welcome back, ${username}! You now have full access to the system.`;
 }
@@ -693,6 +898,7 @@ async function performLogin(username, password) {
         const result = await window.loginUser(username, password);
         terminalState.userName = username.toLowerCase();
         terminalState.isLoggedIn = true;
+        terminalState.currentDirectory = 'firebase';
         updatePrompt();
         return `✅ Welcome back, ${username}! You now have full access to the system.
 You can now save and load files using 'vim filename.py'`;
@@ -832,6 +1038,7 @@ function handleLogout() {
     
     terminalState.userName = 'guest';
     terminalState.isLoggedIn = false;
+    terminalState.currentDirectory = 'local';
     updatePrompt();
     
     // Clear any stored session on server
@@ -930,6 +1137,14 @@ function changeDirectory(path) {
             terminalState.currentDirectory = '~';
             updatePrompt();
             return '';
+        } else if (terminalState.currentDirectory === 'local') {
+            terminalState.currentDirectory = '~';
+            updatePrompt();
+            return '';
+        } else if (terminalState.currentDirectory === 'firebase') {
+            terminalState.currentDirectory = '~';
+            updatePrompt();
+            return '';
         }
     } else if (path === 'projects' && terminalState.currentDirectory === '~') {
         terminalState.currentDirectory = 'projects';
@@ -985,6 +1200,28 @@ function runProject() {
         return 'You\'re already running this project! This terminal interface is the portfolio terminal.';
     } else {
         return 'No runnable project in current directory. Navigate to a project directory first.';
+    }
+}
+
+function executeJavaScript(code) {
+    if (!code.trim()) {
+        return 'Usage: js <JavaScript code>\nExample: js console.log("Hello World!")';
+    }
+    
+    try {
+        // Create a safe execution context
+        const result = eval(code);
+        
+        // Handle different return types
+        if (result === undefined) {
+            return ''; // Silent execution for commands like console.log
+        } else if (typeof result === 'object') {
+            return JSON.stringify(result, null, 2);
+        } else {
+            return String(result);
+        }
+    } catch (error) {
+        return `JavaScript Error: ${error.message}`;
     }
 }
 
@@ -2336,7 +2573,6 @@ if (typeof module !== 'undefined' && module.exports) {
         runProject,
         showAbout,
         showSkills,
-        showProjects,
         showContact,
         loginUser,
         handleProjectSelection,

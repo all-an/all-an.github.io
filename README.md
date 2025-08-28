@@ -88,18 +88,6 @@ To enable the full-stack functionality:
 - `vim <filename>` - Open Vim editor
 - `clear` - Clear terminal
 
-## 🔧 Technologies & Tools
-
-- **Languages & Frameworks:** Java, JavaScript, TypeScript, Python  
-- **Testing:** JUnit, TDD, BDD  
-- **Databases:** PostgreSQL, MySQL, Flyway  
-- **Application Servers:** WildFly, GlassFish  
-- **Frontend:** AngularJS, Angular (2+), React  
-- **Backend:** Spring (REST APIs), Microservices  
-- **DevOps & Messaging:** Docker, Kafka, RabbitMQ  
-- **Monitoring & Observability:** Grafana, Kibana
-- **Cloud:** AWS
-
 ---
 
 ## How to Run

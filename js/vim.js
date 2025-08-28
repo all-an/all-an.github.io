@@ -685,7 +685,11 @@ class VimEditor {
 
     insertNewLine() {
         const lines = this.content.split('\n');
-        const line = lines[this.cursorRow] || '';
+        let line = lines[this.cursorRow] || '';
+        
+        // Clear execution comments before splitting the line
+        line = this.clearExecutionComments(line);
+        
         const beforeCursor = line.slice(0, this.cursorCol);
         const afterCursor = line.slice(this.cursorCol);
         
@@ -775,20 +779,24 @@ class VimEditor {
                 this.moveToPrevWord();
                 break;
             case 'i': // Insert mode
+                this.clearExecutionCommentsFromCurrentLine();
                 this.mode = 'insert';
                 this.updateStatus();
                 break;
             case 'a': // Insert after cursor
+                this.clearExecutionCommentsFromCurrentLine();
                 this.mode = 'insert';
                 // Move cursor one position to the right (after current character)
                 this.moveCursor(this.cursorRow, this.cursorCol + 1);
                 break;
             case 'A': // Insert at end of line
+                this.clearExecutionCommentsFromCurrentLine();
                 const lineForA = lines[this.cursorRow] || '';
                 this.mode = 'insert';
                 this.moveCursor(this.cursorRow, lineForA.length);
                 break;
             case 'I': // Insert at beginning of line
+                this.clearExecutionCommentsFromCurrentLine();
                 this.mode = 'insert';
                 this.moveCursor(this.cursorRow, 0);
                 break;
@@ -948,6 +956,12 @@ class VimEditor {
         } else if (cmd === 'py -l' || cmd === 'python -l') {
             // Execute Python code on current line
             await this.executePythonLine();
+        } else if (cmd === 'js' || cmd === 'javascript') {
+            // Execute JavaScript code
+            await this.executeJavaScript();
+        } else if (cmd === 'js -l' || cmd === 'javascript -l') {
+            // Execute JavaScript code on current line
+            await this.executeJavaScriptLine();
         } else if (cmd === 't' || cmd === 'terminal') {
             // Focus terminal
             this.focusTerminal();
@@ -1205,6 +1219,16 @@ sys.stderr = sys.__stderr__
         return line.replace(/ →.*$/, '');
     }
 
+    clearExecutionCommentsFromCurrentLine() {
+        // Clear execution comments from current line and update display
+        const lines = this.content.split('\n');
+        if (lines[this.cursorRow]) {
+            lines[this.cursorRow] = this.clearExecutionComments(lines[this.cursorRow]);
+            this.content = lines.join('\n');
+            this.updateDisplay();
+        }
+    }
+
     showTerminal() {
         this.terminalPane.style.display = 'flex';
         // Adjust editor pane width when terminal is shown
@@ -1246,6 +1270,17 @@ sys.stderr = sys.__stderr__
             return;
         }
         
+        // Detect if this looks like JavaScript or Python code
+        const isJavaScriptCode = this.detectJavaScriptCode(this.content);
+        
+        if (isJavaScriptCode) {
+            await this.executeJavaScriptLine();
+        } else {
+            await this.executePythonCurrentLine(cleanLine, lines, currentLine);
+        }
+    }
+
+    async executePythonCurrentLine(cleanLine, lines, currentLine) {
         let output = '';
         
         try {
@@ -1260,14 +1295,15 @@ old_stdout = sys.stdout
 sys.stdout = captured_output = io.StringIO()
                 `);
                 
-                // Try to execute the line
+                // Execute the line (works for both expressions and statements)
                 let result;
                 try {
-                    // Try as expression first
                     result = await window.pyodide.runPython(cleanLine);
-                } catch {
-                    // If that fails, it was probably a statement
-                    result = null;
+                } catch (error) {
+                    // If execution fails, show the error
+                    await window.pyodide.runPython('sys.stdout = old_stdout');
+                    output = `Error: ${error.message}`;
+                    return;
                 }
                 
                 // Get any printed output
@@ -1279,11 +1315,14 @@ output
                 
                 // Determine what to show
                 if (printedOutput && printedOutput.trim()) {
+                    // If something was printed, show that
                     output = printedOutput.trim();
-                } else if (result !== undefined && result !== null) {
+                } else if (result !== undefined && result !== null && result !== '') {
+                    // If there's a non-empty result, show it
                     output = String(result);
                 } else {
-                    output = 'executed';
+                    // For statements with no output (like assignments), don't show anything
+                    return; // Don't add any output marker
                 }
             }
         } catch (error) {
@@ -1325,11 +1364,90 @@ output
             return;
         }
         
-        console.log('Showing terminal and executing...');
+        // Detect if this looks like JavaScript or Python code
+        const isJavaScriptCode = this.detectJavaScriptCode(cleanContent);
+        
+        if (isJavaScriptCode) {
+            await this.executeJavaScriptAllCodeToTerminal(cleanContent);
+        } else {
+            await this.executePythonAllCodeToTerminal(cleanContent);
+        }
+    }
+
+    async executeJavaScriptAllCodeToTerminal(cleanContent) {
+        console.log('Showing terminal and executing JavaScript...');
         this.showTerminal();
         this.clearTerminal(); // Clear previous output
-        this.addTerminalOutput('>>> Executing file...', false);
+        this.addTerminalOutput('>>> Executing JavaScript file...', false);
         this.addTerminalOutput('', false);
+        
+        try {
+            // Execute JavaScript directly
+            this.addTerminalOutput('Executing JavaScript code...', true);
+            
+            // Capture console.log output
+            const originalConsoleLog = console.log;
+            let output = [];
+            console.log = (...args) => {
+                output.push(args.join(' '));
+            };
+
+            try {
+                // Execute the JavaScript code
+                const result = eval(this.content);
+                
+                // Handle result display
+                if (result !== undefined) {
+                    output.push(String(result));
+                }
+                
+                // Show captured output
+                if (output.length > 0) {
+                    output.forEach(line => {
+                        this.addTerminalOutput(line, false);
+                    });
+                }
+                
+                if (output.length === 0) {
+                    this.addTerminalOutput('(no output)', false);
+                }
+                
+            } finally {
+                // Restore console.log
+                console.log = originalConsoleLog;
+            }
+            
+        } catch (error) {
+            this.addTerminalOutput(`Error: ${error.message}`, true);
+        }
+    }
+
+    async executePythonAllCodeToTerminal(cleanContent) {
+        console.log('Showing terminal and executing Python...');
+        this.showTerminal();
+        this.clearTerminal(); // Clear previous output
+        this.addTerminalOutput('>>> Executing Python file...', false);
+        this.addTerminalOutput('', false);
+        
+        // Check if we're in local - use local Python3
+        if (window.terminalState && window.terminalState.currentDirectory === 'local') {
+            try {
+                this.addTerminalOutput('Using local Python3 environment...', false);
+                this.addTerminalOutput('Note: Saving file and opening in system Python3', false);
+                
+                // Save the file first
+                await this.saveFile(this.currentFilename);
+                
+                // Create a message to the user about using local Python
+                this.addTerminalOutput(`To execute: python3 ${this.currentFilename}`, false);
+                this.addTerminalOutput('Run this command in your terminal after the file is downloaded.', false);
+                
+                return;
+            } catch (error) {
+                this.addTerminalOutput(`Error: ${error.message}`, true);
+                return;
+            }
+        }
         
         try {
             if (!window.pyodide) {
@@ -1394,6 +1512,51 @@ output
             } catch {}
             this.addTerminalOutput(`Error: ${error.message}`, true);
         }
+    }
+
+    // Detect if code looks like JavaScript based on syntax patterns
+    detectJavaScriptCode(code) {
+        // Look for JavaScript-specific patterns
+        const javascriptPatterns = [
+            /function\s+\w+\s*\(/,   // function definitions
+            /const\s+\w+\s*=/,       // const bindings
+            /let\s+\w+\s*=/,         // let bindings
+            /var\s+\w+\s*=/,         // var bindings
+            /console\.log\s*\(/,     // console.log
+            /=>\s*[\{\w]/,           // arrow functions
+            /class\s+\w+\s*\{/,      // class definitions
+            /\.\w+\s*\(/,            // method calls
+            /document\./,            // DOM access
+            /window\./,              // window object
+        ];
+        
+        // Count how many JavaScript patterns we find
+        let jsScore = 0;
+        for (const pattern of javascriptPatterns) {
+            if (pattern.test(code)) {
+                jsScore++;
+            }
+        }
+        
+        // Look for Python-specific patterns that would indicate it's NOT JavaScript
+        const pythonPatterns = [
+            /def\s+\w+\s*\(/,       // function definitions
+            /import\s+\w+/,         // imports
+            /from\s+\w+\s+import/,  // from imports
+            /if\s+__name__\s*==\s*["']__main__["']/,  // main guard
+            /print\s*\(/,           // print function (not macro)
+            /class\s+\w+\s*[:（]/,  // class definitions
+        ];
+        
+        let pythonScore = 0;
+        for (const pattern of pythonPatterns) {
+            if (pattern.test(code)) {
+                pythonScore++;
+            }
+        }
+        
+        // If we have more JavaScript patterns than Python patterns, it's probably JavaScript
+        return jsScore > pythonScore && jsScore > 0;
     }
 
     focusTerminal() {
@@ -1461,6 +1624,143 @@ output
                 await window.pyodide.runPython('sys.stdout = old_stdout');
             } catch {}
             this.addTerminalOutput(`Error: ${error.message}`, true);
+        }
+    }
+
+    async executeJavaScript() {
+        try {
+            this.statusLeft.textContent = 'Executing JavaScript code...';
+            
+            // Execute JavaScript directly
+
+            const code = this.content;
+            
+            if (!code.trim()) {
+                this.statusLeft.textContent = 'No JavaScript code to execute';
+                setTimeout(() => this.updateStatus(), 2000);
+                return;
+            }
+
+            // Prepare for JavaScript execution
+            
+            // Capture console.log output
+            const originalConsoleLog = console.log;
+            let output = [];
+            console.log = (...args) => {
+                output.push(args.join(' '));
+            };
+
+            try {
+                // Execute the JavaScript code
+                const result = eval(code);
+                
+                // Handle result display
+                if (result !== undefined) {
+                    output.push(String(result));
+                }
+                
+                // JavaScript execution complete
+                
+            } finally {
+                // Restore console.log
+                console.log = originalConsoleLog;
+            }
+
+            // Show output in terminal if available
+            if (window.addOutput) {
+                const finalOutput = output.length > 0 ? output.join('\n') : '(no output)';
+                window.addOutput(`JavaScript execution result:\n${finalOutput}`);
+            }
+            
+            this.statusLeft.textContent = 'JavaScript code executed';
+            setTimeout(() => this.updateStatus(), 3000);
+            
+        } catch (error) {
+            this.statusLeft.textContent = `JavaScript execution failed: ${error.message}`;
+            setTimeout(() => this.updateStatus(), 3000);
+        }
+    }
+
+    async executeJavaScriptLine() {
+        try {
+            this.statusLeft.textContent = 'Executing JavaScript line...';
+            
+            // Execute JavaScript directly
+
+            const lines = this.content.split('\n');
+            const currentLine = lines[this.cursorRow];
+            
+            if (!currentLine || !currentLine.trim()) {
+                this.statusLeft.textContent = 'No code on current line';
+                setTimeout(() => this.updateStatus(), 2000);
+                return;
+            }
+
+            // Prepare for JavaScript execution
+            
+            // Capture console.log output
+            const originalConsoleLog = console.log;
+            let output = [];
+            console.log = (...args) => {
+                output.push(args.join(' '));
+            };
+
+            try {
+                // Execute all content up to current line for context
+                const contextLines = lines.slice(0, this.cursorRow + 1);
+                const contextCode = contextLines.join('\n');
+                const result = eval(contextCode);
+                
+                if (result !== undefined) {
+                    output.push(String(result));
+                }
+                
+                // Find relevant output (last few lines that might be from current line)
+                let lineOutput = '';
+                if (output.length > 0) {
+                    // Take the last output that's not a variable declaration
+                    const relevantOutput = output.filter(line => 
+                        !line.startsWith('Variable ') && 
+                        !line.startsWith('Function ') && 
+                        !line.startsWith('Struct ')
+                    );
+                    if (relevantOutput.length > 0) {
+                        lineOutput = relevantOutput[relevantOutput.length - 1];
+                    }
+                }
+                
+            } finally {
+                // Restore console.log
+                console.log = originalConsoleLog;
+            }
+
+            // Add the result as a → marker at the end of the current line
+            if (lineOutput && lineOutput.trim()) {
+                const cleanOutput = lineOutput.replace(/\n/g, ' ').trim();
+                const newLine = currentLine.includes(' →') 
+                    ? currentLine.replace(/ →.*$/, ` → ${cleanOutput}`)
+                    : `${currentLine} → ${cleanOutput}`;
+                    
+                lines[this.cursorRow] = newLine;
+                this.content = lines.join('\n');
+                this.updateDisplay();
+            } else if (output.length > 0) {
+                // If no specific line output but there was some output, mark as executed
+                const newLine = currentLine.includes(' →') 
+                    ? currentLine.replace(/ →.*$/, ' → executed')
+                    : `${currentLine} → executed`;
+                    
+                lines[this.cursorRow] = newLine;
+                this.content = lines.join('\n');
+                this.updateDisplay();
+            }
+            
+            this.statusLeft.textContent = 'JavaScript line executed';
+            setTimeout(() => this.updateStatus(), 2000);
+            
+        } catch (error) {
+            this.statusLeft.textContent = `JavaScript line execution failed: ${error.message}`;
+            setTimeout(() => this.updateStatus(), 3000);
         }
     }
 }
