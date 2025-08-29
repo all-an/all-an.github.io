@@ -37,7 +37,7 @@ describe('Firebase Config Tests', function() {
         
         mockUser = {
             uid: 'test-user-id',
-            email: 'testuser@terminal.app'
+            email: 'testuser@.app'
         };
         
         mockDocRef = {
@@ -241,7 +241,7 @@ describe('Firebase Config Tests', function() {
                 if (userId === 'test-user-id') {
                     return {
                         username: 'testuser',
-                        email: 'testuser@terminal.app',
+                        email: 'testuser@.app',
                         createdAt: new Date(),
                         lastLogin: new Date()
                     };
@@ -360,7 +360,7 @@ describe('Firebase Config Tests', function() {
                 
                 expect(profile).to.be.an('object');
                 expect(profile.username).to.equal('testuser');
-                expect(profile.email).to.equal('testuser@terminal.app');
+                expect(profile.email).to.equal('testuser@.app');
                 expect(profile.createdAt).to.be.a('date');
                 expect(profile.lastLogin).to.be.a('date');
             });

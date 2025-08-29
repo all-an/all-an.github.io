@@ -73,8 +73,8 @@ window.registerUser = async function(username, password) {
             throw new Error('Username already exists');
         }
         
-        // Create user with email-like format (username@terminal.app)
-        const email = `${username}@terminal.app`;
+        // Create user with email-like format (username@.app)
+        const email = `${username}@.app`;
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         
         // Store user profile in Firestore
@@ -93,7 +93,7 @@ window.registerUser = async function(username, password) {
 
 window.loginUser = async function(username, password) {
     try {
-        const email = `${username}@terminal.app`;
+        const email = `${username}@.app`;
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         
         // Update last login

@@ -56,16 +56,6 @@ const terminalState = {
 
 // Available commands
 const commands = {
-    cloudsimulator: {
-        description: 'Open CloudSimulator webpage',
-        execute: () => {
-            addOutput('Opening CloudSimulator...');
-            setTimeout(() => {
-                window.open('cloudlogin.html', '_blank');
-            }, 1000);
-            return '';
-        }
-    },
     message: {
         description: 'Send me a message',
         execute: () => startMessageMode()
@@ -400,8 +390,6 @@ function getPortfolioTerminalDirectoryFiles() {
 function getProjectsDirectoryFiles() {
     return [
         '../',
-        'cloudsimulator/',
-        'flashcards/',
         'text-adventure/',
         'portfolio-terminal/',
         'README.md'
@@ -416,8 +404,6 @@ function getDirectoryFiles(directory) {
             return getProjectsDirectoryFiles();
         case 'projects/flashcards':
             return getFlashcardsDirectoryFiles();
-        case 'projects/cloudsimulator':
-            return getCloudSimulatorDirectoryFiles();
         case 'projects/text-adventure':
             return getTextAdventureDirectoryFiles();
         case 'projects/portfolio-terminal':
@@ -513,10 +499,6 @@ Welcome to my project directory! Here you'll find various software projects I've
 
 ## Available Projects:
 
-### 1. cloudsimulator/
-CloudSimulator - AWS services in retro BIOS interface style.
-Practice AWS CLI commands in a safe simulation environment with authentic BIOS navigation.
-
 ### 2. flashcards/
 Interactive Flashcards System - A timed learning application with score tracking.
 Built with Go backend and vanilla JavaScript frontend.
@@ -560,71 +542,6 @@ func main() {
     log.Println("Starting flashcards server on :8080")
     log.Fatal(http.ListenAndServe(":8080", nil))
 }`
-        };
-    } else if (directory === 'projects/cloudsimulator') {
-        return {
-            'README.md': `# CloudSimulator
-
-A BIOS-style AWS cloud services simulator that provides an interactive learning environment for AWS CLI commands.
-
-## Overview
-
-CloudSimulator presents AWS services in a retro BIOS interface style, allowing users to explore and practice AWS CLI commands in a safe, simulated environment. Each service provides common AWS CLI commands that can be executed to see mock responses.
-
-## Features
-
-- **BIOS-Style Interface**: Retro blue BIOS design with grid layout for services
-- **Interactive Terminal**: Click-to-execute commands with simulated AWS CLI responses
-- **12 AWS Services**: EC2, S3, RDS, Lambda, VPC, IAM, CloudWatch, SNS, SQS, CloudFormation, API Gateway, DynamoDB
-- **Mock Responses**: Realistic JSON and text responses for learning purposes
-- **Keyboard Navigation**: ESC key for navigation
-- **Modular Design**: Separated CSS and JavaScript files for maintainability
-
-## AWS Services Included
-
-1. **EC2** - Elastic Compute Cloud (instances, security groups)
-2. **S3** - Simple Storage Service (buckets, objects)
-3. **RDS** - Relational Database Service (databases, snapshots)
-4. **Lambda** - Serverless Compute (functions, invocation)
-5. **VPC** - Virtual Private Cloud (networks, subnets)
-6. **IAM** - Identity & Access Management (users, roles, policies)
-7. **CloudWatch** - Monitoring & Logging (metrics, logs)
-8. **SNS** - Simple Notification Service (topics, subscriptions)
-9. **SQS** - Simple Queue Service (queues, messages)
-10. **CloudFormation** - Infrastructure as Code (stacks, templates)
-11. **API Gateway** - API Management (APIs, deployments)
-12. **DynamoDB** - NoSQL Database (tables, items)
-
-## Educational Purpose
-
-This simulator is designed for:
-- AWS CLI learning and practice
-- Understanding AWS service relationships
-- Safe experimentation with commands
-- Retro computing nostalgia`,
-            'name-convention.md': `# CloudSimulator Naming Conventions
-
-This document outlines the naming conventions used in the CloudSimulator project.
-
-## File Structure
-- templates/cloudsimulator.html - Main HTML template
-- static/cloudsimulator.css - BIOS-style CSS
-- static/cloudsimulator.js - Interactive functionality
-
-## JavaScript Functions
-- All functions follow camelCase convention
-- Functions are organized in CloudSimulator object
-- Small, testable functions for unit testing
-
-## CSS Classes
-- kebab-case for class names
-- Semantic naming (e.g., .service-item, .bios-header)
-- BEM methodology where applicable
-
-## AWS Service Keys
-- Lowercase service identifiers
-- Match AWS CLI service names where possible
-- Examples: ec2, s3, rds, lambda, vpc, iam`
         };
     } else if (directory === 'projects/text-adventure') {
         return {
@@ -1156,10 +1073,6 @@ function changeDirectory(path) {
             terminalState.currentDirectory = 'projects/flashcards';
             updatePrompt();
             return '';
-        } else if (path === 'cloudsimulator') {
-            terminalState.currentDirectory = 'projects/cloudsimulator';
-            updatePrompt();
-            return '';
         } else if (path === 'text-adventure') {
             terminalState.currentDirectory = 'projects/text-adventure';
             updatePrompt();
@@ -1180,18 +1093,6 @@ function runProject() {
         addOutput('Server starting on http://localhost:8080');
         setTimeout(() => {
             window.location.href = '/projects/flashcards';
-        }, 2000);
-        return '';
-    } else if (terminalState.currentDirectory === 'projects/cloudsimulator') {
-        addOutput('Launching CloudSimulator BIOS interface...');
-        addOutput('Loading AWS service configurations...');
-        addOutput('✓ BIOS styling loaded');
-        addOutput('✓ Arrow key navigation enabled');
-        addOutput('✓ 12 AWS services configured');
-        addOutput('');
-        addOutput('Opening CloudSimulator...');
-        setTimeout(() => {
-            window.location.href = '/cloudsimulator';
         }, 2000);
         return '';
     } else if (terminalState.currentDirectory === 'projects/text-adventure') {
@@ -1240,14 +1141,6 @@ function handleProjectSelection(projectNumber) {
                 addOutput('');
                 addOutput('Type your choice: login, register, or guest');
                 terminalState.awaitingCloudSimChoice = true;
-            } else {
-                addOutput(`Welcome back, ${terminalState.userName}! 👋`);
-                addOutput('Entering CloudSimulator directory...');
-                terminalState.currentDirectory = 'projects/cloudsimulator';
-                updatePrompt();
-                addOutput('AWS services in retro BIOS interface style!');
-                addOutput('');
-                addOutput('Type "run" to launch the BIOS simulator interface.');
             }
             break;
         case 2:
@@ -2144,7 +2037,7 @@ function addOutput(output, isCommand = false) {
 }
 
 function getPrompt() {
-    return `${terminalState.userName}@terminal:${terminalState.currentDirectory}$`;
+    return `${terminalState.userName}@:${terminalState.currentDirectory}$`;
 }
 
 function updatePrompt() {
