@@ -148,14 +148,7 @@ npx mocha --require js/tests/setup.js --grep "should validate firebase configura
 ### Current Test Files
 ```
 js/tests/
-├── setup.js                    # Test environment setup
-├── firebase-config.test.js      # Firebase functionality tests
-├── firebaseconfig-nim.test.js   # Firebase Nim tests 
 ├── terminal.test.js             # Terminal functionality tests
-├── flashcards.test.js           # Flashcards functionality tests
-├── flashcards_terminal.test.js  # Flashcards integration tests
-├── tab_completion.test.js       # Tab completion tests
-└── vim.test.js                  # Vim editor tests
 ```
 
 ### Adding New Tests
@@ -204,7 +197,6 @@ global.document = {
 module.exports = {
     terminalState,
     commands,
-    handleFlashcardChoice,  // Make sure this is exported
     // ... other functions
 };
 ```

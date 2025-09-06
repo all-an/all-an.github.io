@@ -3,6 +3,69 @@
  * Provides a real vim-like editing experience with line numbers and cursor control
  */
 
+// File system functions for localStorage
+if (!window.saveFile) {
+    window.saveFile = async function(filename, content) {
+        try {
+            // Get existing files from localStorage
+            const localFiles = JSON.parse(localStorage.getItem('local-files') || '[]');
+            
+            // Check if file already exists
+            const existingFileIndex = localFiles.findIndex(f => f.filename === filename);
+            
+            if (existingFileIndex >= 0) {
+                // Update existing file
+                localFiles[existingFileIndex].content = content;
+                localFiles[existingFileIndex].lastModified = new Date().toISOString();
+            } else {
+                // Add new file
+                localFiles.push({
+                    filename: filename,
+                    content: content,
+                    lastModified: new Date().toISOString()
+                });
+            }
+            
+            // Save back to localStorage
+            localStorage.setItem('local-files', JSON.stringify(localFiles));
+            
+            // Also save directly as key for backward compatibility
+            localStorage.setItem(filename, content);
+            
+            return { success: true };
+        } catch (error) {
+            console.error('Error saving file:', error);
+            throw error;
+        }
+    };
+}
+
+if (!window.loadFile) {
+    window.loadFile = async function(filename) {
+        try {
+            // First try to load from local-files array
+            const localFiles = JSON.parse(localStorage.getItem('local-files') || '[]');
+            const localFile = localFiles.find(f => f.filename === filename);
+            
+            if (localFile && localFile.content !== undefined) {
+                return { success: true, content: localFile.content };
+            }
+            
+            // If not found in array, check direct key
+            const directContent = localStorage.getItem(filename);
+            if (directContent !== null) {
+                return { success: true, content: directContent };
+            }
+            
+            // File not found
+            return { success: false, content: '' };
+        } catch (error) {
+            console.error('Error loading file:', error);
+            return { success: false, content: '' };
+        }
+    };
+}
+
 class VimEditor {
     constructor() {
         this.mode = 'normal';
@@ -1020,22 +1083,47 @@ class VimEditor {
                 this.title.textContent = filename;
                 this.updateDisplay();
                 this.moveCursor(0, 0);
-            } else {
-                // New file - start empty
-                this.content = '';
+                return;
+            }
+        } catch (error) {
+            console.log('Error loading from cloud storage:', error);
+        }
+        
+        // File not found in cloud storage, check localStorage
+        try {
+            // First check if file is stored in local-files array
+            const localFiles = JSON.parse(localStorage.getItem('local-files') || '[]');
+            const localFile = localFiles.find(f => f.filename === filename);
+            
+            if (localFile && localFile.content !== undefined) {
+                this.content = localFile.content;
                 this.currentFilename = filename;
                 this.title.textContent = filename;
                 this.updateDisplay();
                 this.moveCursor(0, 0);
+                return;
+            }
+            
+            // If not found in array, check if file is stored directly as a key
+            const directContent = localStorage.getItem(filename);
+            if (directContent !== null) {
+                this.content = directContent;
+                this.currentFilename = filename;
+                this.title.textContent = filename;
+                this.updateDisplay();
+                this.moveCursor(0, 0);
+                return;
             }
         } catch (error) {
-            // New file or error - start empty
-            this.content = '';
-            this.currentFilename = filename;
-            this.title.textContent = filename;
-            this.updateDisplay();
-            this.moveCursor(0, 0);
+            console.log('Error loading from localStorage:', error);
         }
+        
+        // File not found anywhere - start with empty content
+        this.content = '';
+        this.currentFilename = filename;
+        this.title.textContent = filename;
+        this.updateDisplay();
+        this.moveCursor(0, 0);
     }
 
     async executePython() {
@@ -1429,7 +1517,7 @@ output
         this.addTerminalOutput('', false);
         
         // Check if we're in local - use local Python3
-        if (window.terminalState && window.terminalState.currentDirectory === 'local') {
+        if (window.terminalState && window.terminalState.currentDirectory === '') {
             try {
                 this.addTerminalOutput('Using local Python3 environment...', false);
                 this.addTerminalOutput('Note: Saving file and opening in system Python3', false);

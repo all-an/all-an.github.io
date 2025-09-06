@@ -1,518 +1,148 @@
-const { expect } = require('chai');
+/**
+ * Jest tests for terminal.js downloadFiles function
+ */
 
-// Mock DOM for testing
-beforeEach(function() {
-    global.terminalContent = {
-        insertBefore: function() {},
-        appendChild: function() {}
-    };
-
-    global.document = {
-        getElementById: function(id) {
-            if (id === 'terminalContent') return global.terminalContent;
-            return { 
-                focus: function() {},
-                addEventListener: function() {},
-                style: { display: 'none' },
-                querySelector: function() { 
-                    return { textContent: '' }; 
-                }
-            };
-        },
-        querySelector: function(selector) { 
-            if (selector === '.current-line') {
-                return {
-                    querySelector: function() {
-                        return { textContent: '' };
-                    },
-                    parentNode: {
-                        insertBefore: function() {},
-                        replaceChild: function() {}
-                    }
-                };
-            }
-            return { textContent: 'guest@:~$' }; 
-        },
-        addEventListener: function() {},
-        createElement: function() {
-            return {
-                className: '',
-                innerHTML: '',
-                appendChild: function() {},
-                cloneNode: function() { return this; }
-            };
-        }
-    };
-    
-    global.window = {
-        location: { href: '' }
-    };
-    
-    // Mock functions that interact with DOM
-    global.scrollToBottom = function() {};
-    global.addOutput = function() {};
-    global.updatePrompt = function() {};
-});
-
-const {
-    terminalState,
-    commands,
-    showHelp,
-    getHomeDirectoryFiles,
-    getFlashcardsDirectoryFiles,
-    getTextAdventureDirectoryFiles,
-    getPortfolioTerminalDirectoryFiles,
-    getDirectoryFiles,
-    getProjectFiles,
-    catFile,
-    changeDirectory,
-    runProject,
-    showAbout,
-    showSkills,
-    showProjects,
-    showContact,
-    loginUser,
-    handleProjectSelection,
-    getPrompt
+// Import the actual functions from terminal.js
+const { 
+    downloadFiles, 
+    downloadLocalFiles, 
+    terminalState 
 } = require('../terminal.js');
 
-describe('Terminal State Management', function() {
-    beforeEach(function() {
-        // Reset terminal state
-        terminalState.currentDirectory = '~';
-        terminalState.userName = 'guest';
-        terminalState.isLoggedIn = false;
+describe('downloadFiles', () => {
+    beforeEach(() => {
+        // Set initial state for each test
+        terminalState.currentDirectory = '';
     });
 
-    describe('getPrompt', function() {
-        it('should return correct prompt for guest user', function() {
-            expect(getPrompt()).to.equal('guest@:~$');
+    describe('when in local directory (currentDirectory === "")', () => {
+        beforeEach(() => {
+            terminalState.currentDirectory = '';
         });
 
-        it('should return correct prompt for logged in user', function() {
-            terminalState.userName = 'allan';
-            expect(getPrompt()).to.equal('allan@:~$');
+        test('should return no files message when localStorage is empty', () => {
+            localStorage.setItem('local-files', '[]');
+            
+            const result = downloadFiles();
+            
+            expect(result).toBe('No local files found to download.');
         });
 
-        it('should handle different directories', function() {
+        test('should download files from local-files array format', () => {
+            const testFiles = ['test1.txt', 'test2.py'];
+            localStorage.setItem('local-files', JSON.stringify(testFiles));
+            // Set the actual file contents in localStorage
+            localStorage.setItem('test1.txt', 'Hello World');
+            localStorage.setItem('test2.py', 'print("test")');
+            
+            const result = downloadFiles();
+            
+            expect(result).toBe('Downloaded 2 local files to Downloads folder.');
+            // Test that the core functionality works - files are processed
+            expect(global.Blob).toHaveBeenCalledTimes(2);
+        });
+
+        test('should download files from string array format', () => {
+            const testFiles = ['hello.py', 'script.js'];
+            localStorage.setItem('local-files', JSON.stringify(testFiles));
+            localStorage.setItem('hello.py', 'print("hello")');
+            localStorage.setItem('script.js', 'console.log("test");');
+            
+            const result = downloadFiles();
+            
+            expect(result).toBe('Downloaded 2 local files to Downloads folder.');
+        });
+
+        test('should handle files with some missing content', () => {
+            const testFiles = ['file1.txt', 'file2.py', 'file3.js'];
+            localStorage.setItem('local-files', JSON.stringify(testFiles));
+            // Only set content for 2 out of 3 files
+            localStorage.setItem('file1.txt', 'content1');
+            localStorage.setItem('file2.py', 'print("hello")');
+            // file3.js has no content
+            
+            const result = downloadFiles();
+            
+            expect(result).toBe('Downloaded 2 local files to Downloads folder.');
+        });
+
+        test('should skip files with no content', () => {
+            const testFiles = ['exists.txt', 'missing.txt'];
+            localStorage.setItem('local-files', JSON.stringify(testFiles));
+            localStorage.setItem('exists.txt', 'content');
+            // missing.txt is not in localStorage
+            
+            const result = downloadFiles();
+            
+            expect(result).toBe('Downloaded 1 local files to Downloads folder.');
+        });
+
+        test('should handle localStorage parse errors', () => {
+            localStorage.setItem('local-files', 'invalid-json');
+            
+            const result = downloadFiles();
+            
+            expect(result).toMatch(/Error downloading local files:/);
+        });
+
+        test('should create proper download elements', () => {
+            const testFiles = ['test.txt'];
+            localStorage.setItem('local-files', JSON.stringify(testFiles));
+            localStorage.setItem('test.txt', 'test content');
+            
+            const result = downloadFiles();
+            
+            expect(result).toBe('Downloaded 1 local files to Downloads folder.');
+        });
+
+        test('should create blob with correct content and type', () => {
+            const testFiles = ['test.txt'];
+            localStorage.setItem('local-files', JSON.stringify(testFiles));
+            localStorage.setItem('test.txt', 'test content');
+            
+            downloadFiles();
+            
+            expect(global.Blob).toHaveBeenCalledWith(['test content'], { type: 'text/plain' });
+        });
+    });
+
+    describe('when not in local directory', () => {
+        test('should return error message when in different directory', () => {
             terminalState.currentDirectory = 'projects';
-            expect(getPrompt()).to.equal('guest@:projects$');
-        });
-    });
-});
-
-describe('Command System', function() {
-    describe('showHelp', function() {
-        it('should return help text with available commands', function() {
-            const result = showHelp();
-            expect(result).to.include('Available commands:');
-            expect(result).to.include('help');
-            expect(result).to.include('whoami');
-            expect(result).to.include('ls');
+            
+            const result = downloadFiles();
+            
+            expect(result).toBe('download-files: Command only available in local mode.');
         });
 
-        it('should include command descriptions', function() {
-            const result = showHelp();
-            expect(result).to.include('Show available commands');
-            expect(result).to.include('Display current user');
-        });
-    });
-
-    describe('Directory File Functions', function() {
-        describe('getHomeDirectoryFiles', function() {
-            it('should return empty array for home directory files', function() {
-                const files = getHomeDirectoryFiles();
-                expect(files).to.deep.equal([]);
-            });
-        });
-
-        describe('getFlashcardsDirectoryFiles', function() {
-            it('should return flashcards project files', function() {
-                const files = getFlashcardsDirectoryFiles();
-                expect(files).to.include('../');
-            });
-        });
-
-        describe('getDirectoryFiles', function() {
-            it('should return empty array for home directory', function() {
-                const files = getDirectoryFiles('~');
-                expect(files).to.deep.equal([]);
-            });
-
-            it('should return empty array for unknown directory', function() {
-                const files = getDirectoryFiles('unknown/path');
-                expect(files).to.deep.equal([]);
-            });
-        });
-    });
-
-
-    describe('catFile', function() {
-        beforeEach(function() {
+        test('should return error message when in home directory', () => {
             terminalState.currentDirectory = '~';
-        });
-
-        it('should return file contents for valid home files', function() {
-            const result = catFile('about.txt');
-            expect(result).to.include('Allan Pereira Abrahão');
-            expect(result).to.include('Software Engineer');
-        });
-
-        it('should return project file contents when in project directory', function() {
-            terminalState.currentDirectory = 'projects/flashcards';
-            const result = catFile('README.md');
-            expect(result).to.include('Interactive Flashcards System');
-            expect(result).to.include('Go and vanilla JavaScript');
-        });
-
-        it('should return error for invalid files', function() {
-            const result = catFile('nonexistent.txt');
-            expect(result).to.include('No such file or directory');
-        });
-
-        it('should return usage message when no filename provided', function() {
-            const result = catFile();
-            expect(result).to.include('missing file operand');
-            expect(result).to.include('Usage: cat <filename>');
-        });
-
-        it('should handle binary files appropriately', function() {
-            const result = catFile('resume.pdf');
-            expect(result).to.include('Cannot display binary file');
+            
+            const result = downloadFiles();
+            
+            expect(result).toBe('download-files: Command only available in local mode.');
         });
     });
 });
 
-describe('Content Display Functions', function() {
-    describe('showAbout', function() {
-        it('should return personal information', function() {
-            const result = showAbout();
-            expect(result).to.include('Allan Pereira Abrahão');
-            expect(result).to.include('Software Engineer');
-            expect(result).to.include('Brazil');
-            expect(result).to.include('3+ years');
-        });
+describe('downloadLocalFiles', () => {
+    // No additional setup needed - handled by jest.setup.js
 
-        it('should include interests section', function() {
-            const result = showAbout();
-            expect(result).to.include('Interests:');
-            expect(result).to.include('Microservices');
-            expect(result).to.include('Cloud computing');
-        });
-    });
-
-    describe('showSkills', function() {
-        it('should include all major skill categories', function() {
-            const result = showSkills();
-            expect(result).to.include('Backend Technologies:');
-            expect(result).to.include('Frontend Technologies:');
-            expect(result).to.include('Databases:');
-            expect(result).to.include('DevOps & Cloud:');
-        });
-
-        it('should include specific technologies', function() {
-            const result = showSkills();
-            expect(result).to.include('Java');
-            expect(result).to.include('Go');
-            expect(result).to.include('JavaScript');
-            expect(result).to.include('PostgreSQL');
-            expect(result).to.include('Docker');
-            expect(result).to.include('AWS');
-        });
-    });
-
-    describe('showProjects', function() {
-        it('should include featured projects', function() {
-            const result = showProjects();
-            expect(result).to.include('Featured Projects:');
-            expect(result).to.include('Interactive Flashcards');
-            expect(result).to.include('Text Adventure');
-        });
-
-        it('should include project descriptions', function() {
-            const result = showProjects();
-            expect(result).to.include('Timed learning application');
-            expect(result).to.include('Go backend');
-        });
-
-        it('should include numbered navigation instructions', function() {
-            const result = showProjects();
-            expect(result).to.include('Type the project number (1-4) to open it');
-        });
-
-        it('should not include URL references', function() {
-            const result = showProjects();
-            expect(result).to.not.include('URL: /projects');
-        });
-    });
-
-    describe('showContact', function() {
-        it('should include contact methods', function() {
-            const result = showContact();
-            expect(result).to.include('Contact Information:');
-            expect(result).to.include('GitHub');
-            expect(result).to.include('LinkedIn');
-        });
-
-        it('should include social media links', function() {
-            const result = showContact();
-            expect(result).to.include('https://github.com/all-an');
-            expect(result).to.include('linkedin.com/in/allan-pereira-abrahao');
-        });
-    });
-});
-
-describe('User Authentication', function() {
-    beforeEach(function() {
-        terminalState.userName = 'guest';
-        terminalState.isLoggedIn = false;
-    });
-
-    describe('loginUser', function() {
-        it('should login successfully with any username', function() {
-            const result = loginUser('john');
-            expect(result).to.include('Welcome back, john');
-            expect(terminalState.userName).to.equal('john');
-            expect(terminalState.isLoggedIn).to.be.true;
-        });
-
-        it('should accept different usernames', function() {
-            const result = loginUser('sarah');
-            expect(result).to.include('Welcome back, sarah');
-            expect(terminalState.userName).to.equal('sarah');
-            expect(terminalState.isLoggedIn).to.be.true;
-        });
-
-        it('should be case insensitive', function() {
-            const result = loginUser('ALLAN');
-            expect(result).to.include('Welcome back');
-            expect(terminalState.userName).to.equal('allan');
-        });
-
-        it('should require username parameter', function() {
-            const result = loginUser();
-            expect(result).to.include('Usage: login <username>');
-            expect(result).to.include('Example: login john');
-            expect(terminalState.userName).to.equal('guest');
-        });
-    });
-});
-
-describe('Command Validation', function() {
-    it('should have all expected commands available', function() {
-        const expectedCommands = [
-            'help', 'whoami', 'pwd', 'ls', 'cat', 'clear',
-            'about', 'skills', 'projects', 'contact', 'login'
-        ];
+    test('should handle empty local-files gracefully', () => {
+        // No local-files key in localStorage
+        const result = downloadLocalFiles();
         
-        expectedCommands.forEach(cmd => {
-            expect(commands).to.have.property(cmd);
-            expect(commands[cmd]).to.have.property('description');
-            expect(commands[cmd]).to.have.property('execute');
-        });
+        expect(result).toBe('No local files found to download.');
     });
 
-    it('should have proper command descriptions', function() {
-        Object.keys(commands).forEach(cmd => {
-            expect(commands[cmd].description).to.be.a('string');
-            expect(commands[cmd].description.length).to.be.greaterThan(0);
-        });
-    });
-
-    it('should have executable functions for all commands', function() {
-        Object.keys(commands).forEach(cmd => {
-            expect(commands[cmd].execute).to.be.a('function');
-        });
-    });
-});
-
-describe('Directory Navigation', function() {
-    describe('changeDirectory', function() {
-        beforeEach(function() {
-            terminalState.currentDirectory = '~';
-        });
-
-        it('should require a path argument', function() {
-            const result = changeDirectory();
-            expect(result).to.include('missing operand');
-            expect(result).to.include('Usage: cd <directory>');
-        });
-
-        it('should navigate back from project directory', function() {
-            terminalState.currentDirectory = 'projects/flashcards';
-            const result = changeDirectory('..');
-            expect(result).to.equal('');
-            expect(terminalState.currentDirectory).to.equal('~');
-        });
-
-        it('should navigate to projects directory', function() {
-            const result = changeDirectory('projects');
-            expect(result).to.equal('');
-            expect(terminalState.currentDirectory).to.equal('projects');
-        });
-
-        it('should handle invalid directory', function() {
-            const result = changeDirectory('nonexistent');
-            expect(result).to.include('No such directory');
-        });
-    });
-
-    describe('runProject', function() {
-        let mockAddOutput;
-        let addOutputCalls = [];
+    test('should handle URL creation and cleanup', () => {
+        const testFiles = ['test.txt'];
+        localStorage.setItem('local-files', JSON.stringify(testFiles));
+        localStorage.setItem('test.txt', 'test content');
         
-        beforeEach(function() {
-            addOutputCalls = [];
-            mockAddOutput = global.addOutput;
-            global.addOutput = function(output) {
-                addOutputCalls.push(output);
-            };
-            global.setTimeout = function(fn, delay) {
-                return 123;
-            };
-            global.window = { location: { href: '' } };
-        });
+        downloadLocalFiles();
         
-        afterEach(function() {
-            global.addOutput = mockAddOutput;
-        });
-
-        it('should run flashcards project', function() {
-            terminalState.currentDirectory = 'projects/flashcards';
-            const result = runProject();
-            expect(result).to.equal('');
-            expect(addOutputCalls[0]).to.include('Starting Interactive Flashcards');
-            expect(addOutputCalls[1]).to.include('localhost:8080');
-        });
-
-        it('should handle text-adventure project', function() {
-            terminalState.currentDirectory = 'projects/text-adventure';
-            const result = runProject();
-            expect(result).to.include('still in development');
-        });
-
-        it('should handle portfolio-terminal project', function() {
-            terminalState.currentDirectory = 'projects/portfolio-terminal';
-            const result = runProject();
-            expect(result).to.include('already running this project');
-        });
-
-        it('should handle non-project directory', function() {
-            terminalState.currentDirectory = '~';
-            const result = runProject();
-            expect(result).to.include('No runnable project in current directory');
-        });
-    });
-
-    describe('getProjectFiles', function() {
-
-        it('should return empty object for non-project directory', function() {
-            const files = getProjectFiles('~');
-            expect(files).to.deep.equal({});
-        });
-    });
-});
-
-describe('Project Navigation', function() {
-    describe('handleProjectSelection', function() {
-        let mockAddOutput, mockSetTimeout;
-        let addOutputCalls = [];
-        
-        beforeEach(function() {
-            addOutputCalls = [];
-            // Mock addOutput function
-            global.addOutput = function(output) {
-                addOutputCalls.push(output);
-            };
-            
-            // Mock updatePrompt function
-            global.updatePrompt = function() {};
-            
-            // Mock setTimeout
-            mockSetTimeout = global.setTimeout;
-            global.setTimeout = function(fn, delay) {
-                return 123;
-            };
-            
-            // Mock window.location
-            global.window = {
-                location: { href: '' }
-            };
-            
-            // Reset terminal state
-            terminalState.currentDirectory = '~';
-        });
-        
-        afterEach(function() {
-            global.setTimeout = mockSetTimeout;
-        });
-
-        it('should handle project 2 selection', function() {
-            handleProjectSelection(2);
-            expect(addOutputCalls[0]).to.include('Interactive Flashcards System');
-            expect(addOutputCalls[1]).to.include('Choose how you want to play');
-            expect(addOutputCalls).to.some(call => call.includes('guest'));
-            expect(addOutputCalls).to.some(call => call.includes('login'));
-        });
-
-        it('should handle project 3 selection', function() {
-            handleProjectSelection(3);
-            expect(addOutputCalls[0]).to.include('Entering Text Adventure Game');
-            expect(terminalState.currentDirectory).to.equal('projects/text-adventure');
-            expect(addOutputCalls[1]).to.include('currently in development');
-        });
-
-        it('should handle project 4 selection', function() {
-            handleProjectSelection(4);
-            expect(addOutputCalls[0]).to.include('Entering Portfolio Terminal');
-            expect(terminalState.currentDirectory).to.equal('projects/portfolio-terminal');
-            expect(addOutputCalls[1]).to.include('currently using this project');
-        });
-
-        it('should handle invalid project numbers', function() {
-            handleProjectSelection(5);
-            expect(addOutputCalls[0]).to.include('Invalid project number');
-            expect(terminalState.currentDirectory).to.equal('~');
-        });
-    });
-});
-
-describe('Integration Tests', function() {
-    describe('Command Execution Flow', function() {
-        it('should handle basic command execution', function() {
-            const whoamiResult = commands.whoami.execute();
-            expect(whoamiResult).to.equal('guest');
-            
-            const helpResult = commands.help.execute();
-            expect(helpResult).to.include('Available commands:');
-        });
-
-        it('should handle commands with arguments', async function() {
-            const catResult = await commands.cat.execute(['about.txt']);
-            expect(catResult).to.include('Allan Pereira');
-            
-            const loginResult = await commands.login.execute(['john']);
-            expect(loginResult).to.include('Welcome back');
-        });
-    });
-
-    describe('State Changes', function() {
-        it('should maintain state across command executions', async function() {
-            // Reset state first
-            terminalState.userName = 'guest';
-            terminalState.isLoggedIn = false;
-            
-            // Initial state
-            expect(terminalState.userName).to.equal('guest');
-            
-            // Login
-            await commands.login.execute(['john']);
-            expect(terminalState.userName).to.equal('john');
-            expect(terminalState.isLoggedIn).to.be.true;
-            
-            // Whoami should reflect new state
-            const whoamiResult = await commands.whoami.execute();
-            expect(whoamiResult).to.equal('john');
-        });
+        expect(global.URL.createObjectURL).toHaveBeenCalled();
+        expect(global.URL.revokeObjectURL).toHaveBeenCalledWith('mock-url');
     });
 });

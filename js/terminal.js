@@ -1,4 +1,4 @@
-// Terminal Logic for Interactive Portfolio
+// Terminal Logic
 
 let commandHistory = [];
 let historyIndex = -1;
@@ -12,33 +12,10 @@ let typedText = document.getElementById('typedText');
 
 // Terminal state
 const terminalState = {
-    currentDirectory: 'local',
-    userName: 'guest',
+    currentDirectory: '',
+    userName: '',
     isLoggedIn: false,
-    awaitingFlashcardChoice: false,
     awaitingCloudSimChoice: false,
-    flashcardsActive: false,
-    flashcardsData: null,
-    currentQuestionIndex: 0,
-    messageMode: false,
-    messageData: {
-        step: 'name', // 'name', 'email', 'message'
-        name: '',
-        email: '',
-        message: ''
-    },
-    loginMode: false,
-    loginData: {
-        step: 'username', // 'username', 'password'
-        username: '',
-        password: ''
-    },
-    registerMode: false,
-    registerData: {
-        step: 'username', // 'username', 'password'
-        username: '',
-        password: ''
-    },
     vimMode: false,
     vimFilename: '',
     vimContent: '',
@@ -47,11 +24,6 @@ const terminalState = {
     vimCurrentMode: 'normal', // 'normal', 'insert', 'command'
     vimCommandBuffer: '',
     vimLastKey: '',
-    textAdventureActive: false,
-    currentEventNumber: 1,
-    textAdventureStartTime: null,
-    textAdventureTimer: null,
-    textAdventureTimeLeft: 0
 };
 
 // Available commands
@@ -108,10 +80,10 @@ const commands = {
 
 // Command execution functions
 function downloadFiles() {
-    if (terminalState.currentDirectory === 'local') {
+    if (terminalState.currentDirectory === '') {
         return downloadLocalFiles();
     } else {
-        return 'download-files: Command only available in local or firebase mode.';
+        return 'download-files: Command only available in local mode.';
     }
 }
 
@@ -125,7 +97,7 @@ function downloadLocalFiles() {
         
         let downloadedCount = 0;
         files.forEach(filename => {
-            const content = localStorage.getItem(`local:${filename}`);
+            const content = localStorage.getItem(`${filename}`);
             if (content !== null) {
                 // Create and trigger download
                 const blob = new Blob([content], { type: 'text/plain' });
@@ -147,176 +119,6 @@ function downloadLocalFiles() {
     }
 }
 
-async function downloadFirebaseFiles() {
-    try {
-        if (!terminalState.isLoggedIn) {
-            return 'You must be logged in to download Firebase files.';
-        }
-        
-        const result = await window.listFiles();
-        if (!result.success || result.files.length === 0) {
-            return 'No Firebase files found to download.';
-        }
-        
-        let downloadedCount = 0;
-        for (const file of result.files) {
-            try {
-                const fileResult = await window.loadFile(file.filename);
-                if (fileResult.success) {
-                    // Create and trigger download
-                    const blob = new Blob([fileResult.content], { type: 'text/plain' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = file.filename;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                    downloadedCount++;
-                }
-            } catch (error) {
-                console.error(`Error downloading ${file.filename}:`, error);
-            }
-        }
-        
-        return `Downloaded ${downloadedCount} Firebase files to Downloads folder.`;
-    } catch (error) {
-        return `Error downloading Firebase files: ${error.message}`;
-    }
-}
-
-function startTextAdventure() {
-    // Set terminal state to text adventure mode
-    terminalState.textAdventureActive = true;
-    terminalState.currentEventNumber = 1;
-    terminalState.textAdventureStartTime = Date.now();
-    
-    // Get the first story event
-    const firstEvent = getStoryEvent(1);
-    if (!firstEvent) {
-        return 'Error: Could not load text adventure. Please try again later.';
-    }
-    
-    // Start the timer for this event
-    startEventTimer(firstEvent.time);
-    
-    // Format and display the story event
-    return formatStoryEvent(firstEvent);
-}
-
-function getStoryEvent(eventNumber) {
-    // This will eventually get data from Firebase, for now use the sample data
-    if (typeof storyEvents !== 'undefined') {
-        return storyEvents.find(event => event.eventnumber === eventNumber);
-    }
-    return null;
-}
-
-function formatStoryEvent(event) {
-    let output = `\n📖 TEXT ADVENTURE: The Mysterious Terminal\n\n`;
-    output += `${event.description}\n\n`;
-    
-    if (event.commands && event.commands.length > 0) {
-        output += `⏰ Choose quickly! You have ${event.time} seconds:\n\n`;
-        event.commands.forEach((command, index) => {
-            output += `${index + 1}. ${command.action_description}\n`;
-        });
-        output += `\nType the number (1-${event.commands.length}) to make your choice.`;
-    } else {
-        output += `🎭 Story Complete! Type any key to return to terminal.`;
-    }
-    
-    return output;
-}
-
-function startEventTimer(timeLimit) {
-    // Clear any existing timer
-    if (terminalState.textAdventureTimer) {
-        clearInterval(terminalState.textAdventureTimer);
-    }
-    
-    terminalState.textAdventureTimeLeft = timeLimit;
-    
-    // Create timer that updates every second
-    terminalState.textAdventureTimer = setInterval(() => {
-        terminalState.textAdventureTimeLeft--;
-        
-        // Update progress bar (similar to flashcards)
-        updateTimeBar(terminalState.textAdventureTimeLeft, timeLimit);
-        
-        if (terminalState.textAdventureTimeLeft <= 0) {
-            clearInterval(terminalState.textAdventureTimer);
-            handleTextAdventureTimeout();
-        }
-    }, 1000);
-}
-
-function updateTimeBar(timeLeft, totalTime) {
-    // Create a simple ASCII progress bar
-    const barLength = 20;
-    const percentage = timeLeft / totalTime;
-    const filledLength = Math.floor(percentage * barLength);
-    const emptyLength = barLength - filledLength;
-    
-    const bar = '█'.repeat(filledLength) + '░'.repeat(emptyLength);
-    const timeDisplay = `⏰ ${timeLeft}s [${bar}] ${Math.round(percentage * 100)}%`;
-    
-    // Update status in terminal (this would need DOM manipulation)
-    console.log(timeDisplay); // For now, log to console
-}
-
-function handleTextAdventureTimeout() {
-    addOutput('\n⏰ Time\'s up! You hesitated too long...');
-    addOutput('The story continues without your input. Sometimes inaction is also a choice.');
-    
-    // End the text adventure
-    terminalState.textAdventureActive = false;
-    terminalState.currentEventNumber = 1;
-}
-
-function handleTextAdventureChoice(choice) {
-    if (!terminalState.textAdventureActive) {
-        return 'No active text adventure. Type "textadventure" to start.';
-    }
-    
-    const currentEvent = getStoryEvent(terminalState.currentEventNumber);
-    if (!currentEvent) {
-        return 'Error: Could not find current story event.';
-    }
-    
-    const choiceIndex = parseInt(choice) - 1;
-    if (choiceIndex < 0 || choiceIndex >= currentEvent.commands.length) {
-        return `Invalid choice. Please choose 1-${currentEvent.commands.length}.`;
-    }
-    
-    // Clear the timer
-    if (terminalState.textAdventureTimer) {
-        clearInterval(terminalState.textAdventureTimer);
-    }
-    
-    // Get the selected command
-    const selectedCommand = currentEvent.commands[choiceIndex];
-    terminalState.currentEventNumber = selectedCommand.nexteventnumber;
-    
-    // Get the next event
-    const nextEvent = getStoryEvent(terminalState.currentEventNumber);
-    if (!nextEvent) {
-        terminalState.textAdventureActive = false;
-        return 'Adventure complete! Thanks for playing.';
-    }
-    
-    // If it's a game over event (no commands), end the game
-    if (!nextEvent.commands || nextEvent.commands.length === 0) {
-        terminalState.textAdventureActive = false;
-        return `\n${nextEvent.description}\n\n🎭 Adventure complete! Thanks for playing.`;
-    }
-    
-    // Start timer for next event
-    startEventTimer(nextEvent.time);
-    
-    return formatStoryEvent(nextEvent);
-}
 
 function showHelp() {
     let helpText = 'Available commands:\n\n';
@@ -333,74 +135,38 @@ function getHomeDirectoryFiles() {
 function getLocalFiles() {
     // Get files from localStorage for local directory
     const files = JSON.parse(localStorage.getItem('local-files') || '[]');
-    return files.sort();
+    
+    // Extract filenames from the file objects and add any direct key files
+    const filenames = files.map(file => file.filename || file).filter(Boolean);
+    
+    // Also check for files stored directly as keys (like hello.py)
+    const allKeys = Object.keys(localStorage);
+    for (const key of allKeys) {
+        // Skip system keys and the local-files array itself
+        if (key !== 'local-files' && !key.startsWith('_') && !filenames.includes(key)) {
+            // Check if it looks like a filename (has extension or is reasonable filename)
+            if (key.includes('.') || key.match(/^[a-zA-Z0-9_-]+$/)) {
+                filenames.push(key);
+            }
+        }
+    }
+    
+    return filenames.sort();
 }
 
-function getFlashcardsDirectoryFiles() {
-    return [
-    ];
-}
-
-function getCloudSimulatorDirectoryFiles() {
-    return [
-        '../',
-        'README.md',
-        'name-convention.md'
-    ];
-}
-
-function getTextAdventureDirectoryFiles() {
-    return [
-    ];
-}
-
-function getPortfolioTerminalDirectoryFiles() {
-    return [
-        '../',
-        'index.html',
-        'style.css',
-        'app.js',
-        'README.md',
-        'package.json'
-    ];
-}
-
-function getProjectsDirectoryFiles() {
-    return [
-        '../',
-        'text-adventure/',
-        'portfolio-terminal/',
-        'README.md'
-    ];
-}
 
 function getDirectoryFiles(directory) {
     switch (directory) {
         case '~':
             return getHomeDirectoryFiles();
-        case 'projects':
-            return getProjectsDirectoryFiles();
-        case 'projects/flashcards':
-            return getFlashcardsDirectoryFiles();
-        case 'projects/text-adventure':
-            return getTextAdventureDirectoryFiles();
-        case 'projects/portfolio-terminal':
-            return getPortfolioTerminalDirectoryFiles();
-        case 'local':
+        case '':
             return getLocalFiles();
-        case 'firebase':
-            return []; // Firebase files are handled asynchronously
         default:
             return [];
     }
 }
 
 async function executeListDirectory() {
-    // For logged in users in firebase directory, fetch files async
-    if (terminalState.isLoggedIn && terminalState.currentDirectory === 'firebase') {
-        listDirectoryAsync();
-        return ''; // Return empty, let async function handle output
-    }
     
     // For all other cases, use sync version
     return await listDirectorySync();
@@ -409,8 +175,8 @@ async function executeListDirectory() {
 async function listDirectorySync() {
     const files = getDirectoryFiles(terminalState.currentDirectory);
     
-    // Show login message if user is not logged in and in local directory
-    if (!terminalState.isLoggedIn && terminalState.currentDirectory === 'local') {
+    // Show files for local directory
+    if (terminalState.currentDirectory === '') {
         const localFiles = files.length > 0 ? files.join('  ') : '';
         
         return `📁 Local Files:
@@ -423,46 +189,6 @@ async function listDirectorySync() {
     return files.length > 0 ? files.join('  ') : 'No files found in this directory.';
 }
 
-async function listDirectoryAsync() {
-    try {
-        // Add debugging info
-        const currentUser = window.getCurrentUser();
-        console.log('Current Firebase user:', currentUser);
-        console.log('Terminal state logged in:', terminalState.isLoggedIn);
-        console.log('Terminal username:', terminalState.userName);
-        
-        const result = await window.listFiles();
-        console.log('listFiles result:', result);
-        
-        if (result.success && result.files.length > 0) {
-            const userFileNames = result.files.map(file => file.filename).join('  ');
-            addOutput(`📁 Your Saved Files:
-${userFileNames}
-
-Use 'vim filename' to edit files`);
-        } else {
-            // Show more detailed info about why no files are found
-            if (!currentUser) {
-                addOutput(`📁 Your Saved Files:
-❌ Not authenticated with Firebase. Please try logging in again.
-
-Use 'login <username> <password>' to authenticate`);
-            } else {
-                addOutput(`📁 Your Saved Files:
-Directory appears to be empty.
-
-Use 'vim filename.py' to create and edit files
-Current user: ${currentUser.email || currentUser.uid}`);
-            }
-        }
-    } catch (error) {
-        console.error('Error fetching user files:', error);
-        addOutput(`📁 Your Saved Files:
-❌ Error: ${error.message}
-
-Use 'vim filename.py' to create and edit files`);
-    }
-}
 
 function getProjectFiles(directory) {
     if (directory === 'projects') {
@@ -471,111 +197,7 @@ function getProjectFiles(directory) {
 
 Welcome to my project directory! Here you'll find various software projects I've developed.
 
-## Available Projects:
-
-### 2. flashcards/
-Interactive Flashcards System - A timed learning application with score tracking.
-Built with Go backend and vanilla JavaScript frontend.
-
-### 3. text-adventure/
-Text Adventure Game Engine - Interactive story-based game platform (Coming Soon).
-
-### 4. portfolio-terminal/
-Portfolio Terminal Interface - You're using it right now!
-An interactive terminal-style portfolio built with HTML5, CSS3, and JavaScript.
-
-## Navigation
-- Use 'ls' to see available projects
-- Use 'cd <project-name>' to enter a project directory
-- Use 'cd ..' to go back to the home directory
-- Type project numbers (1-4) from home directory for quick access`
-        };
-    } else if (directory === 'projects/flashcards') {
-        return {
-            'README.md': `# Interactive Flashcards System
-
-A timed learning application with score tracking built with Go and vanilla JavaScript.
-
-## Features
-- User account management
-- Course creation and management  
-- Timed flashcard sessions
-- Score tracking and leaderboards
-- Responsive web interface
-
-import (
-    "log"
-    "net/http"
-    "allanswebterminal/handlers/flashcards"
-    "allanswebterminal/handlers/login"
-    "allanswebterminal/handlers/messages"
-)
-
-func main() {
-    // Setup routes and handlers
-    log.Println("Starting flashcards server on :8080")
-    log.Fatal(http.ListenAndServe(":8080", nil))
-}`
-        };
-    } else if (directory === 'projects/text-adventure') {
-        return {
-            'README.md': `# Text Adventure Game Engine
-
-An interactive story-based game platform with branching narratives.
-
-## Status: In Development
-
-This project will feature:
-- Interactive story system
-- Branching dialogue options
-- Save/load functionality
-- Multiple story paths
-- Character progression
-
-// Text Adventure Game Engine
-// Coming soon...
-
-func main() {
-    // Game engine implementation
-}`
-        };
-    } else if (directory === 'projects/portfolio-terminal') {
-        return {
-            'README.md': `# Portfolio Terminal Interface
-
-An interactive terminal-style portfolio built with HTML5, CSS3, and JavaScript.
-
-## Features
-- Terminal command simulation
-- Interactive navigation
-- Project showcase
-- Contact form integration
-- Responsive design
-
-## You're using it right now!`,
-            'index.html': `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Allan - Software Engineer</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <!-- Terminal interface structure -->
-</body>
-</html>`,
-            'style.css': `/* Terminal Simulator Styles */
-body {
-    background: #000000;
-    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-    color: #00ff00;
-}`,
-            'app.js': `// Terminal Logic for Interactive Portfolio
-let terminalState = {
-    currentDirectory: '~',
-    userName: 'guest',
-    isLoggedIn: false
-};`
+No projects are currently available.`
         };
     }
     return {};
@@ -680,264 +302,7 @@ technical discussions, or just to say hello!`;
 }
 
 
-function loginUser(username) {
-    if (!username) {
-        return 'Usage: login <username>\nExample: login john';
-    }
-    
-    // For demo purposes, accept any username
-    terminalState.userName = username.toLowerCase();
-    terminalState.isLoggedIn = true;
-    terminalState.currentDirectory = 'firebase';
-    updatePrompt();
-    return `Welcome back, ${username}! You now have full access to the system.`;
-}
 
-async function handleLogin(args) {
-    // If no arguments, start step-by-step login
-    if (args.length === 0) {
-        return startLoginMode();
-    }
-    
-    // Legacy support: if both username and password provided
-    if (args.length === 2) {
-        const [username, password] = args;
-        return await performLogin(username, password);
-    }
-    
-    // If only username provided
-    if (args.length === 1) {
-        return `Starting login for ${args[0]}...
-Please use 'login' without arguments for step-by-step login, or provide both username and password.`;
-    }
-    
-    return `Usage: login
-This will guide you through step-by-step login.
-
-Legacy usage: login <username> <password>
-Don't have an account? Use 'register <username> <password>' to create one.`;
-}
-
-function startLoginMode() {
-    terminalState.loginMode = true;
-    terminalState.loginData = {
-        step: 'username',
-        username: '',
-        password: ''
-    };
-    
-    return `🔐 Login to your account
-
-Enter your username (or "cancel" to exit):`;
-}
-
-function handleLoginInput(input) {
-    if (input.toLowerCase() === 'cancel') {
-        exitLoginMode(true);
-        return;
-    }
-
-    switch (terminalState.loginData.step) {
-        case 'username':
-            terminalState.loginData.username = input.trim();
-            if (!terminalState.loginData.username) {
-                addOutput('Please enter a valid username:');
-                return;
-            }
-            terminalState.loginData.step = 'password';
-            addOutput('Enter your password:');
-            break;
-
-        case 'password':
-            terminalState.loginData.password = input.trim();
-            if (!terminalState.loginData.password) {
-                addOutput('Please enter your password:');
-                return;
-            }
-            performLoginFromMode();
-            break;
-    }
-}
-
-async function performLoginFromMode() {
-    const { username, password } = terminalState.loginData;
-    
-    addOutput('');
-    addOutput('🔐 Authenticating...');
-    
-    try {
-        const result = await performLogin(username, password);
-        addOutput(result);
-        exitLoginMode();
-    } catch (error) {
-        addOutput(`❌ Login error: ${error.message}`);
-        addOutput('Please try again or type "cancel" to exit.');
-        // Reset to username step to try again
-        terminalState.loginData.step = 'username';
-        terminalState.loginData.username = '';
-        terminalState.loginData.password = '';
-        addOutput('');
-        addOutput('Enter your username (or "cancel" to exit):');
-    }
-}
-
-async function performLogin(username, password) {
-    try {
-        const result = await window.loginUser(username, password);
-        terminalState.userName = username.toLowerCase();
-        terminalState.isLoggedIn = true;
-        terminalState.currentDirectory = 'firebase';
-        updatePrompt();
-        return `✅ Welcome back, ${username}! You now have full access to the system.
-You can now save and load files using 'vim filename.py'`;
-    } catch (error) {
-        throw new Error(error.message);
-    }
-}
-
-function exitLoginMode(cancelled = false) {
-    terminalState.loginMode = false;
-    terminalState.loginData = { step: 'username', username: '', password: '' };
-    if (cancelled) {
-        addOutput('');
-        addOutput('Login cancelled. Type "help" for available commands.');
-    }
-}
-
-async function handleRegister(args) {
-    // If no arguments, start step-by-step registration
-    if (args.length === 0) {
-        return startRegisterMode();
-    }
-    
-    // Legacy support: if both username and password provided
-    if (args.length === 2) {
-        const [username, password] = args;
-        return await performRegister(username, password);
-    }
-    
-    // If only username provided
-    if (args.length === 1) {
-        return `Starting registration for ${args[0]}...
-Please use 'register' without arguments for step-by-step registration, or provide both username and password.`;
-    }
-    
-    return `Usage: register
-This will guide you through step-by-step registration.
-
-Legacy usage: register <username> <password>
-Password must be at least 6 characters long.`;
-}
-
-function startRegisterMode() {
-    terminalState.registerMode = true;
-    terminalState.registerData = {
-        step: 'username',
-        username: '',
-        password: ''
-    };
-    
-    return `📝 Create a new account
-
-Enter your username (or "cancel" to exit):`;
-}
-
-function handleRegisterInput(input) {
-    if (input.toLowerCase() === 'cancel') {
-        exitRegisterMode(true);
-        return;
-    }
-
-    switch (terminalState.registerData.step) {
-        case 'username':
-            terminalState.registerData.username = input.trim();
-            if (!terminalState.registerData.username) {
-                addOutput('Please enter a valid username:');
-                return;
-            }
-            terminalState.registerData.step = 'password';
-            addOutput('Enter your password (at least 6 characters):');
-            break;
-
-        case 'password':
-            terminalState.registerData.password = input.trim();
-            if (!terminalState.registerData.password) {
-                addOutput('Please enter your password:');
-                return;
-            }
-            if (terminalState.registerData.password.length < 6) {
-                addOutput('❌ Password must be at least 6 characters long. Please try again:');
-                return;
-            }
-            performRegisterFromMode();
-            break;
-    }
-}
-
-async function performRegisterFromMode() {
-    const { username, password } = terminalState.registerData;
-    
-    addOutput('');
-    addOutput('📝 Creating account...');
-    
-    try {
-        const result = await performRegister(username, password);
-        addOutput(result);
-        exitRegisterMode();
-    } catch (error) {
-        addOutput(`❌ Registration error: ${error.message}`);
-        addOutput('Please try again or type "cancel" to exit.');
-        // Reset to username step to try again
-        terminalState.registerData.step = 'username';
-        terminalState.registerData.username = '';
-        terminalState.registerData.password = '';
-        addOutput('');
-        addOutput('Enter your username (or "cancel" to exit):');
-    }
-}
-
-async function performRegister(username, password) {
-    if (password.length < 6) {
-        return `❌ Password must be at least 6 characters long.`;
-    }
-    
-    try {
-        const result = await window.registerUser(username, password);
-        return `✅ Account created successfully for ${username}!
-Now you can use 'login' to sign in to your new account.`;
-    } catch (error) {
-        throw new Error(error.message);
-    }
-}
-
-function exitRegisterMode(cancelled = false) {
-    terminalState.registerMode = false;
-    terminalState.registerData = { step: 'username', username: '', password: '' };
-    if (cancelled) {
-        addOutput('');
-        addOutput('Registration cancelled. Type "help" for available commands.');
-    }
-}
-
-function handleLogout() {
-    if (!terminalState.isLoggedIn) {
-        return 'You are not logged in.';
-    }
-    
-    terminalState.userName = 'guest';
-    terminalState.isLoggedIn = false;
-    terminalState.currentDirectory = 'local';
-    updatePrompt();
-    
-    // Clear any stored session on server
-    try {
-        fetch('/logout', { method: 'POST' });
-    } catch (error) {
-        console.error('Error during logout:', error);
-    }
-    
-    return '✅ Logged out successfully. You are now browsing as guest.';
-}
 
 function clearTerminal() {
     // Remove all content except welcome message and current line
@@ -1025,7 +390,7 @@ function changeDirectory(path) {
             terminalState.currentDirectory = '~';
             updatePrompt();
             return '';
-        } else if (terminalState.currentDirectory === 'local') {
+        } else if (terminalState.currentDirectory === '') {
             terminalState.currentDirectory = '~';
             updatePrompt();
             return '';
@@ -1040,15 +405,7 @@ function changeDirectory(path) {
         return '';
     } else if (terminalState.currentDirectory === 'projects') {
         // Navigate to project subdirectories
-        if (path === 'flashcards') {
-            terminalState.currentDirectory = 'projects/flashcards';
-            updatePrompt();
-            return '';
-        } else if (path === 'text-adventure') {
-            terminalState.currentDirectory = 'projects/text-adventure';
-            updatePrompt();
-            return '';
-        } else if (path === 'portfolio-terminal') {
+        if (path === 'portfolio-terminal') {
             terminalState.currentDirectory = 'projects/portfolio-terminal';
             updatePrompt();
             return '';
@@ -1056,483 +413,6 @@ function changeDirectory(path) {
     }
     
     return `cd: ${path}: No such directory`;
-}
-
-function runProject() {
-    if (terminalState.currentDirectory === 'projects/flashcards') {
-        addOutput('Starting Interactive Flashcards System...');
-        addOutput('Server starting on http://localhost:8080');
-        setTimeout(() => {
-            window.location.href = '/projects/flashcards';
-        }, 2000);
-        return '';
-    } else if (terminalState.currentDirectory === 'projects/text-adventure') {
-        return 'This project is still in development. Coming soon!';
-    } else if (terminalState.currentDirectory === 'projects/portfolio-terminal') {
-        return 'You\'re already running this project! This terminal interface is the portfolio terminal.';
-    } else {
-        return 'No runnable project in current directory. Navigate to a project directory first.';
-    }
-}
-
-function executeJavaScript(code) {
-    if (!code.trim()) {
-        return 'Usage: js <JavaScript code>\nExample: js console.log("Hello World!")';
-    }
-    
-    try {
-        // Create a safe execution context
-        const result = eval(code);
-        
-        // Handle different return types
-        if (result === undefined) {
-            return ''; // Silent execution for commands like console.log
-        } else if (typeof result === 'object') {
-            return JSON.stringify(result, null, 2);
-        } else {
-            return String(result);
-        }
-    } catch (error) {
-        return `JavaScript Error: ${error.message}`;
-    }
-}
-
-function showCloudSimulatorDetails() {
-    addOutput('📋 CloudSimulator Project Details (Guest View)');
-    addOutput('');
-    addOutput('🌩️ AWS Services Simulator in Retro BIOS Style');
-    addOutput('');
-    addOutput('Features:');
-    addOutput('• 12 AWS Services: IAM, VPC, EC2, S3, RDS, DynamoDB, Lambda, API Gateway, SQS, SNS, CloudWatch, CloudFormation');
-    addOutput('• Authentic AWS CLI Commands with realistic responses');
-    addOutput('• Real AWS managed policies with actual creation dates');
-    addOutput('• localStorage-based persistence for learning progress');
-    addOutput('• Interactive BIOS-style interface with AWS console styling');
-    addOutput('');
-    addOutput('🔐 To access the full interactive simulator, please login or register.');
-    addOutput('');
-    addOutput('Available commands:');
-    addOutput('• login <username> <password>   - Login to access simulator');
-    addOutput('• register <username> <password> - Create account for access');
-    return '';
-}
-
-function startFlashcardsGuest() {
-    addOutput('🎮 Starting Flashcards in Guest Mode...');
-    addOutput('Note: Your progress will not be saved.');
-    addOutput('');
-    loadGuestFlashcards();
-    return '';
-}
-
-function startFlashcardsLogin() {
-    if (!terminalState.isLoggedIn) {
-        addOutput('🔐 Please login first to save your progress.');
-        addOutput('Type: login allan');
-        return '';
-    }
-    addOutput('🎮 Starting Flashcards with progress saving...');
-    addOutput('');
-    startFlashcardsTerminal(true);
-    return '';
-}
-
-function enterFlashcardsDirectory() {
-    terminalState.currentDirectory = 'projects/flashcards';
-    updatePrompt();
-    return 'Type "ls" to see files or "run" to start.';
-}
-
-function handleInvalidFlashcardChoice() {
-    terminalState.awaitingFlashcardChoice = true;
-    return 'Invalid choice. Type: guest, login, or directory';
-}
-
-function startFlashcardsTerminal(saveProgress) {
-    loadFlashcardsCourses(saveProgress);
-}
-
-async function loadFlashcardsCourses(saveProgress) {
-    addOutput('Loading flashcards...');
-    try {
-        const courses = await fetchCourses();
-        displayCoursesInTerminal(courses, saveProgress);
-    } catch (error) {
-        addOutput('Error: ' + error.message);
-    }
-}
-
-async function loadGuestFlashcards() {
-    addOutput('Loading available flashcards...');
-    try {
-        const flashcards = await fetchGuestFlashcards();
-        displayGuestFlashcardsInTerminal(flashcards);
-    } catch (error) {
-        addOutput('Error: ' + error.message);
-    }
-}
-
-function displayCoursesInTerminal(courses, saveProgress) {
-    if (!courses.length) {
-        addOutput('No courses available.');
-        return;
-    }
-    
-    addOutput('Available courses:');
-    courses.forEach((course, index) => {
-        addOutput(`  ${index + 1}. ${course.name}`);
-    });
-    addOutput('Type course number to start:');
-    
-    setFlashcardsState(courses, saveProgress);
-}
-
-function setFlashcardsState(courses, saveProgress) {
-    terminalState.flashcardsActive = true;
-    terminalState.flashcardsData = {
-        courses: courses,
-        saveProgress: saveProgress,
-        awaitingCourseSelection: true
-    };
-}
-
-function displayGuestFlashcardsInTerminal(flashcards) {
-    if (!flashcards.length) {
-        addOutput('No flashcards available for guest mode.');
-        return;
-    }
-    
-    addOutput('Available flashcards (select by typing numbers):');
-    addOutput('');
-    flashcards.forEach((flashcard, index) => {
-        addOutput(`  ${index + 1}. <span style="color: #ffff00;">${flashcard.question}</span> (${flashcard.time}s)`);
-        addOutput(`      Answer: ${flashcard.answer}`);
-        addOutput('');
-    });
-    addOutput('');
-    addOutput('<span style="color: #00aaff;">Examples:</span>');
-    addOutput('<span style="color: #00aaff;">  "1,3,5"    - Select flashcards 1, 3, and 5</span>');
-    addOutput('<span style="color: #00aaff;">  "1-4"      - Select flashcards 1, 2, 3, and 4</span>');
-    addOutput('<span style="color: #00aaff;">  "1,3-5,7"  - Select flashcards 1, 3, 4, 5, and 7</span>');
-    addOutput('<span style="color: #00aaff;">  "all"      - Select all flashcards</span>');
-    addOutput('');
-    addOutput('Type your selection:');
-    
-    setGuestFlashcardsState(flashcards);
-}
-
-function setGuestFlashcardsState(flashcards) {
-    terminalState.flashcardsActive = true;
-    terminalState.flashcardsData = {
-        flashcards: flashcards,
-        saveProgress: false,
-        awaitingGuestSelection: true,
-        selectedFlashcards: []
-    };
-}
-
-function parseFlashcardSelection(input, maxIndex) {
-    const selected = new Set();
-    
-    if (input.toLowerCase() === 'all') {
-        for (let i = 1; i <= maxIndex; i++) {
-            selected.add(i);
-        }
-        return Array.from(selected).sort((a, b) => a - b);
-    }
-    
-    const parts = input.split(',');
-    
-    for (const part of parts) {
-        const trimmed = part.trim();
-        
-        if (trimmed.includes('-')) {
-            // Handle range like "3-5"
-            const [start, end] = trimmed.split('-').map(s => parseInt(s.trim()));
-            if (isNaN(start) || isNaN(end) || start < 1 || end > maxIndex || start > end) {
-                throw new Error(`Invalid range: ${trimmed}`);
-            }
-            for (let i = start; i <= end; i++) {
-                selected.add(i);
-            }
-        } else {
-            // Handle single number
-            const num = parseInt(trimmed);
-            if (isNaN(num) || num < 1 || num > maxIndex) {
-                throw new Error(`Invalid number: ${trimmed}`);
-            }
-            selected.add(num);
-        }
-    }
-    
-    return Array.from(selected).sort((a, b) => a - b);
-}
-
-async function fetchCourses() {
-    const response = await fetch('/api/flashcards/courses');
-    if (!response.ok) throw new Error('Failed to fetch courses');
-    return await response.json();
-}
-
-async function fetchGuestFlashcards() {
-    const response = await fetch('/api/flashcards/guest');
-    if (!response.ok) throw new Error('Failed to fetch guest flashcards');
-    return await response.json();
-}
-
-function handleFlashcardsInput(input) {
-    if (input.toLowerCase() === 'quit') {
-        exitFlashcards();
-        return;
-    }
-    
-    if (terminalState.flashcardsData.awaitingNext) {
-        if (input.toLowerCase() === 'next') {
-            handleNextCommand();
-        } else {
-            addOutput('❌ Please type "next" to continue to the next question...');
-        }
-        return;
-    }
-    
-    if (terminalState.flashcardsData.awaitingGuestSelection) {
-        selectGuestFlashcards(input);
-    } else if (terminalState.flashcardsData.awaitingCourseSelection) {
-        selectCourse(input);
-    } else if (terminalState.flashcardsData.currentQuestion) {
-        submitAnswer(input);
-    }
-}
-
-function selectGuestFlashcards(input) {
-    try {
-        const flashcards = terminalState.flashcardsData.flashcards;
-        const selectedIndices = parseFlashcardSelection(input, flashcards.length);
-        
-        if (selectedIndices.length === 0) {
-            addOutput('No flashcards selected. Please try again:');
-            return;
-        }
-        
-        const selectedFlashcards = selectedIndices.map(index => flashcards[index - 1]);
-        
-        addOutput(`Selected ${selectedFlashcards.length} flashcard(s):`);
-        selectedFlashcards.forEach((card, i) => {
-            addOutput(`  ${i + 1}. ${card.question}`);
-        });
-        addOutput('');
-        addOutput('Starting game...');
-        
-        startGuestGame(selectedFlashcards);
-        
-    } catch (error) {
-        addOutput(`Error: ${error.message}`);
-        addOutput('Please try again (e.g., "1,3-5" or "all"):');
-    }
-}
-
-async function startGuestGame(selectedFlashcards) {
-    try {
-        const flashcardIds = selectedFlashcards.map(card => card.id);
-        const response = await fetch('/api/flashcards/start-guest', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ flashcard_ids: flashcardIds })
-        });
-        
-        if (!response.ok) throw new Error('Failed to start guest game');
-        
-        const gameData = await response.json();
-        setupGuestGame(gameData);
-        
-    } catch (error) {
-        addOutput('Error: ' + error.message);
-    }
-}
-
-function setupGuestGame(gameData) {
-    terminalState.flashcardsData.awaitingGuestSelection = false;
-    terminalState.flashcardsData.session_id = gameData.session_id;
-    terminalState.flashcardsData.totalQuestions = gameData.total_questions;
-    terminalState.flashcardsData.gameFlashcards = gameData.flashcards || []; // Store all flashcards for guest mode
-    terminalState.flashcardsData.guestScore = {
-        correct: 0,
-        total: 0,
-        totalTime: 0
-    };
-    terminalState.currentQuestionIndex = 0;
-    showQuestionWithTimer(gameData.first_card);
-}
-
-function selectCourse(input) {
-    const courseIndex = parseInt(input) - 1;
-    const courses = terminalState.flashcardsData.courses;
-    
-    if (isValidCourseSelection(courseIndex, courses)) {
-        startGame(courses[courseIndex]);
-    } else {
-        addOutput('Invalid course number. Try again:');
-    }
-}
-
-function isValidCourseSelection(index, courses) {
-    return index >= 0 && index < courses.length;
-}
-
-function startGame(course) {
-    addOutput(`Starting ${course.name}...`);
-    loadGameData(course.id);
-}
-
-async function loadGameData(courseId) {
-    try {
-        const gameData = await fetchGameStart(courseId);
-        setupGame(gameData);
-    } catch (error) {
-        addOutput('Error: ' + error.message);
-    }
-}
-
-async function fetchGameStart(courseId) {
-    const response = await fetch(`/api/flashcards/start?course_id=${courseId}`, {
-        method: 'POST'
-    });
-    if (!response.ok) throw new Error('Failed to start game');
-    return await response.json();
-}
-
-function setupGame(gameData) {
-    terminalState.flashcardsData.awaitingCourseSelection = false;
-    terminalState.flashcardsData.session_id = gameData.session_id;
-    terminalState.flashcardsData.totalQuestions = gameData.total_questions;
-    terminalState.currentQuestionIndex = 0;
-    showQuestion(gameData.first_card);
-}
-
-function showQuestion(card) {
-    terminalState.flashcardsData.currentQuestion = card;
-    addOutput('─'.repeat(40));
-    addOutput(`Q${terminalState.currentQuestionIndex + 1}/${terminalState.flashcardsData.totalQuestions}: ${card.question}`);
-    addOutput('Answer (or "quit" to exit):');
-}
-
-function showQuestionWithTimer(card) {
-    terminalState.flashcardsData.currentQuestion = card;
-    terminalState.flashcardsData.questionStartTime = Date.now();
-    terminalState.flashcardsData.timeLimit = card.time * 1000; // Convert to milliseconds
-    
-    // Remove any existing progress bars first
-    const existingBars = document.querySelectorAll('.timer-container');
-    existingBars.forEach(bar => bar.parentElement.remove());
-    
-    addOutput('─'.repeat(50));
-    addOutput(`Q${terminalState.currentQuestionIndex + 1}/${terminalState.flashcardsData.totalQuestions}: ${card.question}`);
-    addOutput(`⏱️ Time limit: ${card.time} seconds`);
-    
-    // Create progress bar container and add it immediately after the question
-    const progressContainer = createProgressBar();
-    addOutputElement(progressContainer);
-    
-    addOutput('Your answer (or "quit" to exit):');
-    
-    // Start the countdown timer
-    startQuestionTimer(card);
-}
-
-function createProgressBar() {
-    const container = document.createElement('div');
-    container.className = 'timer-container';
-    container.style.cssText = `
-        margin: 10px 0;
-        background: #333;
-        border-radius: 10px;
-        height: 20px;
-        position: relative;
-        overflow: hidden;
-    `;
-    
-    const progressBar = document.createElement('div');
-    progressBar.className = 'timer-progress';
-    progressBar.style.cssText = `
-        height: 100%;
-        background: linear-gradient(90deg, #4CAF50, #FFC107, #FF5722);
-        width: 100%;
-        border-radius: 10px;
-        transition: width 0.1s linear;
-    `;
-    
-    const timeText = document.createElement('div');
-    timeText.className = 'timer-text';
-    timeText.style.cssText = `
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        color: white;
-        font-weight: bold;
-        font-size: 12px;
-        z-index: 1;
-    `;
-    
-    container.appendChild(progressBar);
-    container.appendChild(timeText);
-    
-    return container;
-}
-
-function addOutputElement(element) {
-    // This should behave like addOutput but with an element instead of text
-    const currentLine = document.querySelector('.current-line');
-    const outputDiv = document.createElement('div');
-    outputDiv.className = 'output';
-    outputDiv.appendChild(element);
-    
-    // Insert right before the current input line (same as addOutput)
-    terminalContent.insertBefore(outputDiv, currentLine);
-    scrollToBottom();
-}
-
-function startQuestionTimer(card) {
-    const startTime = terminalState.flashcardsData.questionStartTime;
-    const timeLimit = terminalState.flashcardsData.timeLimit;
-    
-    const updateTimer = () => {
-        const elapsed = Date.now() - startTime;
-        const remaining = Math.max(0, timeLimit - elapsed);
-        const percentage = (remaining / timeLimit) * 100;
-        
-        const progressBar = document.querySelector('.timer-progress');
-        const timeText = document.querySelector('.timer-text');
-        
-        if (progressBar && timeText) {
-            progressBar.style.width = `${percentage}%`;
-            timeText.textContent = `${Math.ceil(remaining / 1000)}s`;
-            
-            // Change color based on time remaining
-            if (percentage > 50) {
-                progressBar.style.background = '#4CAF50'; // Green
-            } else if (percentage > 25) {
-                progressBar.style.background = '#FFC107'; // Yellow
-            } else {
-                progressBar.style.background = '#FF5722'; // Red
-            }
-        }
-        
-        if (remaining <= 0) {
-            // Time's up!
-            clearInterval(terminalState.flashcardsData.timerInterval);
-            handleTimeUp(card);
-            return;
-        }
-        
-        // Continue timer if question is still active
-        if (terminalState.flashcardsData.currentQuestion === card) {
-            terminalState.flashcardsData.timerInterval = setTimeout(updateTimer, 100);
-        }
-    };
-    
-    // Start the timer
-    terminalState.flashcardsData.timerInterval = setTimeout(updateTimer, 100);
 }
 
 function handleTimeUp(card) {
@@ -1553,222 +433,7 @@ function handleTimeUp(card) {
     }, 2000);
 }
 
-function submitAnswer(answer) {
-    // Stop the timer if running
-    if (terminalState.flashcardsData.timerInterval) {
-        clearTimeout(terminalState.flashcardsData.timerInterval);
-        terminalState.flashcardsData.timerInterval = null;
-    }
-    
-    // Calculate time taken
-    const timeElapsed = terminalState.flashcardsData.questionStartTime ? 
-        Math.ceil((Date.now() - terminalState.flashcardsData.questionStartTime) / 1000) : 10;
-    
-    // Remove progress bar since question is answered
-    const existingBars = document.querySelectorAll('.timer-container');
-    existingBars.forEach(bar => bar.parentElement.remove());
-    
-    addOutput(`Your answer: ${answer}`);
-    processAnswerWithTimer(answer, timeElapsed);
-}
 
-function processAnswerWithTimer(answer, timeScore) {
-    const currentCard = terminalState.flashcardsData.currentQuestion;
-    const isCorrect = checkAnswerLocally(answer, currentCard.answer);
-    
-    if (isCorrect) {
-        addOutput('✅ Correct!');
-        addOutput(`⏱️ Time: ${timeScore}s`);
-        recordAnswer(isCorrect, timeScore);
-        
-        setTimeout(() => {
-            nextQuestionOrEnd();
-        }, 1500);
-    } else {
-        addOutput('❌ Incorrect');
-        addOutput(`⏱️ Time: ${timeScore}s`);
-        addOutput(`💡 Correct Answer: ${currentCard.answer}`);
-        addOutput('');
-        addOutput('📝 Type "next" to continue to the next question...');
-        
-        recordAnswer(isCorrect, timeScore);
-        terminalState.flashcardsData.awaitingNext = true;
-    }
-}
-
-function checkAnswerLocally(userAnswer, correctAnswer) {
-    return userAnswer.trim().toLowerCase() === correctAnswer.trim().toLowerCase();
-}
-
-function recordAnswer(isCorrect, timeScore) {
-    if (!terminalState.flashcardsData.guestScore) {
-        terminalState.flashcardsData.guestScore = {
-            correct: 0,
-            total: 0,
-            totalTime: 0
-        };
-    }
-    
-    terminalState.flashcardsData.guestScore.total++;
-    terminalState.flashcardsData.guestScore.totalTime += timeScore;
-    
-    if (isCorrect) {
-        terminalState.flashcardsData.guestScore.correct++;
-    }
-}
-
-function nextQuestionOrEnd() {
-    terminalState.currentQuestionIndex++;
-    
-    if (terminalState.currentQuestionIndex >= terminalState.flashcardsData.totalQuestions) {
-        // Game complete - show guest score
-        showGuestFinalScore();
-    } else {
-        // Next question - get from stored flashcards for guest mode
-        if (terminalState.flashcardsData.gameFlashcards && terminalState.flashcardsData.gameFlashcards.length > 0) {
-            const nextCard = terminalState.flashcardsData.gameFlashcards[terminalState.currentQuestionIndex];
-            showQuestionWithTimer(nextCard);
-        } else {
-            // Fallback for regular course mode
-            const nextCard = terminalState.flashcardsData.currentQuestion;
-            showQuestionWithTimer(nextCard);
-        }
-    }
-}
-
-function showGuestFinalScore() {
-    const score = terminalState.flashcardsData.guestScore;
-    const accuracy = score.total > 0 ? (score.correct / score.total * 100) : 0;
-    const avgTime = score.total > 0 ? (score.totalTime / score.total) : 0;
-    
-    addOutput('');
-    addOutput('🎉 Guest Game Complete!');
-    addOutput('═'.repeat(40));
-    addOutput(`📊 Final Score:`);
-    addOutput(`   Correct Answers: ${score.correct}/${score.total}`);
-    addOutput(`   Accuracy: ${accuracy.toFixed(1)}%`);
-    addOutput(`   Total Time: ${score.totalTime} seconds`);
-    addOutput(`   Average Time: ${avgTime.toFixed(1)}s per question`);
-    addOutput('═'.repeat(40));
-    
-    if (accuracy >= 90) {
-        addOutput('🌟 Excellent work! Outstanding performance!');
-    } else if (accuracy >= 70) {
-        addOutput('👍 Great job! Good performance!');
-    } else if (accuracy >= 50) {
-        addOutput('👌 Not bad! Keep practicing to improve!');
-    } else {
-        addOutput('💪 Keep studying! Practice makes perfect!');
-    }
-    
-    addOutput('');
-    addOutput('Note: As a guest, your score was not saved.');
-    addOutput('Type "help" for more commands.');
-    
-    exitFlashcards();
-}
-
-async function processAnswer(answer) {
-    try {
-        const result = await submitAnswerToAPI(answer);
-        showResult(result);
-    } catch (error) {
-        addOutput('Error: ' + error.message);
-    }
-}
-
-async function submitAnswerToAPI(answer) {
-    const sessionId = terminalState.flashcardsData.session_id;
-    const response = await fetch(`/api/flashcards/answer?session_id=${sessionId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            answer: answer,
-            time_score: 10,
-            flashcard_id: terminalState.flashcardsData.currentQuestion.id
-        })
-    });
-    if (!response.ok) throw new Error('Failed to submit answer');
-    return await response.json();
-}
-
-function showResult(result) {
-    if (result.correct) {
-        addOutput('✅ Correct!');
-        addOutput(`💡 Answer: ${result.correct_answer}`);
-        
-        if (result.game_complete) {
-            showFinalScore(result.final_score);
-        } else {
-            nextQuestion(result.next_card);
-        }
-    } else {
-        addOutput('❌ Incorrect');
-        addOutput(`💡 Correct Answer: ${result.correct_answer}`);
-        addOutput('');
-        addOutput('📝 Type "next" to continue to the next question...');
-        
-        terminalState.flashcardsData.awaitingNext = true;
-        terminalState.flashcardsData.nextCard = result.next_card;
-        terminalState.flashcardsData.gameComplete = result.game_complete;
-        terminalState.flashcardsData.finalScore = result.final_score;
-    }
-}
-
-function handleNextCommand() {
-    terminalState.flashcardsData.awaitingNext = false;
-    
-    if (terminalState.flashcardsData.gameComplete) {
-        showFinalScore(terminalState.flashcardsData.finalScore);
-    } else if (terminalState.flashcardsData.nextCard) {
-        nextQuestion(terminalState.flashcardsData.nextCard);
-    } else {
-        // For guest mode with local game state
-        nextQuestionOrEnd();
-    }
-    
-    // Clear stored data
-    terminalState.flashcardsData.nextCard = null;
-    terminalState.flashcardsData.gameComplete = false;
-    terminalState.flashcardsData.finalScore = null;
-}
-
-function nextQuestion(nextCard) {
-    terminalState.currentQuestionIndex++;
-    setTimeout(() => showQuestion(nextCard), 1000);
-}
-
-function showFinalScore(score) {
-    addOutput('');
-    addOutput('🎉 Game Complete!');
-    addOutput(`Score: ${score.correct_answers}/${score.total_questions}`);
-    addOutput(`Accuracy: ${score.accuracy_percent.toFixed(1)}%`);
-    exitFlashcards();
-}
-
-function exitFlashcards() {
-    terminalState.flashcardsActive = false;
-    terminalState.flashcardsData = null;
-    terminalState.currentQuestionIndex = 0;
-    addOutput('');
-    addOutput('Thanks for playing! Type "help" for commands.');
-}
-
-function startMessageMode() {
-    terminalState.messageMode = true;
-    terminalState.messageData = {
-        step: 'name',
-        name: '',
-        email: '',
-        message: ''
-    };
-    
-    addOutput('📩 Send me a message!');
-    addOutput('');
-    addOutput('Let\'s get your details:');
-    addOutput('What\'s your name? (type your name or "cancel" to exit)');
-    return '';
-}
 
 function openVimEditor(filename) {
     if (!filename) {
@@ -1849,7 +514,7 @@ function addOutput(output, isCommand = false) {
 }
 
 function getPrompt() {
-    return `${terminalState.userName}@:${terminalState.currentDirectory}$`;
+    return `${terminalState.userName}${terminalState.currentDirectory}$`;
 }
 
 function updatePrompt() {
@@ -2204,10 +869,6 @@ function initTerminal() {
     setupEscapeKeyHandler();
 }
 
-
-
-
-
 // Make functions globally accessible
 window.clearTerminal = clearTerminal;
 window.navigateHistory = navigateHistory;
@@ -2219,27 +880,17 @@ document.addEventListener('DOMContentLoaded', initTerminal);
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         terminalState,
-        commands,
         showHelp,
         getHomeDirectoryFiles,
-        getFlashcardsDirectoryFiles,
-        getCloudSimulatorDirectoryFiles,
-        getTextAdventureDirectoryFiles,
-        getPortfolioTerminalDirectoryFiles,
-        getProjectsDirectoryFiles,
         getDirectoryFiles,
         listDirectorySync,
-        listDirectoryAsync,
         executeListDirectory,
         getProjectFiles,
         catFile,
         changeDirectory,
-        runProject,
         showAbout,
         showSkills,
         showContact,
-        loginUser,
-        handleProjectSelection,
         processCommand,
         getPrompt,
         updatePrompt,
@@ -2253,29 +904,14 @@ if (typeof module !== 'undefined' && module.exports) {
         setupModalEvents,
         setupEscapeKeyHandler,
         initTerminal,
-        handleFlashcardChoice,
-        handleCloudSimChoice,
-        showCloudSimulatorDetails,
-        startFlashcardsGuest,
-        startFlashcardsLogin,
-        enterFlashcardsDirectory,
-        handleInvalidFlashcardChoice,
-        setFlashcardsState,
-        handleFlashcardsInput,
-        selectCourse,
-        isValidCourseSelection,
-        exitFlashcards,
-        startMessageMode,
-        handleMessageInput,
-        sendMessage,
-        exitMessageMode,
-        isValidEmail,
         openVimEditor,
         handleTabCompletion,
         getCompletions,
         getPathCompletions,
         showCompletions,
         findCommonPrefix,
-        handleNextCommand
+        downloadFiles,
+        downloadLocalFiles
     };
+
 }

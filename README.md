@@ -26,7 +26,19 @@ A modern, interactive terminal-style portfolio website built for GitHub Pages wi
 - `projects` - View projects
 - `contact` - Contact form
 - `vim <filename>` - Open Vim editor
+- `ls` - List files in current directory
+- `cat <filename>` - Display file contents  
+- `download-files` - Download local files to Downloads folder
 - `clear` - Clear terminal
+
+## Vim Editor Features
+
+The built-in vim editor supports:
+- Normal, insert, and command modes
+- File editing with `:w` (save), `:q` (quit), `:wq` (save & quit)
+- Python/JavaScript code execution with `Ctrl+E` (current line) and `Ctrl+X` (entire file)
+- Syntax highlighting and line numbers
+- Local file storage in browser localStorage
 
 ---
 
@@ -44,8 +56,11 @@ npm install
 # Run tests
 npm test
 
+# Run tests in watch mode
+npm run test:watch
+
 # Run with coverage
-npm run coverage
+npm run test:coverage
 
 # Serve locally (any HTTP server)
 python -m http.server 8000
@@ -75,5 +90,6 @@ Open `http://localhost:8000` in your browser.
 [![license](https://img.shields.io/github/license/hrishikeshpaul/portfolio-template?style=flat&logo=appveyor)](https://github.com/all-an/)
 
 - Licensed under the [MIT License](http://opensource.org/licenses/mit-license.php)  
-- © 2021 [Allan Pereira Abrahão](https://github.com/all-an/)
+- © 2025 [Allan Pereira Abrahão](https://github.com/all-an/)
+- allan8tech@gmail.com
 
