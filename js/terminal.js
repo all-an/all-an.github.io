@@ -56,10 +56,6 @@ const terminalState = {
 
 // Available commands
 const commands = {
-    message: {
-        description: 'Send me a message',
-        execute: () => startMessageMode()
-    },
     about: {
         description: 'About Allan',
         execute: () => showAbout()
@@ -67,18 +63,6 @@ const commands = {
     contact: {
         description: 'Show contact information',
         execute: () => showContact()
-    },
-    register: {
-        description: 'Register a new account',
-        execute: (args) => handleRegister(args)
-    },
-    login: {
-        description: 'Login with your account',
-        execute: (args) => handleLogin(args)
-    },
-    logout: {
-        description: 'Logout from your account',
-        execute: () => handleLogout()
     },
     vim: {
         description: 'Open vim editor',
@@ -120,18 +104,12 @@ const commands = {
         description: 'Download files to Downloads folder',
         execute: () => downloadFiles()
     },
-    textadventure: {
-        description: 'Start text adventure game',
-        execute: () => startTextAdventure()
-    }
 };
 
 // Command execution functions
 function downloadFiles() {
     if (terminalState.currentDirectory === 'local') {
         return downloadLocalFiles();
-    } else if (terminalState.currentDirectory === 'firebase') {
-        return downloadFirebaseFiles();
     } else {
         return 'download-files: Command only available in local or firebase mode.';
     }
@@ -439,11 +417,7 @@ async function listDirectorySync() {
    ${localFiles || 'No files found in local storage.'}
    
    ℹ️  Note: Files are stored in browser localStorage
-   📝 Use 'vim filename' to create/edit files
-   
-   Commands:
-   • login <username> <password>     - Login to access Firebase storage
-   • register <username> <password>  - Create a new account`;
+   📝 Use 'vim filename' to create/edit files`;
     }
     
     return files.length > 0 ? files.join('  ') : 'No files found in this directory.';
@@ -653,7 +627,7 @@ cloud technologies, and system architecture.
 
 Interests:
 - Microservices architecture
-- Cloud computing (AWS)
+- Cloud computing (AWS, Azure)
 - DevOps practices
 - Open source contributions`;
 }
@@ -698,14 +672,11 @@ Tools & Practices:
 function showContact() {
     return `Contact Information:
 
-📧 Email: <a href="#" onclick="processCommand('message'); return false;" style="color: #0080ff; text-decoration: underline;">Send message through portfolio</a>
 🔗 GitHub: <a href="https://github.com/all-an" target="_blank" style="color: #0080ff; text-decoration: underline;">https://github.com/all-an</a>
 💼 LinkedIn: <a href="https://www.linkedin.com/in/allan-pereira-abrahao/" target="_blank" style="color: #0080ff; text-decoration: underline;">https://www.linkedin.com/in/allan-pereira-abrahao/</a>
 
 Feel free to reach out for collaboration opportunities,
-technical discussions, or just to say hello!
-
-Type 'message' to open contact form.`;
+technical discussions, or just to say hello!`;
 }
 
 
@@ -1123,93 +1094,6 @@ function executeJavaScript(code) {
         }
     } catch (error) {
         return `JavaScript Error: ${error.message}`;
-    }
-}
-
-function handleProjectSelection(projectNumber) {
-    switch (projectNumber) {
-        case 1:
-            addOutput('🌩️ CloudSimulator - AWS Services Simulator');
-            addOutput('');
-            if (!terminalState.isLoggedIn) {
-                addOutput('⚠️  Authentication required to access CloudSimulator');
-                addOutput('');
-                addOutput('Choose an option:');
-                addOutput('  login     - Login with existing account');
-                addOutput('  register  - Create new account');
-                addOutput('  guest     - View project details only');
-                addOutput('');
-                addOutput('Type your choice: login, register, or guest');
-                terminalState.awaitingCloudSimChoice = true;
-            }
-            break;
-        case 2:
-            addOutput('🎯 Interactive Flashcards System');
-            addOutput('Choose how you want to play:');
-            addOutput('');
-            addOutput('  guest     - Play without login (no progress saved)');
-            addOutput('  login     - Login to save your progress and scores');
-            addOutput('  directory - Enter project directory to explore files');
-            addOutput('');
-            addOutput('Type your choice: guest, login, or directory');
-            
-            // Set a temporary state to handle the next input
-            terminalState.awaitingFlashcardChoice = true;
-            break;
-        case 3:
-            addOutput('Entering Text Adventure Game directory...');
-            terminalState.currentDirectory = 'projects/text-adventure';
-            updatePrompt();
-            addOutput('This project is currently in development.');
-            break;
-        case 4:
-            addOutput('Entering Portfolio Terminal directory...');
-            terminalState.currentDirectory = 'projects/portfolio-terminal';
-            updatePrompt();
-            addOutput('You\'re currently using this project! Type "ls" to see source files.');
-            break;
-        default:
-            addOutput('Invalid project number. Please enter 1, 2, 3, or 4.');
-    }
-}
-
-
-function handleFlashcardChoice(choice) {
-    terminalState.awaitingFlashcardChoice = false;
-    
-    if (choice.toLowerCase() === 'guest') {
-        return startFlashcardsGuest();
-    } else if (choice.toLowerCase() === 'login') {
-        return startFlashcardsLogin();
-    } else if (choice.toLowerCase() === 'directory') {
-        return enterFlashcardsDirectory();
-    } else {
-        return handleInvalidFlashcardChoice();
-    }
-}
-
-function handleCloudSimChoice(choice) {
-    terminalState.awaitingCloudSimChoice = false;
-    
-    if (choice.toLowerCase() === 'login') {
-        addOutput('🔐 Please enter your login credentials:');
-        addOutput('Usage: login <username> <password>');
-        addOutput('');
-        addOutput('After logging in, type "1" again to access CloudSimulator.');
-        return '';
-    } else if (choice.toLowerCase() === 'register') {
-        addOutput('📝 Please register a new account:');
-        addOutput('Usage: register <username> <password>');
-        addOutput('');
-        addOutput('After registering, type "1" again to access CloudSimulator.');
-        return '';
-    } else if (choice.toLowerCase() === 'guest') {
-        return showCloudSimulatorDetails();
-    } else {
-        addOutput('❌ Invalid choice. Please type: login, register, or guest');
-        addOutput('');
-        terminalState.awaitingCloudSimChoice = true;
-        return '';
     }
 }
 
@@ -1886,78 +1770,6 @@ function startMessageMode() {
     return '';
 }
 
-function handleMessageInput(input) {
-    if (input.toLowerCase() === 'cancel') {
-        exitMessageMode();
-        return;
-    }
-
-    switch (terminalState.messageData.step) {
-        case 'name':
-            terminalState.messageData.name = input.trim();
-            if (!terminalState.messageData.name) {
-                addOutput('Please enter a valid name:');
-                return;
-            }
-            terminalState.messageData.step = 'email';
-            addOutput(`Nice to meet you, ${terminalState.messageData.name}!`);
-            addOutput('What\'s your email address?');
-            break;
-
-        case 'email':
-            if (!isValidEmail(input.trim())) {
-                addOutput('Please enter a valid email address:');
-                return;
-            }
-            terminalState.messageData.email = input.trim();
-            terminalState.messageData.step = 'message';
-            addOutput('Great! Now, what\'s your message?');
-            break;
-
-        case 'message':
-            terminalState.messageData.message = input.trim();
-            if (!terminalState.messageData.message) {
-                addOutput('Please enter your message:');
-                return;
-            }
-            sendMessage();
-            break;
-    }
-}
-
-function isValidEmail(email) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-}
-
-async function sendMessage() {
-    addOutput('');
-    addOutput('📤 Sending your message...');
-
-    try {
-        // Use Firebase to save the message
-        await window.saveMessage({
-            name: terminalState.messageData.name,
-            email: terminalState.messageData.email,
-            message: terminalState.messageData.message
-        });
-        
-        addOutput('✅ Message sent successfully!');
-        addOutput(`Thank you, ${terminalState.messageData.name}. I'll get back to you soon!`);
-    } catch (error) {
-        addOutput('❌ Failed to send message: ' + error.message);
-    }
-
-    exitMessageMode();
-}
-
-function exitMessageMode() {
-    terminalState.messageMode = false;
-    terminalState.messageData = { step: 'name', name: '', email: '', message: '' };
-    addOutput('');
-    addOutput('Type "help" for available commands.');
-}
-
 function openVimEditor(filename) {
     if (!filename) {
         filename = 'untitled.py';
@@ -2091,44 +1903,6 @@ function processCommand(input) {
     // Display the command
     addOutput(trimmedInput, true);
     
-    // Handle flashcard choice if awaiting
-    if (terminalState.awaitingFlashcardChoice) {
-        const result = handleFlashcardChoice(trimmedInput);
-        if (result) addOutput(result);
-        return;
-    }
-    
-    // Handle CloudSimulator choice if awaiting
-    if (terminalState.awaitingCloudSimChoice) {
-        const result = handleCloudSimChoice(trimmedInput);
-        if (result) addOutput(result);
-        return;
-    }
-    
-    // Handle flashcards input if active
-    if (terminalState.flashcardsActive) {
-        handleFlashcardsInput(trimmedInput);
-        return;
-    }
-    
-    // Handle message input if in message mode
-    if (terminalState.messageMode) {
-        handleMessageInput(trimmedInput);
-        return;
-    }
-    
-    // Handle login input if in login mode
-    if (terminalState.loginMode) {
-        handleLoginInput(trimmedInput);
-        return;
-    }
-    
-    // Handle register input if in register mode
-    if (terminalState.registerMode) {
-        handleRegisterInput(trimmedInput);
-        return;
-    }
-    
     // Parse command and arguments
     const parts = trimmedInput.split(' ');
     const command = parts[0].toLowerCase();
@@ -2149,9 +1923,6 @@ function processCommand(input) {
         } else if (result) {
             addOutput(result);
         }
-    } else if (/^[1-4]$/.test(command)) {
-        // Handle numbered project selection
-        handleProjectSelection(parseInt(command));
     } else {
         addOutput(`Command not found: ${command}. Type 'help' for available commands.`);
     }

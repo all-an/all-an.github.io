@@ -69,9 +69,9 @@ JavaScript Test Results - Tue Aug 26 06:19:02 PM -03 2025
 FAILING TESTS:
 ============================================
 "before each" hook for "should validate firebase configuration structure"
-should handle guest choice
-should handle login choice when not logged in
-should handle login choice when logged in
+should handle choice
+should handle choice when not logged in
+should handle choice when logged in
 ...
 ```
 

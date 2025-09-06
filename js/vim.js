@@ -531,7 +531,6 @@ class VimEditor {
     }
 
     moveCursor(row, col) {
-        debugger;
         const lines = this.content.split('\n');
         const previousRow = this.cursorRow;
         
