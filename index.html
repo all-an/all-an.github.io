@@ -3,56 +3,179 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Allan - Software Engineer</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='%23000'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='monospace' font-size='10' fill='%2300ff00'>$</text></svg>">
-    <link rel="stylesheet" href="css/style.css">
+    <title>Allan Pereira Abrahão</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E💻%3C/text%3E%3C/svg%3E">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0a0a;
+            color: #ffffff;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(circle at 20% 50%, #001122 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, #002211 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, #110022 0%, transparent 50%);
+            z-index: -1;
+        }
+
+        .container {
+            text-align: center;
+            z-index: 1;
+            padding: 2rem;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(45deg, #00ff88, #00ccff, #8800ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            color: #cccccc;
+            letter-spacing: 1px;
+        }
+
+        .linkedin-btn {
+            background: linear-gradient(45deg, #0077b5, #005885);
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            color: white;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: bold;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 119, 181, 0.3);
+        }
+
+        .linkedin-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .linkedin-btn:hover::before {
+            left: 100%;
+        }
+
+        .linkedin-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 119, 181, 0.5);
+        }
+
+        .linkedin-btn:active {
+            transform: translateY(-1px);
+        }
+
+        @keyframes glow {
+            from {
+                text-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+            }
+            to {
+                text-shadow: 0 0 30px rgba(0, 204, 255, 0.8), 0 0 40px rgba(136, 0, 255, 0.3);
+            }
+        }
+
+        .particles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: #00ff88;
+            border-radius: 50%;
+            animation: float 6s infinite linear;
+            opacity: 0.7;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.7;
+            }
+            90% {
+                opacity: 0.7;
+            }
+            100% {
+                transform: translateY(-10px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="terminal-container">
-        <div class="terminal">
-            <div class="terminal-header">
-                <div class="terminal-controls">
-                    <span class="control close"></span>
-                    <span class="control minimize"></span>
-                    <span class="control maximize"></span>
-                </div>
-                <div class="terminal-title">$</div>
-            </div>
-            <div class="terminal-body" id="terminal">
-                <div class="terminal-content" id="terminalContent">
-                    <div class="welcome-message" id="welcomeMessage">
-                        <div class="welcome-text">
-                            <pre style="color: #00ff00; font-size: 10px; line-height: 1.1; margin: 0 0 8px 0;">
-                            </pre>
-                            <p>Welcome ! My name is Allan. Type '<span style="color: #0080ff; font-weight: bold;">help</span>' for available commands.</p>
-                            <br>
-                        </div>
-                    </div>
-                    <br>
-                    <div class="terminal-line current-line">
-                        <span class="prompt">$</span>
-                        <span id="typedText" class="typed-text"></span>
-                        <span class="cursor">_</span>
-                        <input type="text" id="commandInput" class="command-input" autocomplete="off" autofocus>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div class="particles" id="particles"></div>
+
+    <div class="container">
+        <h1>Hi I'm Allan</h1>
+        <p>contact me on linkedin</p>
+        <button class="linkedin-btn" onclick="window.open('https://www.linkedin.com/in/allan-pereira-abrahao/', '_blank')">
+            LinkedIn
+        </button>
     </div>
 
-    <script type="module">
-        // Load Pyodide for Python execution
-        import { loadPyodide } from "https://cdn.jsdelivr.net/pyodide/v0.28.1/full/pyodide.mjs";
-        
-        window.pyodideLoadPromise = loadPyodide();
-        window.pyodideLoadPromise.then((pyodide) => {
-            window.pyodide = pyodide;
-            console.log("Pyodide loaded successfully");
-        }).catch((error) => {
-            console.error("Failed to load Pyodide:", error);
-        });
+    <script>
+        // Create floating particles
+        function createParticle() {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * 100 + 'vw';
+            particle.style.animationDelay = Math.random() * 6 + 's';
+            particle.style.animationDuration = (Math.random() * 3 + 3) + 's';
+            document.getElementById('particles').appendChild(particle);
+
+            setTimeout(() => {
+                particle.remove();
+            }, 6000);
+        }
+
+        // Generate particles
+        setInterval(createParticle, 300);
     </script>
-    <script src="js/vim.js"></script>
-    <script src="js/terminal.js"></script>
 </body>
 </html>

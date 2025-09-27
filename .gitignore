@@ -56,3 +56,5 @@ dist/
 
 .claude/
 failing_tests_report.log
+
+*.exe
