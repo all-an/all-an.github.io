@@ -21,7 +21,7 @@ Then open `http://localhost:8000`
 
 ## 🌐 Connect with Me
 
-- 💼 [LinkedIn](https://www.linkedin.com/in/allanpereiraabrahao/)
+- 💼 [LinkedIn](https://www.linkedin.com/in/allan-pereira-abrahao/)
 
 ---
 
