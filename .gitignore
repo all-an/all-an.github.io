@@ -58,3 +58,12 @@ dist/
 failing_tests_report.log
 
 *.exe
+
+target/
+
+# Kotlin/Gradle build artifacts
+kotlin/build/
+kotlin/.gradle/
+kotlin/gradle/
+kotlin/gradlew
+kotlin/gradlew.bat

@@ -1,0 +1,169 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #0a0a0a;
+    color: #ffffff;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    position: relative;
+}
+
+body::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background:
+        radial-gradient(circle at 20% 50%, #001122 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, #002211 0%, transparent 50%),
+        radial-gradient(circle at 40% 80%, #110022 0%, transparent 50%);
+    z-index: -1;
+}
+
+.container {
+    text-align: center;
+    z-index: 1;
+    padding: 2rem;
+}
+
+h1 {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    background: linear-gradient(45deg, #00ff88, #00ccff, #01a4d6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: glow 2s ease-in-out infinite alternate;
+}
+
+p {
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+    color: #cccccc;
+    letter-spacing: 1px;
+}
+
+.linkedin-btn, .learn-btn {
+    border: none;
+    padding: 15px 30px;
+    font-size: 1.1rem;
+    color: white;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: bold;
+    position: relative;
+    overflow: hidden;
+    margin: 0 10px;
+}
+
+.linkedin-btn {
+    background: linear-gradient(45deg, #0077b5, #005885);
+    box-shadow: 0 4px 15px rgba(0, 119, 181, 0.3);
+}
+
+.learn-btn {
+    background: linear-gradient(45deg, #0735ff, #00b947);
+    box-shadow: 0 4px 15px rgba(136, 0, 255, 0.3);
+}
+
+.linkedin-btn::before, .learn-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+
+.linkedin-btn:hover::before, .learn-btn:hover::before {
+    left: 100%;
+}
+
+.linkedin-btn:hover, .learn-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 119, 181, 0.5);
+}
+
+.linkedin-btn:active, .learn-btn:active {
+    transform: translateY(-1px);
+}
+
+@keyframes glow {
+    from {
+        text-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+    }
+    to {
+        text-shadow: 0 0 30px rgba(0, 204, 255, 0.8), 0 0 40px rgba(136, 0, 255, 0.3);
+    }
+}
+
+.particles {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    z-index: -1;
+}
+
+.matrix-column {
+    position: absolute;
+    top: -100%;
+    display: flex;
+    flex-direction: column;
+    animation: matrixFall 5s infinite linear;
+    pointer-events: none;
+}
+
+.matrix-char {
+    color: #00ff88;
+    font-family: 'Courier New', monospace;
+    font-size: 18px;
+    font-weight: bold;
+    text-shadow: 0 0 8px #00ff88;
+    line-height: 1.2;
+    opacity: 0;
+    animation: fadeChar 0.5s ease-in-out forwards;
+}
+
+.matrix-char:first-child {
+    color: #ffffff;
+    text-shadow: 0 0 10px #00ff88, 0 0 20px #00ff88;
+    font-size: 20px;
+}
+
+@keyframes matrixFall {
+    0% {
+        transform: translateY(0);
+    }
+    100% {
+        transform: translateY(110vh);
+    }
+}
+
+@keyframes fadeChar {
+    0% {
+        opacity: 0;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0.3;
+    }
+}
