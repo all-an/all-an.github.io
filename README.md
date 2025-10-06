@@ -7,12 +7,6 @@
 .\compile-rust.bat
 ```
 
-## Compile Kotlin to Javascript:
-
-```bash
-.\compile-kotlin.bat
-```
-
 ## Run Locally
 
 **With VS Code Live Server:**
