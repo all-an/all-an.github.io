@@ -51,7 +51,6 @@ coverage_src_only.info
 coverage.info
 
 # WASM build artifacts
-pkg/
 dist/
 
 .claude/

@@ -1,5 +1,6 @@
 # Exclude JavaScript files from language statistics
 *.js linguist-vendored=true
+*.ts linguist-vendored=true
 
 # You can also exclude specific directories
 # static/js/* linguist-generated=true

@@ -1,0 +1,37 @@
+/* tslint:disable */
+/* eslint-disable */
+export const memory: WebAssembly.Memory;
+export const __wbg_matrixchar_free: (a: number, b: number) => void;
+export const matrixchar_character: (a: number) => [number, number];
+export const matrixchar_animation_delay: (a: number) => number;
+export const __wbg_matrixcolumn_free: (a: number, b: number) => void;
+export const matrixcolumn_delay: (a: number) => number;
+export const matrixcolumn_duration: (a: number) => number;
+export const matrixcolumn_chars: (a: number) => [number, number];
+export const create_matrix_char_data: (a: number, b: number, c: number) => number;
+export const create_matrix_column_data: (a: number, b: number, c: number) => number;
+export const __wbg_matrixconfig_free: (a: number, b: number) => void;
+export const matrixconfig_columns: (a: number) => [number, number];
+export const matrixconfig_charset: (a: number) => [number, number];
+export const generate_matrix_config: (a: number, b: number, c: number) => number;
+export const generate_matrix_config_default: () => number;
+export const render_matrix_char: (a: number) => [number, number, number];
+export const render_matrix_column: (a: number) => [number, number, number];
+export const create_particles: () => [number, number];
+export const start_char_animation: (a: number, b: number) => [number, number];
+export const calculate_column_position: (a: number) => number;
+export const generate_animation_delay: () => number;
+export const generate_animation_duration: () => number;
+export const matrixcolumn_position: (a: number) => number;
+export const hello_world: () => [number, number];
+export const __wbindgen_exn_store: (a: number) => void;
+export const __externref_table_alloc: () => number;
+export const __wbindgen_export_2: WebAssembly.Table;
+export const __wbindgen_export_3: WebAssembly.Table;
+export const __wbindgen_free: (a: number, b: number, c: number) => void;
+export const __externref_drop_slice: (a: number, b: number) => void;
+export const __wbindgen_malloc: (a: number, b: number) => number;
+export const __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
+export const __externref_table_dealloc: (a: number) => void;
+export const wasm_bindgen__convert__closures_____invoke__h92fe2e01305c860b: (a: number, b: number) => void;
+export const __wbindgen_start: () => void;
