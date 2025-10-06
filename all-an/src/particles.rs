@@ -3,11 +3,10 @@ use rand::Rng;
 use web_sys::{Document, HtmlElement, Window};
 use wasm_bindgen::JsCast;
 
-// Default charset matching Kotlin implementation
+// Default charset
 pub const DEFAULT_CHARSET: &str = "01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン";
 
 // Data structure for a single matrix character
-// Kotlin equivalent: data class MatrixChar(val character: String, val animationDelay: Int)
 #[wasm_bindgen]
 #[derive(Clone, Debug, PartialEq)]
 pub struct MatrixChar {
@@ -29,7 +28,6 @@ impl MatrixChar {
 }
 
 // Data structure for a matrix column
-// Kotlin equivalent: data class MatrixColumn(val position: Int, val delay: Int, val duration: Int, val chars: List<MatrixChar>)
 #[wasm_bindgen]
 #[derive(Clone, Debug)]
 pub struct MatrixColumn {
@@ -63,7 +61,6 @@ impl MatrixColumn {
 }
 
 // Create a MatrixChar with random character from charset
-// Kotlin equivalent: fun createMatrixCharData(chars: String, index: Int): MatrixChar
 #[wasm_bindgen]
 pub fn create_matrix_char_data(chars: &str, index: i32) -> MatrixChar {
     let mut rng = rand::thread_rng();
@@ -77,7 +74,6 @@ pub fn create_matrix_char_data(chars: &str, index: i32) -> MatrixChar {
 }
 
 // Create a MatrixColumn with random properties
-// Kotlin equivalent: fun createMatrixColumnData(index: Int, chars: String): MatrixColumn
 #[wasm_bindgen]
 pub fn create_matrix_column_data(index: i32, chars: &str) -> MatrixColumn {
     let mut rng = rand::thread_rng();
@@ -96,7 +92,6 @@ pub fn create_matrix_column_data(index: i32, chars: &str) -> MatrixColumn {
 }
 
 // Data structure for matrix configuration
-// Kotlin equivalent: data class MatrixConfig(val columns: List<MatrixColumn>, val charset: String)
 #[wasm_bindgen]
 #[derive(Clone, Debug)]
 pub struct MatrixConfig {
@@ -118,7 +113,6 @@ impl MatrixConfig {
 }
 
 // Generate complete matrix configuration
-// Kotlin equivalent: fun generateMatrixConfig(columnCount: Int = 30, charset: String = DEFAULT_CHARSET): MatrixConfig
 #[wasm_bindgen]
 pub fn generate_matrix_config(column_count: i32, charset: &str) -> MatrixConfig {
     let columns: Vec<MatrixColumn> = (0..column_count)
@@ -167,7 +161,6 @@ fn document() -> Result<Document, JsValue> {
 }
 
 // Render a MatrixChar as an HTML span element
-// Kotlin equivalent: fun renderMatrixChar(charData: MatrixChar): HTMLElement
 #[wasm_bindgen]
 pub fn render_matrix_char(char_data: &MatrixChar) -> Result<HtmlElement, JsValue> {
     let doc = document()?;
@@ -184,7 +177,6 @@ pub fn render_matrix_char(char_data: &MatrixChar) -> Result<HtmlElement, JsValue
 }
 
 // Render a MatrixColumn as an HTML div element containing char spans
-// Kotlin equivalent: fun renderMatrixColumn(column: MatrixColumn, chars: String): HTMLElement
 #[wasm_bindgen]
 pub fn render_matrix_column(column: &MatrixColumn) -> Result<HtmlElement, JsValue> {
     let doc = document()?;
@@ -206,7 +198,6 @@ pub fn render_matrix_column(column: &MatrixColumn) -> Result<HtmlElement, JsValu
 }
 
 // Create particles container and render all columns
-// Kotlin equivalent: fun createParticles()
 #[wasm_bindgen]
 pub fn create_particles() -> Result<(), JsValue> {
     let doc = document()?;
@@ -263,7 +254,6 @@ fn update_char_element(elem: &web_sys::Node, charset: &str) {
 }
 
 // Start animation that randomly changes characters
-// Kotlin equivalent: fun startCharAnimation(chars: String)
 #[wasm_bindgen]
 pub fn start_char_animation(charset: &str) -> Result<(), JsValue> {
     let win = window()?;
@@ -300,26 +290,23 @@ pub fn start_char_animation(charset: &str) -> Result<(), JsValue> {
 }
 
 // Particle system - Pure function to calculate column position
-// Kotlin equivalent: fun calculateColumnPosition(index: Int): Int = (index * 3.33).toInt()
 #[wasm_bindgen]
 pub fn calculate_column_position(index: i32) -> i32 {
     (index as f64 * 3.33) as i32
 }
 
 // Generate random animation delay between 0 and 3000ms
-// Kotlin equivalent: fun generateAnimationDelay(): Int = (0..3000).random()
 #[wasm_bindgen]
 pub fn generate_animation_delay() -> i32 {
     let mut rng = rand::thread_rng();
-    rng.gen_range(0..=3000)
+    rng.gen_range(0..=9000)
 }
 
 // Generate random animation duration between 3000 and 6000ms
-// Kotlin equivalent: fun generateAnimationDuration(): Int = (3000..6000).random()
 #[wasm_bindgen]
 pub fn generate_animation_duration() -> i32 {
     let mut rng = rand::thread_rng();
-    rng.gen_range(3000..=6000)
+    rng.gen_range(1000..=2000)
 }
 
 #[cfg(test)]

@@ -1,6 +1,12 @@
 
 ## Github page
 
+## Compile Rust to WebAssembly:
+
+```bash
+.\compile-rust.bat
+```
+
 ## Compile Kotlin to Javascript:
 
 ```bash
