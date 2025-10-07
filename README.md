@@ -1,10 +1,12 @@
 
 ## Github page
 
-## Compile Rust to WebAssembly:
+## Compile Java to Javascript:
 
 ```bash
-.\compile-rust.bat
+cd java-gwt
+
+.\build.bat
 ```
 
 ## Run Locally
