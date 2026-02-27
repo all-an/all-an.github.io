@@ -1,5 +1,5 @@
 
-## [Page](https://all-an.github.io/)
+## [all-an.github.io](https://all-an.github.io/)
 
 (all animations are maded in Java and compiled to Javascript using gwt)
 
