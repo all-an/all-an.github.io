@@ -1,6 +1,8 @@
 
 ## Github page
 
+(all animations are maded in Java and compiled to Javascript using gwt)
+
 ## Compile Java to Javascript:
 
 ```bash
