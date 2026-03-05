@@ -5,9 +5,16 @@
 
 ## Compile Java to Javascript:
 
+**Unix (macOS/Linux):**
 ```bash
 cd java-gwt
+chmod +x build.sh
+./build.sh
+```
 
+**Windows:**
+```bash
+cd java-gwt
 .\build.bat
 ```
 
