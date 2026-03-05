@@ -60,4 +60,7 @@ failing_tests_report.log
 
 target/
 
+# GWT unit cache (large files)
+games/gwt-unitCache/
+
 draft.md
