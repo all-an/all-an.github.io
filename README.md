@@ -1,23 +1,6 @@
 
 ## [all-an.github.io](https://all-an.github.io/)
 
-(all animations are maded in Java and compiled to Javascript using gwt)
-
-## Compile Java to Javascript:
-
-**Unix (macOS/Linux):**
-```bash
-cd java-gwt
-chmod +x build.sh
-./build.sh
-```
-
-**Windows:**
-```bash
-cd java-gwt
-.\build.bat
-```
-
 ## Run Locally
 
 **With VS Code Live Server:**
