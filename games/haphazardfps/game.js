@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { startAmbient } from './ambient-sound.js';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const PLAYER_SPEED     = 5;
@@ -26,6 +27,11 @@ const CL3         = 22;
 const PINK_DOOR_Z = BLUE_DOOR_Z - CL3;   // z = -59
 const C3_CENTER_Z = BLUE_DOOR_Z - CL3 / 2;
 const PINK_BTN_Z  = BLUE_DOOR_Z - 2;     // z = -39, right after entering
+
+// Corridor 4
+const CL4           = 20;
+const YELLOW_DOOR_Z = PINK_DOOR_Z - CL4;    // z = -79
+const C4_CENTER_Z   = PINK_DOOR_Z - CL4 / 2; // z = -69
 
 // ── Renderer / Scene / Camera ────────────────────────────────────────────────
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -101,6 +107,26 @@ const pinkBtnGlow = new THREE.PointLight(0xff44aa, 1.2, 3);
 pinkBtnGlow.position.set(-CW / 2 + 0.5, 1.35, PINK_BTN_Z);
 scene.add(pinkBtnGlow);
 
+// Corridor 4
+for (let i = 0; i < 6; i++) {
+    const pl = new THREE.PointLight(0xffeeaa, 2.0, 10);
+    pl.position.set(0, CH - 0.1, PINK_DOOR_Z - 1.5 - i * (CL4 / 5));
+    scene.add(pl);
+}
+[-CW / 2 + 0.2, CW / 2 - 0.2].forEach(x =>
+    [PINK_DOOR_Z - 5, PINK_DOOR_Z - 13].forEach(z => {
+        const pl = new THREE.PointLight(0xffcc44, 1.2, 8);
+        pl.position.set(x, 2, z);
+        scene.add(pl);
+    })
+);
+const yellowDoorGlow = new THREE.PointLight(0xffcc00, 2.0, 9);
+yellowDoorGlow.position.set(0, 1.8, YELLOW_DOOR_Z + 2);
+scene.add(yellowDoorGlow);
+const sign4Glow = new THREE.PointLight(0xffdd44, 1.4, 3.5);
+sign4Glow.position.set(-CW / 2 + 0.8, CH / 2, C4_CENTER_Z);
+scene.add(sign4Glow);
+
 // ── Materials ─────────────────────────────────────────────────────────────────
 const wallMat          = new THREE.MeshLambertMaterial({ color: 0x1c1c2c });
 const floorMat         = new THREE.MeshLambertMaterial({ color: 0x111118 });
@@ -118,6 +144,7 @@ const blueAreaMat      = new THREE.MeshLambertMaterial({ color: 0x0055ff, emissi
 const pinkDoorMat      = new THREE.MeshLambertMaterial({ color: 0x881155, emissive: 0x220010 });
 const pinkBtnMat       = new THREE.MeshLambertMaterial({ color: 0xff44aa, emissive: 0x441133 });
 const pinkBtnInactMat  = new THREE.MeshLambertMaterial({ color: 0x442233, emissive: 0x110008 });
+const yellowDoorMat    = new THREE.MeshLambertMaterial({ color: 0xddaa00, emissive: 0x443300 });
 
 // ── Geometry helper ───────────────────────────────────────────────────────────
 function box(w, h, d, mat, x, y, z) {
@@ -126,6 +153,47 @@ function box(w, h, d, mat, x, y, z) {
     m.receiveShadow = m.castShadow = true;
     scene.add(m);
     return m;
+}
+
+// ── Corridor number signs ─────────────────────────────────────────────────────
+function makeNumberSign(n, color = '#ffffff') {
+    const canvas = document.createElement('canvas');
+    canvas.width  = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = 'rgba(0,0,0,0)';
+    ctx.fillRect(0, 0, 256, 256);
+    ctx.font = 'bold 220px monospace';
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = color;
+    ctx.fillText(String(n), 128, 140);
+    const tex = new THREE.CanvasTexture(canvas);
+    const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.FrontSide });
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1.2), mat);
+    return mesh;
+}
+
+// Sign on left wall of corridor 1 (center z = 0)
+{
+    const s = makeNumberSign(1);
+    s.position.set(-CW / 2 + 0.16, CH / 2, 0);
+    s.rotation.y = Math.PI / 2;
+    scene.add(s);
+}
+// Sign on left wall of corridor 2 (center z = C2_CENTER_Z)
+{
+    const s = makeNumberSign(2);
+    s.position.set(-CW / 2 + 0.16, CH / 2, C2_CENTER_Z);
+    s.rotation.y = Math.PI / 2;
+    scene.add(s);
+}
+// Sign on left wall of corridor 3 (center z = C3_CENTER_Z)
+{
+    const s = makeNumberSign(3);
+    s.position.set(-CW / 2 + 0.16, CH / 2, C3_CENTER_Z);
+    s.rotation.y = Math.PI / 2;
+    scene.add(s);
 }
 
 // ── Corridor 1 ────────────────────────────────────────────────────────────────
@@ -194,11 +262,35 @@ const pinkDoor = box(PINK_DOOR_W, CH, 0.2, pinkDoorMat, 0, CH/2, PINK_DOOR_Z);
 box(0.08, 0.55, 0.55, panelMat, -CW/2+0.04, BTN_Y, PINK_BTN_Z);
 const pinkBtn = box(0.18, 0.28, 0.28, pinkBtnMat, -CW/2+0.14, BTN_Y, PINK_BTN_Z);
 
+// ── Corridor 4 ────────────────────────────────────────────────────────────────
+box(CW, 0.2, CL4, floorMat,  0,    -0.1,  C4_CENTER_Z);
+box(CW, 0.2, CL4, ceilMat,   0,  CH+0.1,  C4_CENTER_Z);
+box(0.3, CH, CL4, wallMat, -CW/2, CH/2,   C4_CENTER_Z);
+box(0.3, CH, CL4, wallMat,  CW/2, CH/2,   C4_CENTER_Z);
+
+const YELLOW_DOOR_W = 2.6;
+const yellowSideW   = (CW - YELLOW_DOOR_W) / 2;
+box(yellowSideW, CH, 0.3, wallMat, -(YELLOW_DOOR_W/2+yellowSideW/2), CH/2, YELLOW_DOOR_Z);
+box(yellowSideW, CH, 0.3, wallMat,  (YELLOW_DOOR_W/2+yellowSideW/2), CH/2, YELLOW_DOOR_Z);
+const yellowDoor = box(YELLOW_DOOR_W, CH, 0.2, yellowDoorMat, 0, CH/2, YELLOW_DOOR_Z);
+
+// Sign "4" on left wall — this IS the button
+const sign4      = makeNumberSign(4, '#ffdd44');
+const sign4Shot  = makeNumberSign(4, '#ff4400');
+sign4Shot.visible = false;
+sign4.position.set(-CW / 2 + 0.16, CH / 2, C4_CENTER_Z);
+sign4.rotation.y = Math.PI / 2;
+sign4Shot.position.copy(sign4.position);
+sign4Shot.rotation.copy(sign4.rotation);
+scene.add(sign4);
+scene.add(sign4Shot);
+
 // ── Game state ────────────────────────────────────────────────────────────────
 const greenDoor  = { leftShot: false, rightShot: false, open: false };
 const blueState  = { leftShot: false, rightShot: false, open: false };
 const block      = { active: false, onFloor: false, velocityY: 0 };
 const pinkState  = { active: true, doorOpen: false, cycleShots: 0 };
+const yellowDoorState = { shot: false, open: false };
 let   blueButtonsReset = false; // true after pink button resets blue buttons
 
 let playerMinZ = DOOR_Z + 0.5;
@@ -229,6 +321,7 @@ document.addEventListener('pointerlockchange', () => {
     blocker.classList.toggle('hidden', locked);
     crosshair.classList.toggle('visible', locked);
     hud.classList.toggle('visible', locked);
+    if (locked) startAmbient();
 });
 document.addEventListener('mousemove', e => {
     if (!locked) return;
@@ -262,6 +355,7 @@ function shoot() {
     if (!blueState.leftShot)              targets.push(blueBtnLeft);
     if (!blueState.rightShot)             targets.push(blueBtnRight);
     if (pinkState.active && !pinkState.doorOpen) targets.push(pinkBtn);
+    if (!yellowDoorState.shot)                   targets.push(sign4);
 
     const hits = shootRay.intersectObjects(targets);
     if (hits.length === 0) return;
@@ -310,9 +404,15 @@ function shoot() {
 
             // Close blue door
             blueState.open = false;
+            blueState.leftShot  = false;
+            blueState.rightShot = false;
             blueDoor.visible = true;
             blueDoor.position.y = CH / 2;
             blueDoorGlow.color.set(0x0055ff);
+            blueBtnLeft.material  = blueBtnMat;
+            blueBtnRight.material = blueBtnMat;
+            blueBtnGlowL.color.set(0x2288ff);
+            blueBtnGlowR.color.set(0x2288ff);
 
             if (camera.position.z < BLUE_DOOR_Z) {
                 // Player is in pink corridor — wall them off from behind
@@ -348,11 +448,22 @@ function shoot() {
             blueBtnGlowR.color.set(0x2288ff);
             blueButtonsReset = true;
         } else {
-            // Open pink door
+            // Open pink door, allow full corridor 4
             pinkState.doorOpen = true;
             pinkDoorGlow.color.set(0xffffff);
-            playerMinZ = PINK_DOOR_Z - 5;
+            playerMinZ = YELLOW_DOOR_Z + 0.5;
         }
+    }
+
+    // ── Yellow sign (corridor 4 button) ──
+    if (hit === sign4 && !yellowDoorState.shot) {
+        yellowDoorState.shot = true;
+        sign4.visible     = false;
+        sign4Shot.visible = true;
+        sign4Glow.color.set(0xff4400);
+        yellowDoorState.open = true;
+        yellowDoorGlow.color.set(0xffffff);
+        playerMinZ = YELLOW_DOOR_Z - (CL4 / 2);
     }
 
 }
@@ -376,6 +487,12 @@ function updatePinkDoor(dt) {
     if (!pinkState.doorOpen || !pinkDoor.visible) return;
     pinkDoor.position.y += dt * 5;
     if (pinkDoor.position.y > CH * 1.8) pinkDoor.visible = false;
+}
+
+function updateYellowDoor(dt) {
+    if (!yellowDoorState.open || !yellowDoor.visible) return;
+    yellowDoor.position.y += dt * 5;
+    if (yellowDoor.position.y > CH * 1.8) yellowDoor.visible = false;
 }
 
 // ── Block physics ─────────────────────────────────────────────────────────────
@@ -498,6 +615,7 @@ function loop() {
         updateGreenDoor(dt);
         updateBlueDoor(dt);
         updatePinkDoor(dt);
+        updateYellowDoor(dt);
         updateBlock(dt);
     }
     renderer.render(scene, camera);
