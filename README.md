@@ -1,6 +1,8 @@
 
 ## [all-an.github.io](https://all-an.github.io/)
 
+Personal website on github pages
+
 ## Run Locally
 
 **With VS Code Live Server:**
@@ -30,5 +32,5 @@ Then open `http://localhost:8000`
 [![license](https://img.shields.io/github/license/hrishikeshpaul/portfolio-template?style=flat&logo=appveyor)](https://github.com/all-an/)
 
 - Licensed under the [MIT License](http://opensource.org/licenses/mit-license.php)  
-- © 2025 [Allan Pereira Abrahão](https://github.com/all-an/)
+- © 2026 [Allan Pereira Abrahão](https://github.com/all-an/)
 - allan8tech@gmail.com

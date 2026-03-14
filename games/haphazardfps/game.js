@@ -1,17 +1,28 @@
 import * as THREE from 'three';
 
-// ── Constants ──────────────────────────────────────────────────────────────
-const PLAYER_SPEED     = 8;
+// ── Constants ────────────────────────────────────────────────────────────────
+const PLAYER_SPEED     = 5;
 const PLAYER_HEIGHT    = 1.7;
 const GRAVITY          = 20;
-const JUMP_VELOCITY    = 8;
+const JUMP_VELOCITY    = 7;
 const LOOK_SENSITIVITY = 0.002;
-const MAX_AMMO         = 30;
-const ENEMY_SPEED      = 3;
-const ENEMY_COUNT      = 8;
-const MAP_SIZE         = 40;
+const MAX_AMMO         = 10;
 
-// ── Scene setup ───────────────────────────────────────────────────────────
+// Corridor 1
+const CW     = 4;
+const CH     = 3.8;
+const CL     = 22;
+const DOOR_Z = -CL / 2;          // green door  z = -11
+
+// Corridor 2
+const CL2          = 26;
+const BLUE_DOOR_Z  = DOOR_Z - CL2;           // z = -37
+const C2_CENTER_Z  = DOOR_Z - CL2 / 2;       // z = -24
+const HATCH_Z      = C2_CENTER_Z;             // z = -24  (block drops here)
+const BLUE_AREA_Z  = DOOR_Z - 4;             // z = -15  (target, behind player)
+const BLOCK_SIZE   = 0.8;
+
+// ── Renderer / Scene / Camera ────────────────────────────────────────────────
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
@@ -19,101 +30,184 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x111111);
-scene.fog = new THREE.Fog(0x111111, 15, 50);
+scene.background = new THREE.Color(0x050508);
+scene.fog = new THREE.Fog(0x050508, 10, 45);
 
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
-camera.position.set(0, PLAYER_HEIGHT, 0);
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 80);
+camera.position.set(0, PLAYER_HEIGHT, CL / 2 - 1.5);
 
-// ── Lighting ──────────────────────────────────────────────────────────────
-const ambient = new THREE.AmbientLight(0x404040, 0.5);
-scene.add(ambient);
+// ── Lighting ─────────────────────────────────────────────────────────────────
+scene.add(new THREE.AmbientLight(0x606880, 3.0));
 
-const sunLight = new THREE.DirectionalLight(0xffffff, 0.8);
-sunLight.position.set(10, 20, 10);
-sunLight.castShadow = true;
-sunLight.shadow.mapSize.set(1024, 1024);
-scene.add(sunLight);
-
-// Ceiling lights
-[-10, 0, 10].forEach(x => [-10, 0, 10].forEach(z => {
-    const pl = new THREE.PointLight(0x00ff88, 0.4, 20);
-    pl.position.set(x, 5, z);
+// Corridor 1 – ceiling strip lights
+for (let i = 0; i < 7; i++) {
+    const z = CL / 2 - 1.5 - i * (CL / 6);
+    const pl = new THREE.PointLight(0xddeeff, 2.0, 10);
+    pl.position.set(0, CH - 0.1, z);
     scene.add(pl);
-}));
+}
+// Corridor 1 – wall fill lights
+[-CW / 2 + 0.2, CW / 2 - 0.2].forEach(x =>
+    [-6, 0, 6].forEach(z => {
+        const pl = new THREE.PointLight(0xaabbff, 1.2, 8);
+        pl.position.set(x, 2, z);
+        scene.add(pl);
+    })
+);
 
-// ── Map geometry ──────────────────────────────────────────────────────────
-const floorMat  = new THREE.MeshLambertMaterial({ color: 0x222222 });
-const wallMat   = new THREE.MeshLambertMaterial({ color: 0x333344 });
-const ceilMat   = new THREE.MeshLambertMaterial({ color: 0x1a1a2e });
-const crateMat  = new THREE.MeshLambertMaterial({ color: 0x5c4033 });
+const doorGlow = new THREE.PointLight(0x00ff44, 2.5, 9);
+doorGlow.position.set(0, 1.8, DOOR_Z + 2);
+scene.add(doorGlow);
 
+// Corridor 2 – ceiling strip lights (blue tint)
+for (let i = 0; i < 7; i++) {
+    const z = DOOR_Z - 1.5 - i * (CL2 / 6);
+    const pl = new THREE.PointLight(0xbbddff, 2.0, 10);
+    pl.position.set(0, CH - 0.1, z);
+    scene.add(pl);
+}
+// Corridor 2 – wall fill lights
+[-CW / 2 + 0.2, CW / 2 - 0.2].forEach(x =>
+    [DOOR_Z - 6, DOOR_Z - 13, DOOR_Z - 20].forEach(z => {
+        const pl = new THREE.PointLight(0x4488ff, 1.2, 8);
+        pl.position.set(x, 2, z);
+        scene.add(pl);
+    })
+);
+
+const blueDoorGlow = new THREE.PointLight(0x0055ff, 2.0, 9);
+blueDoorGlow.position.set(0, 1.8, BLUE_DOOR_Z + 2);
+scene.add(blueDoorGlow);
+
+// Blue area glow on floor
+const blueAreaGlow = new THREE.PointLight(0x0088ff, 2.0, 4);
+blueAreaGlow.position.set(0, 0.6, BLUE_AREA_Z);
+scene.add(blueAreaGlow);
+
+// ── Materials ─────────────────────────────────────────────────────────────────
+const wallMat        = new THREE.MeshLambertMaterial({ color: 0x1c1c2c });
+const floorMat       = new THREE.MeshLambertMaterial({ color: 0x111118 });
+const ceilMat        = new THREE.MeshLambertMaterial({ color: 0x16161f });
+const panelMat       = new THREE.MeshLambertMaterial({ color: 0x222233 });
+const doorMat        = new THREE.MeshLambertMaterial({ color: 0x006622, emissive: 0x001a08 });
+const btnMat         = new THREE.MeshLambertMaterial({ color: 0x00ff66, emissive: 0x003311 });
+const btnShotMat     = new THREE.MeshLambertMaterial({ color: 0xff4400, emissive: 0x330e00 });
+const blueDoorMat    = new THREE.MeshLambertMaterial({ color: 0x001e88, emissive: 0x000822 });
+const blueBtnMat     = new THREE.MeshLambertMaterial({ color: 0x2288ff, emissive: 0x001144 });
+const blueBtnShotMat = new THREE.MeshLambertMaterial({ color: 0xff4400, emissive: 0x330e00 });
+const blockMat       = new THREE.MeshLambertMaterial({ color: 0x888899 });
+const hatchMat       = new THREE.MeshLambertMaterial({ color: 0x333355 });
+const blueAreaMat    = new THREE.MeshLambertMaterial({ color: 0x0055ff, emissive: 0x001144 });
+
+// ── Geometry helper ───────────────────────────────────────────────────────────
 function box(w, h, d, mat, x, y, z) {
     const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
     m.position.set(x, y, z);
-    m.receiveShadow = true;
-    m.castShadow = true;
+    m.receiveShadow = m.castShadow = true;
     scene.add(m);
     return m;
 }
 
-// Floor & ceiling
-box(MAP_SIZE, 0.2, MAP_SIZE, floorMat, 0, -0.1, 0);
-box(MAP_SIZE, 0.2, MAP_SIZE, ceilMat,  0, 6.1, 0);
+// ── Corridor 1 ────────────────────────────────────────────────────────────────
+box(CW,   0.2,  CL,  floorMat,    0,    -0.1,       0);
+box(CW,   0.2,  CL,  ceilMat,     0,  CH+0.1,       0);
+box(0.3,  CH,   CL,  wallMat,  -CW/2,  CH/2,        0);
+box(0.3,  CH,   CL,  wallMat,   CW/2,  CH/2,        0);
+box(CW,   CH,  0.3,  wallMat,     0,   CH/2,     CL/2);  // back wall
 
-// Outer walls
-const H = 6, HS = MAP_SIZE / 2;
-box(MAP_SIZE, H, 0.5, wallMat,  0,   H/2, -HS);
-box(MAP_SIZE, H, 0.5, wallMat,  0,   H/2,  HS);
-box(0.5, H, MAP_SIZE, wallMat, -HS,  H/2,   0);
-box(0.5, H, MAP_SIZE, wallMat,  HS,  H/2,   0);
+const DOOR_W = 2.6;
+const sideW  = (CW - DOOR_W) / 2;
+box(sideW, CH, 0.3, wallMat, -(DOOR_W/2 + sideW/2), CH/2, DOOR_Z);
+box(sideW, CH, 0.3, wallMat,  (DOOR_W/2 + sideW/2), CH/2, DOOR_Z);
 
-// Inner obstacles (crates & pillars)
-const obstacles = [];
-const cratePositions = [
-    [5, 1, 5], [-5, 1, 5], [5, 1, -5], [-5, 1, -5],
-    [12, 1, 0], [-12, 1, 0], [0, 1, 12], [0, 1, -12],
-    [8, 1, -8], [-8, 1, 8], [15, 2, 15], [-15, 2, -15],
-    [10, 0.5, -15], [-10, 0.5, 15],
-];
-cratePositions.forEach(([x, y, z]) => {
-    const size = 1 + Math.random();
-    obstacles.push(box(size, size * 2, size, crateMat, x, y, z));
-});
+const door = box(DOOR_W, CH, 0.2, doorMat, 0, CH/2, DOOR_Z);
 
-// ── Player state ──────────────────────────────────────────────────────────
+const BTN_Y = 1.35;
+const BTN_Z = DOOR_Z + 1.8;
+
+box(0.08, 0.55, 0.55, panelMat, -CW/2 + 0.04, BTN_Y, BTN_Z);
+box(0.08, 0.55, 0.55, panelMat,  CW/2 - 0.04, BTN_Y, BTN_Z);
+
+const btnLeft  = box(0.18, 0.28, 0.28, btnMat, -CW/2 + 0.14, BTN_Y, BTN_Z);
+const btnRight = box(0.18, 0.28, 0.28, btnMat,  CW/2 - 0.14, BTN_Y, BTN_Z);
+
+const btnGlowL = new THREE.PointLight(0x00ff66, 1.0, 2.5);
+btnGlowL.position.set(-CW/2 + 0.5, BTN_Y, BTN_Z);
+scene.add(btnGlowL);
+
+const btnGlowR = new THREE.PointLight(0x00ff66, 1.0, 2.5);
+btnGlowR.position.set(CW/2 - 0.5, BTN_Y, BTN_Z);
+scene.add(btnGlowR);
+
+// ── Corridor 2 ────────────────────────────────────────────────────────────────
+box(CW,   0.2, CL2,  floorMat,    0,    -0.1,  C2_CENTER_Z);
+box(CW,   0.2, CL2,  ceilMat,     0,  CH+0.1,  C2_CENTER_Z);
+box(0.3,  CH,  CL2,  wallMat,  -CW/2,  CH/2,   C2_CENTER_Z);
+box(0.3,  CH,  CL2,  wallMat,   CW/2,  CH/2,   C2_CENTER_Z);
+
+const BLUE_DOOR_W = 2.6;
+const blueSideW   = (CW - BLUE_DOOR_W) / 2;
+box(blueSideW, CH, 0.3, wallMat, -(BLUE_DOOR_W/2 + blueSideW/2), CH/2, BLUE_DOOR_Z);
+box(blueSideW, CH, 0.3, wallMat,  (BLUE_DOOR_W/2 + blueSideW/2), CH/2, BLUE_DOOR_Z);
+
+const blueDoor = box(BLUE_DOOR_W, CH, 0.2, blueDoorMat, 0, CH/2, BLUE_DOOR_Z);
+
+const BLUE_BTN_Z = BLUE_DOOR_Z + 1.8;
+box(0.08, 0.55, 0.55, panelMat, -CW/2 + 0.04, BTN_Y, BLUE_BTN_Z);
+box(0.08, 0.55, 0.55, panelMat,  CW/2 - 0.04, BTN_Y, BLUE_BTN_Z);
+
+const blueBtnLeft  = box(0.18, 0.28, 0.28, blueBtnMat, -CW/2 + 0.14, BTN_Y, BLUE_BTN_Z);
+const blueBtnRight = box(0.18, 0.28, 0.28, blueBtnMat,  CW/2 - 0.14, BTN_Y, BLUE_BTN_Z);
+
+const blueBtnGlowL = new THREE.PointLight(0x2288ff, 1.0, 2.5);
+blueBtnGlowL.position.set(-CW/2 + 0.5, BTN_Y, BLUE_BTN_Z);
+scene.add(blueBtnGlowL);
+
+const blueBtnGlowR = new THREE.PointLight(0x2288ff, 1.0, 2.5);
+blueBtnGlowR.position.set(CW/2 - 0.5, BTN_Y, BLUE_BTN_Z);
+scene.add(blueBtnGlowR);
+
+// Blue floor target area
+box(1.5, 0.02, 1.5, blueAreaMat, 0, 0.01, BLUE_AREA_Z);
+
+// Hatch panel (ceiling marker – disappears when buttons shot)
+const hatch = box(BLOCK_SIZE + 0.3, 0.1, BLOCK_SIZE + 0.3, hatchMat, 0, CH - 0.01, HATCH_Z);
+
+// Block – hangs at ceiling level, falls when hatch opens
+const blockMesh = box(BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE, blockMat, 0, CH - BLOCK_SIZE / 2, HATCH_Z);
+
+// ── Game state ────────────────────────────────────────────────────────────────
+const greenDoor = { leftShot: false, rightShot: false, open: false };
+const blueState = { leftShot: false, rightShot: false, open: false };
+const block     = { active: false, onFloor: false, velocityY: 0 };
+
+// ── Player state ──────────────────────────────────────────────────────────────
 const player = {
     velocity: new THREE.Vector3(),
     onGround: false,
-    health: 100,
-    score: 0,
     ammo: MAX_AMMO,
     yaw: 0,
     pitch: 0,
 };
 
-// ── Input ─────────────────────────────────────────────────────────────────
+// ── Input ─────────────────────────────────────────────────────────────────────
 const keys = {};
 document.addEventListener('keydown', e => { keys[e.code] = true; });
 document.addEventListener('keyup',   e => { keys[e.code] = false; });
 
-// ── Pointer lock ──────────────────────────────────────────────────────────
-const blocker     = document.getElementById('blocker');
-const crosshair   = document.getElementById('crosshair');
-const hud         = document.getElementById('hud');
+// ── Pointer lock ──────────────────────────────────────────────────────────────
+const blocker   = document.getElementById('blocker');
+const crosshair = document.getElementById('crosshair');
+const hud       = document.getElementById('hud');
 let locked = false;
 
-blocker.addEventListener('click', () => {
-    renderer.domElement.requestPointerLock();
-});
-
+blocker.addEventListener('click', () => renderer.domElement.requestPointerLock());
 document.addEventListener('pointerlockchange', () => {
     locked = document.pointerLockElement === renderer.domElement;
     blocker.classList.toggle('hidden', locked);
     crosshair.classList.toggle('visible', locked);
     hud.classList.toggle('visible', locked);
 });
-
 document.addEventListener('mousemove', e => {
     if (!locked) return;
     player.yaw   -= e.movementX * LOOK_SENSITIVITY;
@@ -121,12 +215,30 @@ document.addEventListener('mousemove', e => {
     player.pitch  = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, player.pitch));
 });
 
-// ── Shooting ──────────────────────────────────────────────────────────────
-const raycaster  = new THREE.Raycaster();
-const hitMarker  = document.getElementById('hit-marker');
-const scoreEl    = document.getElementById('score');
+// ── HUD ───────────────────────────────────────────────────────────────────────
+const btnCountEl = document.getElementById('score');
 const ammoEl     = document.getElementById('ammo');
-const healthEl   = document.getElementById('health');
+const statusEl   = document.getElementById('health');
+
+btnCountEl.textContent = 'BUTTONS: 0 / 2';
+ammoEl.textContent     = 'AMMO: ' + player.ammo;
+statusEl.textContent   = '';
+
+function updateHUD() {
+    if (!greenDoor.open) {
+        const n = (greenDoor.leftShot ? 1 : 0) + (greenDoor.rightShot ? 1 : 0);
+        btnCountEl.textContent = 'BUTTONS: ' + n + ' / 2';
+    } else {
+        const n = (blueState.leftShot ? 1 : 0) + (blueState.rightShot ? 1 : 0);
+        btnCountEl.textContent = 'BUTTONS: ' + n + ' / 2';
+    }
+}
+
+// ── Shooting ──────────────────────────────────────────────────────────────────
+const shootRay    = new THREE.Raycaster();
+const muzzleLight = new THREE.PointLight(0xffaa00, 0, 4);
+scene.add(muzzleLight);
+const hitMarker = document.getElementById('hit-marker');
 
 function showHitMarker() {
     hitMarker.classList.add('active');
@@ -137,153 +249,146 @@ function shoot() {
     if (!locked || player.ammo <= 0) return;
     player.ammo--;
     ammoEl.textContent = 'AMMO: ' + player.ammo;
+    muzzleLight.intensity = 6;
+    setTimeout(() => { muzzleLight.intensity = 0; }, 60);
 
-    raycaster.setFromCamera({ x: 0, y: 0 }, camera);
-    const hits = raycaster.intersectObjects(enemies.map(e => e.mesh));
-    if (hits.length > 0) {
-        const enemy = enemies.find(e => e.mesh === hits[0].object);
-        if (enemy) killEnemy(enemy);
-        showHitMarker();
+    shootRay.setFromCamera({ x: 0, y: 0 }, camera);
+
+    const targets = [];
+    if (!greenDoor.leftShot)  targets.push(btnLeft);
+    if (!greenDoor.rightShot) targets.push(btnRight);
+    if (!blueState.leftShot)  targets.push(blueBtnLeft);
+    if (!blueState.rightShot) targets.push(blueBtnRight);
+
+    const hits = shootRay.intersectObjects(targets);
+    if (hits.length === 0) return;
+
+    showHitMarker();
+    const hit = hits[0].object;
+
+    if (hit === btnLeft && !greenDoor.leftShot) {
+        greenDoor.leftShot = true;
+        btnLeft.material = btnShotMat;
+        btnGlowL.color.set(0xff4400);
+    } else if (hit === btnRight && !greenDoor.rightShot) {
+        greenDoor.rightShot = true;
+        btnRight.material = btnShotMat;
+        btnGlowR.color.set(0xff4400);
+    } else if (hit === blueBtnLeft && !blueState.leftShot) {
+        blueState.leftShot = true;
+        blueBtnLeft.material = blueBtnShotMat;
+        blueBtnGlowL.color.set(0xff4400);
+    } else if (hit === blueBtnRight && !blueState.rightShot) {
+        blueState.rightShot = true;
+        blueBtnRight.material = blueBtnShotMat;
+        blueBtnGlowR.color.set(0xff4400);
     }
 
-    // Muzzle flash
-    muzzleFlash();
+    if (greenDoor.leftShot && greenDoor.rightShot && !greenDoor.open) {
+        greenDoor.open = true;
+        doorGlow.color.set(0xffffff);
+        flash('DOOR OPEN');
+    }
+
+    if (blueState.leftShot && blueState.rightShot && !block.active) {
+        block.active = true;
+        hatch.visible = false;
+        flash('PUSH THE BLOCK TO THE BLUE AREA!');
+    }
+
+    updateHUD();
+}
+
+function flash(msg) {
+    statusEl.textContent = msg;
+    setTimeout(() => { statusEl.textContent = ''; }, 2500);
 }
 
 document.addEventListener('mousedown', e => { if (e.button === 0) shoot(); });
-document.addEventListener('keydown', e => { if (e.code === 'KeyR') reload(); });
+document.addEventListener('keydown', e => {
+    if (e.code === 'KeyR') {
+        player.ammo = MAX_AMMO;
+        ammoEl.textContent = 'AMMO: ' + player.ammo;
+    }
+});
 
-function reload() {
-    player.ammo = MAX_AMMO;
-    ammoEl.textContent = 'AMMO: ' + player.ammo;
+// ── Door animations ───────────────────────────────────────────────────────────
+function updateGreenDoor(dt) {
+    if (!greenDoor.open || !door.visible) return;
+    door.position.y += dt * 5;
+    if (door.position.y > CH * 1.8) door.visible = false;
 }
 
-// ── Muzzle flash ──────────────────────────────────────────────────────────
-const muzzleLight = new THREE.PointLight(0xffaa00, 0, 3);
-scene.add(muzzleLight);
-
-function muzzleFlash() {
-    muzzleLight.intensity = 5;
-    setTimeout(() => { muzzleLight.intensity = 0; }, 60);
+function updateBlueDoor(dt) {
+    if (!blueState.open || !blueDoor.visible) return;
+    blueDoor.position.y += dt * 5;
+    if (blueDoor.position.y > CH * 1.8) blueDoor.visible = false;
 }
 
-// ── Enemies ───────────────────────────────────────────────────────────────
-const enemyMat  = new THREE.MeshLambertMaterial({ color: 0xff2222 });
-const eyeMat    = new THREE.MeshLambertMaterial({ color: 0xffff00 });
-const enemies   = [];
+// ── Block physics ─────────────────────────────────────────────────────────────
+function updateBlock(dt) {
+    if (!block.active) return;
 
-function spawnEnemy() {
-    const group = new THREE.Group();
-
-    // Body
-    const body = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.4, 0.4), enemyMat);
-    body.position.y = 0.7;
-    group.add(body);
-
-    // Head
-    const head = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), enemyMat);
-    head.position.y = 1.65;
-    group.add(head);
-
-    // Eyes
-    [-0.12, 0.12].forEach(dx => {
-        const eye = new THREE.Mesh(new THREE.SphereGeometry(0.07, 6, 6), eyeMat);
-        eye.position.set(dx, 1.65, 0.26);
-        group.add(eye);
-    });
-
-    // Random spawn along edges, away from player start
-    let x, z;
-    do {
-        x = (Math.random() - 0.5) * (MAP_SIZE - 4);
-        z = (Math.random() - 0.5) * (MAP_SIZE - 4);
-    } while (Math.sqrt(x * x + z * z) < 8);
-
-    group.position.set(x, 0, z);
-
-    const mesh = body; // use body for raycasting
-    const enemy = { group, mesh: body, alive: true };
-    enemies.push(enemy);
-    scene.add(group);
-    return enemy;
-}
-
-for (let i = 0; i < ENEMY_COUNT; i++) spawnEnemy();
-
-function killEnemy(enemy) {
-    enemy.alive = false;
-    scene.remove(enemy.group);
-    enemies.splice(enemies.indexOf(enemy), 1);
-    player.score += 100;
-    scoreEl.textContent = 'SCORE: ' + player.score;
-
-    // Respawn after delay
-    setTimeout(spawnEnemy, 3000);
-}
-
-// ── Collision (simple AABB sphere) ────────────────────────────────────────
-function resolveCollisions() {
-    const r = 0.4;
-    const pos = camera.position;
-    obstacles.forEach(obs => {
-        const b = new THREE.Box3().setFromObject(obs);
-        b.expandByScalar(r);
-        if (b.containsPoint(pos)) {
-            const center = new THREE.Vector3();
-            b.getCenter(center);
-            const dx = pos.x - center.x;
-            const dz = pos.z - center.z;
-            if (Math.abs(dx) > Math.abs(dz)) {
-                pos.x = center.x + Math.sign(dx) * (b.max.x - b.min.x) / 2;
-            } else {
-                pos.z = center.z + Math.sign(dz) * (b.max.z - b.min.z) / 2;
-            }
+    if (!block.onFloor) {
+        block.velocityY -= GRAVITY * dt;
+        blockMesh.position.y += block.velocityY * dt;
+        if (blockMesh.position.y <= BLOCK_SIZE / 2) {
+            blockMesh.position.y = BLOCK_SIZE / 2;
+            block.velocityY = 0;
+            block.onFloor   = true;
         }
-    });
-    // Outer walls
-    const limit = MAP_SIZE / 2 - 0.6;
-    pos.x = Math.max(-limit, Math.min(limit, pos.x));
-    pos.z = Math.max(-limit, Math.min(limit, pos.z));
-}
+    }
 
-// ── Enemy AI ──────────────────────────────────────────────────────────────
-const _enemyDir = new THREE.Vector3();
+    // Constrain block inside corridor 2
+    const hw = CW / 2 - BLOCK_SIZE / 2 - 0.05;
+    blockMesh.position.x = Math.max(-hw, Math.min(hw, blockMesh.position.x));
+    blockMesh.position.z = Math.max(BLUE_DOOR_Z + BLOCK_SIZE / 2 + 0.1,
+                           Math.min(DOOR_Z  - BLOCK_SIZE / 2 - 0.1, blockMesh.position.z));
 
-function updateEnemies(dt) {
-    enemies.forEach(enemy => {
-        if (!enemy.alive) return;
-        _enemyDir.set(
-            camera.position.x - enemy.group.position.x,
-            0,
-            camera.position.z - enemy.group.position.z
-        );
-        const dist = _enemyDir.length();
-        if (dist < 0.01) return;
-        _enemyDir.normalize();
-        enemy.group.position.addScaledVector(_enemyDir, ENEMY_SPEED * dt);
-        enemy.group.lookAt(camera.position.x, enemy.group.position.y, camera.position.z);
-
-        // Damage player on contact
-        if (dist < 1.2) {
-            player.health -= 10 * dt;
-            player.health = Math.max(0, player.health);
-            healthEl.textContent = 'HP: ' + Math.ceil(player.health);
+    // Check if block is over the blue target area
+    if (block.onFloor && !blueState.open) {
+        const dx = Math.abs(blockMesh.position.x - 0);
+        const dz = Math.abs(blockMesh.position.z - BLUE_AREA_Z);
+        if (dx < 0.75 && dz < 0.75) {
+            blueState.open = true;
+            blueDoorGlow.color.set(0xffffff);
+            flash('BLUE DOOR OPEN!');
         }
-    });
+    }
 }
 
-// ── Movement ──────────────────────────────────────────────────────────────
-const _move = new THREE.Vector3();
-const _fwd  = new THREE.Vector3();
+// ── Player ↔ block push ───────────────────────────────────────────────────────
+function applyBlockPush() {
+    if (!block.active || !block.onFloor) return;
+
+    const dx   = camera.position.x - blockMesh.position.x;
+    const dz   = camera.position.z - blockMesh.position.z;
+    const dist = Math.sqrt(dx * dx + dz * dz);
+    const min  = BLOCK_SIZE / 2 + 0.45;
+
+    if (dist < min && dist > 0.001) {
+        const nx = dx / dist;
+        const nz = dz / dist;
+        const ov = min - dist;
+        // Push player out
+        camera.position.x += nx * ov;
+        camera.position.z += nz * ov;
+        // Push block away
+        blockMesh.position.x -= nx * ov;
+        blockMesh.position.z -= nz * ov;
+    }
+}
+
+// ── Player movement & physics ─────────────────────────────────────────────────
+const _move  = new THREE.Vector3();
+const _fwd   = new THREE.Vector3();
 const _right = new THREE.Vector3();
 
 function updatePlayer(dt) {
-    // Camera rotation
     camera.rotation.order = 'YXZ';
     camera.rotation.y = player.yaw;
     camera.rotation.x = player.pitch;
 
-    // Horizontal movement
     _fwd.set(-Math.sin(player.yaw), 0, -Math.cos(player.yaw));
     _right.set(Math.cos(player.yaw), 0, -Math.sin(player.yaw));
 
@@ -292,17 +397,14 @@ function updatePlayer(dt) {
     if (keys['KeyS'] || keys['ArrowDown'])  _move.addScaledVector(_fwd,   -1);
     if (keys['KeyA'] || keys['ArrowLeft'])  _move.addScaledVector(_right, -1);
     if (keys['KeyD'] || keys['ArrowRight']) _move.addScaledVector(_right,  1);
-
     if (_move.lengthSq() > 0) _move.normalize();
-    _move.multiplyScalar(PLAYER_SPEED * dt);
 
-    camera.position.x += _move.x;
-    camera.position.z += _move.z;
+    camera.position.x += _move.x * PLAYER_SPEED * dt;
+    camera.position.z += _move.z * PLAYER_SPEED * dt;
 
-    // Gravity & jump
     if (keys['Space'] && player.onGround) {
         player.velocity.y = JUMP_VELOCITY;
-        player.onGround = false;
+        player.onGround   = false;
     }
     player.velocity.y -= GRAVITY * dt;
     camera.position.y += player.velocity.y * dt;
@@ -310,22 +412,30 @@ function updatePlayer(dt) {
     if (camera.position.y <= PLAYER_HEIGHT) {
         camera.position.y = PLAYER_HEIGHT;
         player.velocity.y = 0;
-        player.onGround = true;
+        player.onGround   = true;
     }
 
-    // Muzzle light follows camera
+    // X: corridor walls
+    camera.position.x = Math.max(-CW / 2 + 0.45, Math.min(CW / 2 - 0.45, camera.position.x));
+
+    // Z: gated by which doors are open
+    let minZ = DOOR_Z + 0.5;
+    if (greenDoor.open)  minZ = BLUE_DOOR_Z + 0.5;
+    if (blueState.open)  minZ = BLUE_DOOR_Z - 5;
+    camera.position.z = Math.max(minZ, Math.min(CL / 2 - 0.45, camera.position.z));
+
+    applyBlockPush();
     muzzleLight.position.copy(camera.position);
-    resolveCollisions();
 }
 
-// ── Resize ────────────────────────────────────────────────────────────────
+// ── Resize ────────────────────────────────────────────────────────────────────
 window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// ── Loop ──────────────────────────────────────────────────────────────────
+// ── Loop ──────────────────────────────────────────────────────────────────────
 let last = performance.now();
 
 function loop() {
@@ -336,7 +446,9 @@ function loop() {
 
     if (locked) {
         updatePlayer(dt);
-        updateEnemies(dt);
+        updateGreenDoor(dt);
+        updateBlueDoor(dt);
+        updateBlock(dt);
     }
     renderer.render(scene, camera);
 }
