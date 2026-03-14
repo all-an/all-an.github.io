@@ -352,7 +352,6 @@ function updateBlock(dt) {
         if (dx < 0.75 && dz < 0.75) {
             blueState.open = true;
             blueDoorGlow.color.set(0xffffff);
-            flash('BLUE DOOR OPEN!');
         }
     }
 }
