@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { startAmbient } from './ambient-sound.js';
+import { startAmbient } from '../music/ambient-sound.js';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const PLAYER_SPEED     = 5;
@@ -504,6 +504,11 @@ document.addEventListener('pointerlockchange', () => {
     hud.classList.toggle('visible', locked);
     if (locked) startAmbient();
 });
+
+if (sessionStorage.getItem('haphazardMusic')) {
+    sessionStorage.removeItem('haphazardMusic');
+    startAmbient();
+}
 document.addEventListener('mousemove', e => {
     if (!locked) return;
     player.yaw   -= e.movementX * LOOK_SENSITIVITY;

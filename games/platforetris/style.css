@@ -1,0 +1,51 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #111;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-family: monospace;
+}
+
+#game-container {
+  position: relative;
+}
+
+#game-canvas {
+  display: block;
+  border: 2px solid #444;
+}
+
+#cell-tooltip {
+  position: fixed;
+  display: none;
+  background: #12122a;
+  border: 2px solid #5555cc;
+  border-radius: 8px;
+  padding: 12px 20px;
+  pointer-events: none;
+  z-index: 100;
+  box-shadow: 0 0 20px #5555cc88;
+  text-align: center;
+}
+
+#cell-tooltip .cell-number {
+  font-family: monospace;
+  font-size: 48px;
+  font-weight: bold;
+  color: #e0e0ff;
+  line-height: 1;
+}
+
+#cell-tooltip .cell-coords {
+  font-family: monospace;
+  font-size: 11px;
+  color: #7777aa;
+  margin-top: 4px;
+}
