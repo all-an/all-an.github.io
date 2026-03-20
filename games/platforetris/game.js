@@ -32,16 +32,40 @@ const PLATFORMS = [
   { col: 22, row: 25, color: '#e63946', border: '#ff6b75' },
   { col: 23, row: 25, color: '#2a9d8f', border: '#4ecdc4' },
   { col: 24, row: 25, color: '#e9c46a', border: '#ffd97d' },
+  { col:  7, row: 17, color: '#1a4a8a', border: '#4488dd' }, // 688
+  { col:  7, row: 18, color: '#1a4a8a', border: '#4488dd' }, // 728
+  { col:  7, row: 19, color: '#1a4a8a', border: '#4488dd' }, // 768
+  { col: 12, row: 18, color: '#00cc44', border: '#66ff88' }, // 733
+  { col: 12, row: 19, color: '#00cc44', border: '#66ff88' }, // 773
+  { col:  2, row: 13, color: '#ff00cc', border: '#ff66ee' }, // 523
+  { col:  3, row: 13, color: '#ff00cc', border: '#ff66ee' }, // 524
+  { col:  9, row: 11, color: '#ffcc00', border: '#ffe566' }, // 450
+  { col: 10, row: 11, color: '#ffcc00', border: '#ffe566' }, // 451
+  { col: 15, row:  8, color: '#00eeff', border: '#66f7ff' }, // 336
+  { col: 16, row:  8, color: '#00eeff', border: '#66f7ff' }, // 337
+  { col: 20, row:  6, color: '#ff4400', border: '#ff8855' }, // 261
+  { col: 21, row:  6, color: '#ff4400', border: '#ff8855' }, // 262
+  { col: 13, row:  3, color: '#aa00ff', border: '#cc66ff' }, // 134
+  { col: 14, row:  3, color: '#aa00ff', border: '#cc66ff' }, // 135
 ];
 
-// ── Filled cells (player color) — cells 991, 993, 994, 995, row 24 ─────────────
+// ── Filled cells (player color) — cells 818, 858, 938, 978, 991, 993–995 ───────
 // These are solid platforms. Cell 992 (col 31, row 24) is the gap / trigger.
 let filledCells = [
+  { col: 17, row: 20 }, // 818
+  { col: 17, row: 21 }, // 858
+  { col: 17, row: 23 }, // 938
+  { col: 17, row: 24 }, // 978
   { col: 30, row: 24 }, // 991
   // 992 — gap (trigger)
   { col: 32, row: 24 }, // 993
   { col: 33, row: 24 }, // 994
   { col: 34, row: 24 }, // 995
+  { col:  2, row: 29 }, // 1163
+  { col:  3, row: 29 }, // 1164
+  // 1165 — gap (col 4, row 29)
+  { col:  5, row: 29 }, // 1166
+  { col:  6, row: 29 }, // 1167
 ];
 
 // ── Piece ──────────────────────────────────────────────────────────────────────
@@ -199,20 +223,9 @@ function updateParticles() {
   }
 }
 
-// Draw a fill-progress ring on cell 992 while the timer counts down
-function drawFillProgress(offX = 0, offY = 0) {
-  if (fillStartTime === null || exploded) return;
-  const progress = Math.min((performance.now() - fillStartTime) / FILL_DELAY, 1);
-  const cx = TRIGGER_COL * CELL + CELL / 2 + offX;
-  const cy = TRIGGER_ROW * CELL + CELL / 2 + offY;
-  const r  = CELL / 2 - 1;
-  ctx.save();
-  ctx.strokeStyle = 'rgba(255,255,255,0.85)';
-  ctx.lineWidth   = 2;
-  ctx.beginPath();
-  ctx.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * progress);
-  ctx.stroke();
-  ctx.restore();
+function updateFillBar() {
+  const pct = fillTimer !== null ? Math.min((performance.now() - fillTimer) / FILL_DELAY * 100, 100) : 0;
+  elFillBar.style.width = pct + '%';
 }
 
 function drawParticles(offX = 0, offY = 0) {
@@ -227,15 +240,37 @@ function drawParticles(offX = 0, offY = 0) {
   }
 }
 
-// ── Explosion logic ────────────────────────────────────────────────────────────
-let exploded = false;
+// ── Shared explosion helpers ───────────────────────────────────────────────────
+// Returns the block number of the first block (from validNums, or any if null)
+// that overlaps grid cell (col, row) via AABB, or null if none.
+function findBlockAtCell(offsets, col, row, validNums = null) {
+  const gLeft = col * CELL, gRight = gLeft + CELL;
+  const gTop  = row * CELL, gBottom = gTop  + CELL;
+  for (let i = 0; i < offsets.length; i++) {
+    if (validNums && !validNums.includes(piece.blockNums[i])) continue;
+    const bLeft = piece.x + offsets[i].dx;
+    const bTop  = piece.y + offsets[i].dy;
+    if (bLeft + CELL > gLeft && bLeft < gRight && bTop + CELL > gTop && bTop < gBottom)
+      return piece.blockNums[i];
+  }
+  return null;
+}
 
-// Trigger: piece block covers cell 992 (col 31, row 24)
-// Destroy zone: cols 30–34, row 24 (cells 991–995)
-const TRIGGER_COL  = 31;
-const TRIGGER_ROW  = 24;
-const DESTROY_ROW  = 24;
-const DESTROY_COLS = new Set([30, 31, 32, 33, 34]);
+// Tag offsets with block numbers, keep those passing keepFn, update piece to
+// the largest remaining connected group.
+function applyBlockExplosion(offsets, keepFn) {
+  const tagged    = offsets.map((b, i) => ({ ...b, num: piece.blockNums[i] }));
+  const surviving = tagged.filter(({ dx, dy }) => keepFn(blockCell(dx, dy)));
+  const connected = largestConnected(surviving);
+  piece.customBlocks = connected.map(({ dx, dy }) => ({ dx, dy }));
+  piece.blockNums    = connected.map(b => b.num);
+  piece.spinning     = false;
+}
+
+// ── Explosion state ────────────────────────────────────────────────────────────
+let fillTimer    = null;   // fill-progress timer start (ms), null when inactive
+let pendingChain = null;   // { axis, index, chain } being tracked
+const FILL_DELAY = 1500;   // ms
 
 // Find the largest group of adjacent blocks (4-connected) and return them
 // with offsets re-normalised so min(dx)=0, min(dy)=0 (adjusts piece.x/y too).
@@ -280,76 +315,100 @@ function largestConnected(blocks) {
   return result.map(b => ({ ...b, dx: b.dx - minDX, dy: b.dy - minDY }));
 }
 
-// Two-step state: block 4 must enter cell 992 before block 3 can trigger.
-let block4Entered = false;
+// Returns the largest contiguous mixed chain of ≥5 as an array of {v, p},
+// or null if none reaches 5. Works on any 1-D list of row or column indices.
+function findMixedChain5(playerVals, filledVals) {
+  if (!playerVals.length || !filledVals.length) return null;
+  const tagged = [
+    ...playerVals.map(v => ({ v, p: true  })),
+    ...filledVals.map(v => ({ v, p: false })),
+  ].sort((a, b) => a.v - b.v);
 
-// How long (ms) block 2 or 4 has been filling cell 992 while settled.
-let fillStartTime = null;
-const FILL_DELAY  = 1500; // ms
-
-function checkExplosion() {
-  if (exploded || roomX !== 0 || roomY !== 0) return;
-
-  const offsets = getBlockOffsets();
-
-  // Which block number overlaps cell 992 while the piece is grounded?
-  // Uses AABB overlap so any partial entry into the gap counts.
-  const gLeft   = TRIGGER_COL * CELL;
-  const gRight  = gLeft + CELL;
-  const gTop    = TRIGGER_ROW * CELL;
-  const gBottom = gTop  + CELL;
-  let numAtGap = null;
-  if (piece.onGround) {
-    for (let i = 0; i < offsets.length; i++) {
-      const bLeft   = piece.x + offsets[i].dx;
-      const bTop    = piece.y + offsets[i].dy;
-      const bRight  = bLeft + CELL;
-      const bBottom = bTop  + CELL;
-      if (bRight > gLeft && bLeft < gRight && bBottom > gTop && bTop < gBottom) {
-        numAtGap = piece.blockNums[i];
-        break;
+  let best = null, start = 0;
+  for (let i = 1; i <= tagged.length; i++) {
+    if (i === tagged.length || tagged[i].v - tagged[i - 1].v > 1) {
+      const g = tagged.slice(start, i);
+      if (g.some(x => x.p) && g.some(x => !x.p) && g.length >= 5) {
+        if (!best || g.length > best.length) best = g;
       }
+      start = i;
     }
   }
+  return best;
+}
 
-  // Step 1: block 4 visits cell 992 — unlock step 2
-  if (numAtGap === 4) {
-    block4Entered = true;
-    fillStartTime = null;
-    return;
+// Scan every column and every row for a mixed chain of ≥5.
+// Returns { axis:'col'|'row', index, chain } or null.
+function findChain5() {
+  if (!piece.onGround) return null;
+  const offsets = getBlockOffsets();
+  const pCells  = offsets.map(b => blockCell(b.dx, b.dy));
+
+  const cols = new Set([...pCells.map(c => c.col), ...filledCells.map(c => c.col)]);
+  for (const col of cols) {
+    const pV = pCells.filter(c => c.col === col).map(c => c.row);
+    const fV = filledCells.filter(c => c.col === col).map(c => c.row);
+    const ch = findMixedChain5(pV, fV);
+    if (ch) return { axis: 'col', index: col, chain: ch };
   }
 
-  // Step 2: block 3 fills (after block 4 entered) OR block 1 fills (independent)
-  const qualifying = (block4Entered && numAtGap === 3) || numAtGap === 1;
-  if (!qualifying) {
-    fillStartTime = null;
-    return;
+  const rows = new Set([...pCells.map(c => c.row), ...filledCells.map(c => c.row)]);
+  for (const row of rows) {
+    const pV = pCells.filter(c => c.row === row).map(c => c.col);
+    const fV = filledCells.filter(c => c.row === row).map(c => c.col);
+    const ch = findMixedChain5(pV, fV);
+    if (ch) return { axis: 'row', index: row, chain: ch };
   }
 
-  // Start the timer on first qualifying frame
-  if (fillStartTime === null) fillStartTime = performance.now();
+  return null;
+}
 
-  // Wait for 1.5 s of continuous fill
-  if (performance.now() - fillStartTime < FILL_DELAY) return;
+function checkExplosion() {
+  if (roomX !== 0 || roomY !== 0) return;
 
-  // ── Trigger explosion ──
-  exploded = true;
-  block4Entered = true; // disable hidden stop
-  fillStartTime = null;
+  const found = findChain5();
+  if (!found) { fillTimer = null; pendingChain = null; return; }
+
+  // Reset timer when the chain changes (different line or different extent)
+  if (!pendingChain
+      || pendingChain.axis  !== found.axis
+      || pendingChain.index !== found.index
+      || pendingChain.chain[0].v !== found.chain[0].v) {
+    fillTimer    = performance.now();
+    pendingChain = found;
+  }
+  if (performance.now() - fillTimer < FILL_DELAY) return;
+
+  // Fire!
+  fillTimer    = null;
+  pendingChain = null;
   playExplosionSound();
-  filledCells = [];
-  spawnExplosion(TRIGGER_COL * CELL + CELL / 2, TRIGGER_ROW * CELL + CELL / 2);
 
-  // Tag each block with its persistent number before filtering
-  const taggedOffsets   = offsets.map((b, i) => ({ ...b, num: piece.blockNums[i] }));
-  const survivingTagged = taggedOffsets.filter(({ dx, dy }) => {
-    const { col, row } = blockCell(dx, dy);
-    return !(DESTROY_COLS.has(col) && row === DESTROY_ROW);
-  });
-  const connected       = largestConnected(survivingTagged);
-  piece.customBlocks    = connected.map(({ dx, dy }) => ({ dx, dy }));
-  piece.blockNums       = connected.map(b => b.num);
-  piece.spinning = false;
+  const { axis, index, chain } = found;
+  const chainVals = new Set(chain.map(x => x.v));
+  const offsets   = getBlockOffsets();
+
+  if (axis === 'col') {
+    for (const x of chain.filter(x => !x.p))
+      spawnExplosion(index * CELL + CELL / 2, x.v * CELL + CELL / 2);
+    for (const b of offsets) {
+      const { col, row } = blockCell(b.dx, b.dy);
+      if (col === index && chainVals.has(row))
+        spawnExplosion(index * CELL + CELL / 2, row * CELL + CELL / 2);
+    }
+    filledCells = filledCells.filter(c => !(c.col === index && chainVals.has(c.row)));
+    applyBlockExplosion(offsets, ({ col, row }) => !(col === index && chainVals.has(row)));
+  } else {
+    for (const x of chain.filter(x => !x.p))
+      spawnExplosion(x.v * CELL + CELL / 2, index * CELL + CELL / 2);
+    for (const b of offsets) {
+      const { col, row } = blockCell(b.dx, b.dy);
+      if (row === index && chainVals.has(col))
+        spawnExplosion(col * CELL + CELL / 2, index * CELL + CELL / 2);
+    }
+    filledCells = filledCells.filter(c => !(c.row === index && chainVals.has(c.col)));
+    applyBlockExplosion(offsets, ({ col, row }) => !(row === index && chainVals.has(col)));
+  }
 }
 
 // ── Physics update ─────────────────────────────────────────────────────────────
@@ -364,6 +423,7 @@ function update() {
       if      (transitionDirX ===  1) piece.x = 2;
       else if (transitionDirX === -1) piece.x = canvas.width  - w - 2;
       else if (transitionDirY === -1) piece.y = canvas.height - h;
+      else if (transitionDirY ===  1) piece.y = 0;
       piece.vy           = 0;
       piece.onGround     = false;
       transitioning      = false;
@@ -407,26 +467,26 @@ function update() {
     }
   }
 
-  // Horizontal movement — locked and snapped when any block is inside cell 992
-  const gL = TRIGGER_COL * CELL, gR = gL + CELL;
-  const gT = TRIGGER_ROW * CELL, gB = gT + CELL;
-  let lockedInGap = false;
-  if (!exploded) {
-    for (const { dx, dy } of getBlockOffsets()) {
-      const bL = piece.x + dx, bR = bL + CELL;
-      const bT = piece.y + dy, bB = bT + CELL;
-      if (bR > gL && bL < gR && bB > gT && bT < gB) {
-        lockedInGap = true;
-        piece.x = TRIGGER_COL * CELL - dx; // snap block to col 31
-        break;
+  // Snap: while the fill timer is running, pixel-align the contributing player block
+  // exactly onto its cell. Pressing left/right releases the snap.
+  const movingLaterally = keys['ArrowLeft'] || keys['KeyA'] || keys['ArrowRight'] || keys['KeyD'];
+  if (!movingLaterally && pendingChain !== null) {
+    const offs = getBlockOffsets();
+    const { axis, index, chain } = pendingChain;
+    const playerVals = new Set(chain.filter(x => x.p).map(x => x.v));
+    for (const { dx, dy } of offs) {
+      const { col, row } = blockCell(dx, dy);
+      if (axis === 'col' && col === index) {
+        piece.x = index * CELL - dx; break;
+      } else if (axis === 'row' && row === index && playerVals.has(col)) {
+        piece.x = col * CELL - dx; break;
       }
     }
   }
+
   piece.vx = 0;
-  if (!lockedInGap) {
-    if (keys['ArrowLeft']  || keys['KeyA']) piece.vx = -SPEED;
-    if (keys['ArrowRight'] || keys['KeyD']) piece.vx =  SPEED;
-  }
+  if (keys['ArrowLeft']  || keys['KeyA']) piece.vx = -SPEED;
+  if (keys['ArrowRight'] || keys['KeyD']) piece.vx =  SPEED;
 
   // Jump
   if ((keys['ArrowUp'] || keys['KeyW'] || keys['Space']) && piece.onGround) {
@@ -451,16 +511,18 @@ function update() {
   if (roomX === 0 && roomY === 0) {
     const offsets = getBlockOffsets();
 
-    const gapLeft  = TRIGGER_COL * CELL;
-    const gapRight = gapLeft + CELL;
-
-    // Land-on-top helper. skipGap=true skips blocks whose center is over the gap column.
-    function landOn(px, py, skipGap = false) {
+    // Land-on-top helper.
+    // For filledCells, skip a block whose center is in a gap column — a column that
+    // has no filledCell in this same row — so it can fall into the gap rather than
+    // landing on top of adjacent filled squares.
+    function landOn(px, py, filledRow = -1) {
       for (const { dx, dy } of offsets) {
-        const bLeft   = piece.x + dx;
-        const bRight  = bLeft + CELL;
-        const bCenter = bLeft + CELL / 2;
-        if (skipGap && bCenter >= gapLeft && bCenter < gapRight) continue;
+        const bLeft      = piece.x + dx;
+        const bRight     = bLeft + CELL;
+        const bCenterCol = Math.floor((bLeft + CELL / 2) / CELL);
+        if (filledRow >= 0
+            && bCenterCol !== Math.floor(px / CELL)
+            && !filledCells.some(c => c.col === bCenterCol && c.row === filledRow)) continue;
         const bBottom = piece.y + dy + CELL;
         if (bRight > px && bLeft < px + CELL) {
           if (piece.vy >= 0 && bBottom >= py && bBottom <= py + CELL + Math.abs(piece.vy) + 1) {
@@ -473,8 +535,7 @@ function update() {
     }
 
     for (const plat of PLATFORMS) landOn(plat.col * CELL, plat.row * CELL);
-    for (const cell of filledCells) landOn(cell.col * CELL, cell.row * CELL, true);
-    if (!block4Entered) landOn(TRIGGER_COL * CELL, (TRIGGER_ROW + 1) * CELL); // invisible stop — removed after block 4 enters
+    for (const cell of filledCells) landOn(cell.col * CELL, cell.row * CELL, cell.row);
 
     checkExplosion();
   }
@@ -493,6 +554,9 @@ function update() {
   } else if (piece.y <= 0) {
     piece.y = 0; piece.vy = 0;
     startTransition(0, -1);
+  } else if (piece.onGround && piece.y >= canvas.height - h
+             && (keys['ArrowDown'] || keys['KeyS'])) {
+    startTransition(0, 1);
   }
 }
 
@@ -608,16 +672,15 @@ function drawGrid() {
     if      (transitionDirX ===  1) { curOffX = -p*W; nxtRX = roomX+1; nxtOffX =  (1-p)*W; }
     else if (transitionDirX === -1) { curOffX =  p*W; nxtRX = roomX-1; nxtOffX = -(1-p)*W; }
     else if (transitionDirY === -1) { curOffY =  p*H; nxtRY = roomY-1; nxtOffY = -(1-p)*H; }
+    else if (transitionDirY ===  1) { curOffY = -p*H; nxtRY = roomY+1; nxtOffY =  (1-p)*H; }
 
     drawRoom(roomX, roomY, curOffX, curOffY);
     drawRoom(nxtRX, nxtRY, nxtOffX, nxtOffY);
     drawPiece(curOffX, curOffY);
-    drawFillProgress(curOffX, curOffY);
     drawParticles(curOffX, curOffY);
   } else {
     drawRoom(roomX, roomY, 0, 0);
     drawPiece(0, 0);
-    drawFillProgress(0, 0);
     drawParticles(0, 0);
   }
 
@@ -625,14 +688,14 @@ function drawGrid() {
 }
 
 // ── Game loop ──────────────────────────────────────────────────────────────────
-let _lastLogTime = 0;
+const elDegrees = document.getElementById('piece-degrees');
+const elFillBar = document.getElementById('fill-bar');
+const ROTATION_DEGREES = ['0°', '90°', '180°', '270°'];
+
 function loop() {
   update(); updateParticles(); drawGrid();
-  const now = performance.now();
-  if (now - _lastLogTime >= 200) {
-    _lastLogTime = now;
-    console.log(`piece  x=${piece.x.toFixed(2)}  y=${piece.y.toFixed(2)}  col=${(piece.x/CELL).toFixed(2)}  row=${(piece.y/CELL).toFixed(2)}`);
-  }
+  elDegrees.textContent = piece.customBlocks ? '—' : ROTATION_DEGREES[piece.rotIndex];
+  updateFillBar();
   requestAnimationFrame(loop);
 }
 
@@ -663,5 +726,27 @@ canvas.addEventListener('mouseleave', () => {
   hoveredCol = -1; hoveredRow = -1;
   tooltip.style.display = 'none';
 });
+
+// ── Background grid hover (outside canvas) ────────────────────────────────────
+const bgTooltip = document.getElementById('bg-tooltip');
+
+function bgCellId(col, row) {
+  // Deterministic 4-char base-36 code from position
+  const n = (((col + 1) * 2654435761) ^ ((row + 1) * 2246822519)) >>> 0;
+  return (n % (36 ** 4)).toString(36).padStart(4, '0');
+}
+
+document.addEventListener('mousemove', (e) => {
+  if (e.target === canvas || canvas.contains(e.target)) return;
+  const col = Math.floor(e.clientX / CELL);
+  const row = Math.floor(e.clientY / CELL);
+  bgTooltip.textContent = bgCellId(col, row);
+  bgTooltip.style.left    = (e.clientX + 14) + 'px';
+  bgTooltip.style.top     = (e.clientY + 14) + 'px';
+  bgTooltip.style.display = 'block';
+});
+
+document.addEventListener('mouseleave', () => { bgTooltip.style.display = 'none'; });
+canvas.addEventListener('mouseenter',   () => { bgTooltip.style.display = 'none'; });
 
 loop();
