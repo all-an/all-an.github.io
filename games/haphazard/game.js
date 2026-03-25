@@ -47,6 +47,8 @@ const C6_CENTER_Z   = TEAL_DOOR_Z - CL6 / 2; // z = -113
 const CL7           = 22;
 const PURPLE_DOOR_Z = ORANGE_DOOR_Z - CL7;    // z = -145
 const C7_CENTER_Z   = ORANGE_DOOR_Z - CL7 / 2; // z = -134
+const C7_HOLE_Z     = PURPLE_DOOR_Z + 3;        // hole center z = -142
+const C7_HOLE_S     = 1.8;                       // square hole side size
 
 // Corridor 6 crush section (between the two side lights at TEAL_DOOR_Z-5 and TEAL_DOOR_Z-13)
 const C6_CRUSH_Z1     = TEAL_DOOR_Z - 5;
@@ -202,6 +204,8 @@ scene.add(purpleDoorGlow);
 const wallMat          = new THREE.MeshLambertMaterial({ color: 0x1c1c2c });
 const floorMat         = new THREE.MeshLambertMaterial({ color: 0x111118 });
 const ceilMat          = new THREE.MeshLambertMaterial({ color: 0x16161f });
+const rooftopMat       = new THREE.MeshLambertMaterial({ color: 0x1a2a3a, emissive: 0x06101e }); // highlighted exterior surface
+const floorHighMat     = new THREE.MeshLambertMaterial({ color: 0x16161e, emissive: 0x05050e }); // highlighted interior floor surface
 const panelMat         = new THREE.MeshLambertMaterial({ color: 0x222233 });
 const doorMat          = new THREE.MeshLambertMaterial({ color: 0x006622, emissive: 0x001a08 });
 const btnMat           = new THREE.MeshLambertMaterial({ color: 0x00ff66, emissive: 0x003311 });
@@ -224,6 +228,9 @@ const c6BtnMat         = new THREE.MeshLambertMaterial({ color: 0xff6600, emissi
 const c6BtnShotMat     = new THREE.MeshLambertMaterial({ color: 0x550000, emissive: 0x110000 });
 const c6WallMoveMat    = new THREE.MeshLambertMaterial({ color: 0x1a0000, emissive: 0x110000 });
 const purpleDoorMat    = new THREE.MeshLambertMaterial({ color: 0x5500aa, emissive: 0x150030 });
+const c7BtnMat         = new THREE.MeshLambertMaterial({ color: 0xcc66ff, emissive: 0x220033 });
+const c7BtnShotMat     = new THREE.MeshLambertMaterial({ color: 0x440066, emissive: 0x110011 });
+const c7PlatformMat    = new THREE.MeshLambertMaterial({ color: 0x9955cc, emissive: 0x1a0033 });
 
 // ── Geometry helper ───────────────────────────────────────────────────────────
 function box(w, h, d, mat, x, y, z) {
@@ -417,10 +424,29 @@ const orangeDoor = box(ORANGE_DOOR_W, CH, 0.2, orangeDoorMat, 0, CH/2, ORANGE_DO
 
 // ── Corridor 7 ────────────────────────────────────────────────────────────────
 box(CW, 0.2, CL7, floorMat,  0,    -0.1,  C7_CENTER_Z);
-box(CW, 0.2, CL7, ceilMat,   0,  CH+0.1,  C7_CENTER_Z);
+// Ceiling with square hole right before the purple door
+{
+    const sideW    = (CW - C7_HOLE_S) / 2;
+    const frontLen = Math.abs(ORANGE_DOOR_Z - (C7_HOLE_Z + C7_HOLE_S / 2));
+    const backLen  = Math.abs((C7_HOLE_Z - C7_HOLE_S / 2) - PURPLE_DOOR_Z);
+    box(CW,      0.2, frontLen,  ceilMat, 0,                                 CH + 0.1, (ORANGE_DOOR_Z + C7_HOLE_Z + C7_HOLE_S / 2) / 2);
+    box(CW,      0.2, backLen,   ceilMat, 0,                                 CH + 0.1, ((C7_HOLE_Z - C7_HOLE_S / 2) + PURPLE_DOOR_Z) / 2);
+    box(sideW,   0.2, C7_HOLE_S, ceilMat, -(C7_HOLE_S / 2 + sideW / 2),    CH + 0.1, C7_HOLE_Z);
+    box(sideW,   0.2, C7_HOLE_S, ceilMat,  (C7_HOLE_S / 2 + sideW / 2),    CH + 0.1, C7_HOLE_Z);
+}
 box(0.3, CH, CL7, wallMat, -CW/2, CH/2,   C7_CENTER_Z);
 box(0.3, CH, CL7, wallMat,  CW/2, CH/2,   C7_CENTER_Z);
 box(CW,  CH, 0.3, wallMat,  0,   CH/2,  PURPLE_DOOR_Z - 0.15);
+
+// Button — left wall, below the 7 sign
+box(0.08, 0.55, 0.55, panelMat, -CW/2+0.04, BTN_Y, C7_CENTER_Z);
+const c7Btn = box(0.18, 0.28, 0.28, c7BtnMat, -CW/2+0.14, BTN_Y, C7_CENTER_Z);
+const c7BtnGlow = new THREE.PointLight(0xcc66ff, 1.0, 2.5);
+c7BtnGlow.position.set(-CW/2+0.5, BTN_Y, C7_CENTER_Z);
+scene.add(c7BtnGlow);
+
+// Platform — starts on the floor under the hole, rises to fill it
+const c7Platform = box(C7_HOLE_S, 0.2, C7_HOLE_S, c7PlatformMat, 0, 0.1, C7_HOLE_Z);
 
 const PURPLE_DOOR_W = 2.6;
 const purpleSideW   = (CW - PURPLE_DOOR_W) / 2;
@@ -432,6 +458,49 @@ const purpleDoor = box(PURPLE_DOOR_W, CH, 0.2, purpleDoorMat, 0, CH/2, PURPLE_DO
 // sliding inward until their inner face meets at x = 0
 const c6CrushLeft  = box(CW, CH, C6_CRUSH_LEN, wallMat, -CW, CH/2, C6_CRUSH_CTRZ);
 const c6CrushRight = box(CW, CH, C6_CRUSH_LEN, wallMat,  CW, CH/2, C6_CRUSH_CTRZ);
+
+// ── Starfield (visible from outside through roof hole) ────────────────────────
+{
+    const starArr = [];
+    const rng = () => Math.random();
+    for (let i = 0; i < 3000; i++) {
+        starArr.push(
+            (rng() - 0.5) * 120,                      // x: wide spread
+            CH + 5 + rng() * 60,                       // y: above corridors
+            CL / 2 - rng() * 220                       // z: along corridor strip + beyond
+        );
+    }
+    const starGeo = new THREE.BufferGeometry();
+    starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starArr, 3));
+    scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.18, sizeAttenuation: true })));
+}
+
+// ── Rooftop surface (walkable exterior on top of all corridors) ───────────────
+// Four-piece slab matching the ceiling hole gap in corridor 7 so the hole stays open.
+// Slightly emissive to read clearly as a floor when the player is outside in the dark.
+{
+    const RTOP_W        = CW + 0.6;                        // covers wall tops too (total 4.6 units wide)
+    const RTOP_Y        = CH + 0.225;                       // 0.025 above ceiling top at CH+0.2
+    const RTOP_SIDE_W   = (RTOP_W - C7_HOLE_S) / 2;        // side strip width flanking the hole
+    const frontLen      = CL / 2 - (C7_HOLE_Z + C7_HOLE_S / 2);
+    const backLen       = (C7_HOLE_Z - C7_HOLE_S / 2) - PURPLE_DOOR_Z;
+    // Front strip — corridor 1 start to just before the hole
+    box(RTOP_W,      0.05, frontLen,  rooftopMat, 0,                                RTOP_Y, (CL / 2 + C7_HOLE_Z + C7_HOLE_S / 2) / 2);
+    // Back strip — just after the hole to corridor 7 end
+    box(RTOP_W,      0.05, backLen,   rooftopMat, 0,                                RTOP_Y, ((C7_HOLE_Z - C7_HOLE_S / 2) + PURPLE_DOOR_Z) / 2);
+    // Side strips flanking the hole in Z
+    box(RTOP_SIDE_W, 0.05, C7_HOLE_S, rooftopMat, -(C7_HOLE_S / 2 + RTOP_SIDE_W / 2), RTOP_Y, C7_HOLE_Z);
+    box(RTOP_SIDE_W, 0.05, C7_HOLE_S, rooftopMat,  (C7_HOLE_S / 2 + RTOP_SIDE_W / 2), RTOP_Y, C7_HOLE_Z);
+}
+
+// ── Interior floor highlight (thin slab over all corridor floors) ─────────────
+// Slightly emissive layer sitting flush on top of the floor boxes so the ground
+// reads more clearly in the dark corridor lighting.
+{
+    const FLOOR_LEN   = CL / 2 - PURPLE_DOOR_Z;           // full corridor strip length (156 units)
+    const FLOOR_CTR_Z = (CL / 2 + PURPLE_DOOR_Z) / 2;     // z = -67
+    box(CW, 0.03, FLOOR_LEN, floorHighMat, 0, 0.015, FLOOR_CTR_Z);
+}
 
 // Button — left wall, right after teal door (beginning of corridor 6)
 box(0.08, 0.55, 0.55, panelMat, -CW/2+0.04, BTN_Y, TEAL_DOOR_Z - 2);
@@ -470,7 +539,9 @@ const yellowDoorState = { shot: false, open: false };
 const tealDoorState   = { open: false };
 const c6CrushState    = { active: false };
 const c6OrangeDoor    = { open: false };
+const c7State         = { up: false };
 let   playerDead      = false;
+let   playerOutside   = false;
 const CIRCLE_Z = YELLOW_DOOR_Z + 2.5;
 let   blueButtonsReset = false; // true after pink button resets blue buttons
 
@@ -528,8 +599,88 @@ function showHitMarker() {
     setTimeout(() => hitMarker.classList.remove('active'), 80);
 }
 
+const _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playFootstep() {
+    const buf  = _audioCtx.createBuffer(1, _audioCtx.sampleRate * 0.08, _audioCtx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 3);
+    }
+    const src  = _audioCtx.createBufferSource();
+    const gain = _audioCtx.createGain();
+    const filt = _audioCtx.createBiquadFilter();
+    src.buffer = buf;
+    filt.type  = 'lowpass';
+    filt.frequency.value = 300;
+    src.connect(filt);
+    filt.connect(gain);
+    gain.connect(_audioCtx.destination);
+    gain.gain.value = 0.18;
+    src.start();
+}
+
+let _stepTimer = 0;
+
+function playShot() {
+    const t      = _audioCtx.currentTime;
+    const master = _audioCtx.createGain();
+    master.gain.value = 0.22;
+    master.connect(_audioCtx.destination);
+
+    // ── Click transient (1.5 ms highpass noise — the hard contact of the switch) ─
+    const tickLen  = Math.floor(_audioCtx.sampleRate * 0.0015);
+    const tickBuf  = _audioCtx.createBuffer(1, tickLen, _audioCtx.sampleRate);
+    const tickData = tickBuf.getChannelData(0);
+    for (let i = 0; i < tickLen; i++) tickData[i] = Math.random() * 2 - 1;
+    const tickSrc  = _audioCtx.createBufferSource();
+    const tickHp   = _audioCtx.createBiquadFilter();
+    const tickGain = _audioCtx.createGain();
+    tickSrc.buffer      = tickBuf;
+    tickHp.type         = 'highpass';
+    tickHp.frequency.value = 3500;
+    tickGain.gain.setValueAtTime(2.5, t);
+    tickGain.gain.exponentialRampToValueAtTime(0.001, t + 0.0015);
+    tickSrc.connect(tickHp);
+    tickHp.connect(tickGain);
+    tickGain.connect(master);
+    tickSrc.start(t);
+
+    // ── Body ring (sine at 1400 Hz, 30 ms — plastic/metal resonance of the switch) ─
+    const ring     = _audioCtx.createOscillator();
+    const ringGain = _audioCtx.createGain();
+    ring.type = 'sine';
+    ring.frequency.value = 1400;
+    ringGain.gain.setValueAtTime(0.6, t);
+    ringGain.gain.exponentialRampToValueAtTime(0.001, t + 0.03);
+    ring.connect(ringGain);
+    ringGain.connect(master);
+    ring.start(t);
+    ring.stop(t + 0.03);
+
+    // ── Thock body (bandpass noise 800–2000 Hz, 25 ms — the mechanical body thud) ─
+    const thockLen  = Math.floor(_audioCtx.sampleRate * 0.025);
+    const thockBuf  = _audioCtx.createBuffer(1, thockLen, _audioCtx.sampleRate);
+    const thockData = thockBuf.getChannelData(0);
+    for (let i = 0; i < thockLen; i++) thockData[i] = Math.random() * 2 - 1;
+    const thockSrc  = _audioCtx.createBufferSource();
+    const thockBp   = _audioCtx.createBiquadFilter();
+    const thockGain = _audioCtx.createGain();
+    thockSrc.buffer      = thockBuf;
+    thockBp.type         = 'bandpass';
+    thockBp.frequency.value = 1200;
+    thockBp.Q.value         = 1.2;
+    thockGain.gain.setValueAtTime(1.0, t);
+    thockGain.gain.exponentialRampToValueAtTime(0.001, t + 0.025);
+    thockSrc.connect(thockBp);
+    thockBp.connect(thockGain);
+    thockGain.connect(master);
+    thockSrc.start(t);
+}
+
 function shoot() {
     if (!locked) return;
+    playShot();
     muzzleLight.intensity = 6;
     setTimeout(() => { muzzleLight.intensity = 0; }, 60);
 
@@ -544,6 +695,7 @@ function shoot() {
     if (!yellowDoorState.shot)                   targets.push(sign4);
     if (!tealDoorState.open)                     targets.push(tealBtn);
     targets.push(c6EntranceBtn);
+    targets.push(c7Btn);
 
     const hits = shootRay.intersectObjects(targets);
     if (hits.length === 0) return;
@@ -668,6 +820,13 @@ function shoot() {
         }
     }
 
+    // ── C7 platform button ──
+    if (hit === c7Btn) {
+        c7State.up = !c7State.up;
+        c7Btn.material = c7State.up ? c7BtnShotMat : c7BtnMat;
+        c7BtnGlow.color.set(c7State.up ? 0x440066 : 0xcc66ff);
+    }
+
     // ── Yellow sign (corridor 4 button) ──
     if (hit === sign4 && !yellowDoorState.shot) {
         yellowDoorState.shot = true;
@@ -712,6 +871,17 @@ function updateTealDoor(dt) {
     if (!tealDoorState.open || !tealDoor.visible) return;
     tealDoor.position.y += dt * 5;
     if (tealDoor.position.y > CH * 1.8) tealDoor.visible = false;
+}
+
+function updateC7Platform(dt) {
+    if (c7State.up) {
+        const target = CH + 0.1;
+        if (c7Platform.position.y < target)
+            c7Platform.position.y = Math.min(c7Platform.position.y + dt * 2.5, target);
+    } else {
+        if (c7Platform.position.y > 0.1)
+            c7Platform.position.y = Math.max(c7Platform.position.y - dt * 2.5, 0.1);
+    }
 }
 
 // ── C6 death + respawn ────────────────────────────────────────────────────────
@@ -900,6 +1070,17 @@ function updatePlayer(dt) {
     camera.position.x += _move.x * PLAYER_SPEED * dt;
     camera.position.z += _move.z * PLAYER_SPEED * dt;
 
+    // footstep sound
+    if (_move.lengthSq() > 0 && player.onGround) {
+        _stepTimer += dt;
+        if (_stepTimer >= 0.38) {
+            _stepTimer = 0;
+            playFootstep();
+        }
+    } else {
+        _stepTimer = 0.2; // next step comes quickly when movement resumes
+    }
+
     if (keys['Space'] && player.onGround) {
         player.velocity.y = JUMP_VELOCITY;
         player.onGround   = false;
@@ -907,15 +1088,48 @@ function updatePlayer(dt) {
     player.velocity.y -= GRAVITY * dt;
     camera.position.y += player.velocity.y * dt;
 
-    if (camera.position.y <= PLAYER_HEIGHT) {
-        camera.position.y = PLAYER_HEIGHT;
+    // ── Platform collision ──
+    const platTop   = c7Platform.position.y + 0.1;
+    const onPlatXZ  = Math.abs(camera.position.x)              < C7_HOLE_S / 2 - 0.05
+                   && Math.abs(camera.position.z - C7_HOLE_Z)  < C7_HOLE_S / 2 - 0.05;
+    const feetAbovePlat = (camera.position.y - PLAYER_HEIGHT) - platTop;
+    if (onPlatXZ && player.velocity.y <= 0 && feetAbovePlat >= -0.3 && feetAbovePlat <= 0.25) {
+        camera.position.y = platTop + PLAYER_HEIGHT;
         player.velocity.y = 0;
         player.onGround   = true;
     }
 
-    camera.position.x = Math.max(-CW/2 + 0.45, Math.min(CW/2 - 0.45, camera.position.x));
+    // ── Inside ↔ outside transition ──
+    const overHole   = Math.abs(camera.position.x)             < C7_HOLE_S / 2
+                    && Math.abs(camera.position.z - C7_HOLE_Z) < C7_HOLE_S / 2;
+    const rooftopY   = CH + 0.25 + PLAYER_HEIGHT; // camera y when standing on rooftop slab (top at CH+0.25)
 
-    camera.position.z = Math.max(playerMinZ, Math.min(playerMaxZ, camera.position.z));
+    if (!playerOutside && camera.position.y > CH + PLAYER_HEIGHT) playerOutside = true;
+    if (playerOutside  && overHole && camera.position.y < CH)      playerOutside = false;
+
+    // ── Floor / rooftop collision ──
+    if (playerOutside) {
+        if (!overHole && camera.position.y <= rooftopY) {
+            camera.position.y = rooftopY;
+            player.velocity.y = 0;
+            player.onGround   = true;
+        }
+    } else {
+        if (camera.position.y <= PLAYER_HEIGHT) {
+            camera.position.y = PLAYER_HEIGHT;
+            player.velocity.y = 0;
+            player.onGround   = true;
+        }
+    }
+
+    // ── X/Z constraints ──
+    if (playerOutside) {
+        camera.position.x = Math.max(-40, Math.min(40, camera.position.x));
+        camera.position.z = Math.max(PURPLE_DOOR_Z - 6, Math.min(CL / 2 + 6, camera.position.z));
+    } else {
+        camera.position.x = Math.max(-CW/2 + 0.45, Math.min(CW/2 - 0.45, camera.position.x));
+        camera.position.z = Math.max(playerMinZ, Math.min(playerMaxZ, camera.position.z));
+    }
 
     applyBlockPush();
     muzzleLight.position.copy(camera.position);
@@ -947,11 +1161,12 @@ function loop() {
         updateC6CrushWalls(dt);
         updateOrangeDoor(dt);
         updateBlock(dt);
+        updateC7Platform(dt);
     }
     renderer.render(scene, camera);
 }
 
-///── Dev mode: set corridor number (1–7) to spawn there ───────────────────────
+//── Dev mode: set corridor number (1–7) to spawn there ───────────────────────
 // const DEV_CORRIDOR = 7;
 // (c => {
 //     const z = [CL/2-1.5, DOOR_Z-2, BLUE_DOOR_Z-2, PINK_DOOR_Z-2, YELLOW_DOOR_Z-2, TEAL_DOOR_Z-2, ORANGE_DOOR_Z-2][c-1];

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Learn</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0a0a;
+      color: #fff;
+      font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 32px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      background: linear-gradient(45deg, #00ff88, #00ccff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .btn-learn {
+      background: #0e1e0e;
+      border: 1px solid #1e4a1e;
+      border-radius: 6px;
+      color: #00ff88;
+      font-family: inherit;
+      font-size: 1rem;
+      padding: 14px 36px;
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .btn-learn:hover {
+      background: #152e15;
+      border-color: #00ff88;
+    }
+
+    a { text-decoration: none; }
+
+    .back {
+      position: absolute;
+      top: 24px;
+      left: 24px;
+      color: #333;
+      font-size: 0.8rem;
+      letter-spacing: 1px;
+      transition: color 0.15s;
+    }
+
+    .back:hover { color: #666; }
+  </style>
+</head>
+<body>
+
+  <a href="../index.html" class="back">← back</a>
+
+  <h1>Learn</h1>
+
+  <a href="learn-math/index.html">
+    <button class="btn-learn">Learn Math</button>
+  </a>
+
+</body>
+</html>

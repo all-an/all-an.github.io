@@ -14,7 +14,7 @@ const CELL = 20;
 let hoveredCol = -1;
 let hoveredRow = -1;
 
-// ── L-piece rotations (clockwise) ─────────────────────────────────────────────
+// ── L-tetromino rotations (clockwise) ─────────────────────────────────────────────
 const ROTATIONS = [
   { blocks: [[0,0],[0,1],[0,2],[1,2]], w: 2, h: 3 }, // 0°
   { blocks: [[0,0],[1,0],[2,0],[0,1]], w: 3, h: 2 }, // 90° CW
@@ -27,51 +27,149 @@ const JUMP_VEL   = -10;
 const SPEED      = 3;
 const SPIN_SPEED = 6;
 
+// ── Vivid color palette ────────────────────────────────────────────────────────
+const VIVID_COLORS = [
+  { id:  1, color: '#ff0033', border: '#ff6688' }, // red
+  { id:  2, color: '#ff6600', border: '#ffaa44' }, // orange
+  { id:  3, color: '#ffdd00', border: '#ffee66' }, // yellow
+  { id:  4, color: '#ff0088', border: '#ff55bb' }, // hot pink
+  { id:  5, color: '#00ff44', border: '#55ff88' }, // green
+  { id:  6, color: '#00eeff', border: '#55f5ff' }, // cyan
+  { id:  7, color: '#0066ff', border: '#4488ff' }, // blue
+  { id:  8, color: '#aa00ff', border: '#cc66ff' }, // purple
+  { id:  9, color: '#aaaaaa', border: '#dddddd' }, // gray
+  { id: 10, color: '#006600', border: '#009900' }, // dark green
+];
+const vc = id => VIVID_COLORS[id - 1];
+
 // ── Platforms ──────────────────────────────────────────────────────────────────
-const PLATFORMS = [
-  { col: 22, row: 25, color: '#e63946', border: '#ff6b75' },
-  { col: 23, row: 25, color: '#2a9d8f', border: '#4ecdc4' },
-  { col: 24, row: 25, color: '#e9c46a', border: '#ffd97d' },
-  { col:  7, row: 17, color: '#1a4a8a', border: '#4488dd' }, // 688
-  { col:  7, row: 18, color: '#1a4a8a', border: '#4488dd' }, // 728
-  { col:  7, row: 19, color: '#1a4a8a', border: '#4488dd' }, // 768
-  { col: 12, row: 18, color: '#00cc44', border: '#66ff88' }, // 733
-  { col: 12, row: 19, color: '#00cc44', border: '#66ff88' }, // 773
-  { col:  2, row: 13, color: '#ff00cc', border: '#ff66ee' }, // 523
-  { col:  3, row: 13, color: '#ff00cc', border: '#ff66ee' }, // 524
-  { col:  9, row: 11, color: '#ffcc00', border: '#ffe566' }, // 450
-  { col: 10, row: 11, color: '#ffcc00', border: '#ffe566' }, // 451
-  { col: 15, row:  8, color: '#00eeff', border: '#66f7ff' }, // 336
-  { col: 16, row:  8, color: '#00eeff', border: '#66f7ff' }, // 337
-  { col: 20, row:  6, color: '#ff4400', border: '#ff8855' }, // 261
-  { col: 21, row:  6, color: '#ff4400', border: '#ff8855' }, // 262
-  { col: 13, row:  3, color: '#aa00ff', border: '#cc66ff' }, // 134
-  { col: 14, row:  3, color: '#aa00ff', border: '#cc66ff' }, // 135
+let PLATFORMS = [
+  { col: 22, row: 25, ...vc( 1) }, // 782 red
+  { col: 23, row: 25, ...vc( 5) }, //     green
+  { col: 24, row: 25, ...vc( 2) }, //     orange
+  { col:  7, row: 17, ...vc( 7) }, // 688 blue
+  { col:  7, row: 18, ...vc( 7) }, // 728 blue
+  { col:  7, row: 19, ...vc( 7) }, // 768 blue
+  { col: 12, row: 18, ...vc( 5) }, // 733 green
+  { col: 12, row: 19, ...vc( 5) }, // 773 green
+  { col:  2, row: 13, ...vc( 9) }, // 523 magenta
+  { col:  3, row: 13, ...vc( 9) }, // 524 magenta
+  { col:  9, row: 11, ...vc( 3) }, // 450 yellow
+  { col: 10, row: 11, ...vc( 3) }, // 451 yellow
+  { col: 15, row:  8, ...vc( 6) }, // 336 cyan
+  { col: 16, row:  8, ...vc( 6) }, // 337 cyan
+  { col: 20, row:  6, ...vc( 2) }, // 261 orange
+  { col: 21, row:  6, ...vc( 2) }, // 262 orange
+  { col: 13, row:  3, ...vc( 8) }, // 134 purple
+  { col: 14, row:  3, ...vc( 8) }, // 135 purple
+  { col: 21, row: 19, ...vc( 6) }, // 782 cyan
+  { col: 22, row: 19, ...vc( 6) }, // 783 cyan
+  { col: 23, row: 19, ...vc( 6) }, // 784 cyan
+  { col: 38, row: 28, ...vc( 1) }, // 1159
+  { col: 38, row: 29, ...vc( 1) }, // 1199
+  { col: 39, row: 28, ...vc( 2) }, // 1160
+  { col: 39, row: 29, ...vc( 2) }, // 1200
+  { col:  0, row: 28, ...vc( 3) }, // 1121
+  { col:  0, row: 29, ...vc( 3) }, // 1161
+  { col:  1, row: 28, ...vc( 4) }, // 1122
+  { col:  1, row: 29, ...vc( 4) }, // 1162
+  { col:  2, row: 28, ...vc( 5) }, // 1123
+  { col:  2, row: 29, ...vc( 5) }, // 1163
+  { col:  3, row: 28, ...vc( 6) }, // 1124
+  { col:  3, row: 29, ...vc( 6) }, // 1164
+  { col:  4, row: 28, ...vc( 7) }, // 1125
+  { col:  4, row: 29, ...vc( 7) }, // 1165
+  { col:  5, row: 28, ...vc( 8) }, // 1126
+  { col:  5, row: 29, ...vc( 8) }, // 1166
+  { col:  6, row: 28, ...vc( 9) }, // 1127
+  { col:  6, row: 29, ...vc( 9) }, // 1167
+  { col:  7, row: 28, ...vc(10) }, // 1128
+  { col:  7, row: 29, ...vc(10) }, // 1168
+  { col:  8, row: 28, ...vc( 1) }, // 1129
+  { col:  8, row: 29, ...vc( 1) }, // 1169
+  { col:  9, row: 28, ...vc( 2) }, // 1130
+  { col:  9, row: 29, ...vc( 2) }, // 1170
+  { col: 10, row: 28, ...vc( 3) }, // 1131
+  { col: 10, row: 29, ...vc( 3) }, // 1171
+  { col: 11, row: 28, ...vc( 4) }, // 1132
+  { col: 11, row: 29, ...vc( 4) }, // 1172
+  { col: 12, row: 28, ...vc( 5) }, // 1133
+  { col: 12, row: 29, ...vc( 5) }, // 1173
+  { col: 13, row: 28, ...vc( 6) }, // 1134
+  { col: 13, row: 29, ...vc( 6) }, // 1174
+  { col: 14, row: 28, ...vc( 7) }, // 1135
+  { col: 14, row: 29, ...vc( 7) }, // 1175
+  { col: 15, row: 28, ...vc( 8) }, // 1136
+  { col: 15, row: 29, ...vc( 8) }, // 1176
+  { col: 16, row: 28, ...vc( 9) }, // 1137
+  { col: 16, row: 29, ...vc( 9) }, // 1177
+  { col: 17, row: 28, ...vc(10) }, // 1138
+  { col: 17, row: 29, ...vc(10) }, // 1178
+  { col: 18, row: 28, ...vc( 1) }, // 1139
+  { col: 18, row: 29, ...vc( 1) }, // 1179
+  { col: 19, row: 28, ...vc( 2) }, // 1140
+  { col: 19, row: 29, ...vc( 2) }, // 1180
+  { col: 20, row: 28, ...vc( 3) }, // 1141
+  { col: 20, row: 29, ...vc( 3) }, // 1181
+  { col: 21, row: 28, ...vc( 4) }, // 1142
+  { col: 21, row: 29, ...vc( 4) }, // 1182
+  { col: 22, row: 28, ...vc( 5) }, // 1143
+  { col: 22, row: 29, ...vc( 5) }, // 1183
+  { col: 23, row: 28, ...vc( 6) }, // 1144
+  { col: 23, row: 29, ...vc( 6) }, // 1184
+  { col: 24, row: 28, ...vc( 7) }, // 1145
+  { col: 24, row: 29, ...vc( 7) }, // 1185
+  { col: 25, row: 28, ...vc( 8) }, // 1146
+  { col: 25, row: 29, ...vc( 8) }, // 1186
+  { col: 26, row: 28, ...vc( 9) }, // 1147
+  { col: 26, row: 29, ...vc( 9) }, // 1187
+  { col: 27, row: 28, ...vc(10) }, // 1148
+  { col: 27, row: 29, ...vc(10) }, // 1188
+  { col: 28, row: 28, ...vc( 1) }, // 1149
+  { col: 28, row: 29, ...vc( 1) }, // 1189
+  { col: 29, row: 28, ...vc( 2) }, // 1150
+  { col: 29, row: 29, ...vc( 2) }, // 1190
+  { col: 30, row: 28, ...vc( 3) }, // 1151
+  { col: 30, row: 29, ...vc( 3) }, // 1191
+  { col: 31, row: 28, ...vc( 4) }, // 1152
+  { col: 31, row: 29, ...vc( 4) }, // 1192
+  { col: 32, row: 28, ...vc( 5) }, // 1153
+  { col: 32, row: 29, ...vc( 5) }, // 1193
+  { col: 33, row: 28, ...vc( 6) }, // 1154
+  { col: 33, row: 29, ...vc( 6) }, // 1194
+  { col: 34, row: 28, ...vc( 7) }, // 1155
+  { col: 34, row: 29, ...vc( 7) }, // 1195
+  { col: 35, row: 28, ...vc( 8) }, // 1156
+  { col: 35, row: 29, ...vc( 8) }, // 1196
+  { col: 36, row: 28, ...vc( 9) }, // 1157
+  { col: 36, row: 29, ...vc( 9) }, // 1197
+  { col: 37, row: 28, ...vc(10) }, // 1158
+  { col: 37, row: 29, ...vc(10) }, // 1198
 ];
 
 // ── Filled cells (player color) — cells 818, 858, 938, 978, 991, 993–995 ───────
 // These are solid platforms. Cell 992 (col 31, row 24) is the gap / trigger.
 let filledCells = [
-  { col: 17, row: 20 }, // 818
-  { col: 17, row: 21 }, // 858
-  { col: 17, row: 23 }, // 938
-  { col: 17, row: 24 }, // 978
-  { col: 30, row: 24 }, // 991
+  { col: 17, row: 20, color: vc(4).color }, // 818
+  { col: 17, row: 21, color: vc(4).color }, // 858
+  { col: 17, row: 23, color: vc(4).color }, // 938
+  { col: 17, row: 24, color: vc(4).color }, // 978
+  { col: 30, row: 24, color: vc(4).color }, // 991
   // 992 — gap (trigger)
-  { col: 32, row: 24 }, // 993
-  { col: 33, row: 24 }, // 994
-  { col: 34, row: 24 }, // 995
-  { col:  2, row: 29 }, // 1163
-  { col:  3, row: 29 }, // 1164
+  { col: 32, row: 24, color: vc(4).color }, // 993
+  { col: 33, row: 24, color: vc(4).color }, // 994
+  { col: 34, row: 24, color: vc(4).color }, // 995
+  { col:  2, row: 29, color: vc(4).color }, // 1163
+  { col:  3, row: 29, color: vc(4).color }, // 1164
   // 1165 — gap (col 4, row 29)
-  { col:  5, row: 29 }, // 1166
-  { col:  6, row: 29 }, // 1167
+  { col:  5, row: 29, color: vc(4).color }, // 1166
+  { col:  6, row: 29, color: vc(4).color }, // 1167
 ];
 
 // ── Piece ──────────────────────────────────────────────────────────────────────
-// piece.customBlocks = null  → use ROTATIONS normally
-// piece.customBlocks = [{dx,dy},...] → arbitrary blocks after explosion
-const piece = {
+// tetromino.customBlocks = null  → use ROTATIONS normally
+// tetromino.customBlocks = [{dx,dy},...] → arbitrary blocks after explosion
+const tetromino = {
   x: 16 * CELL,
   y: 27 * CELL,
   vx: 0,
@@ -80,13 +178,17 @@ const piece = {
   rotIndex: 0,
   spinAngle: 0,
   spinning:  false,
+  totalDeg:  0,
   customBlocks: null,
   blockNums: [4, 3, 2, 1], // persistent numbers that survive rotation
+  rotations: null, // set by spawnNewPiece / init
+  rotPerms:  null, // set by spawnNewPiece / init
+  ...(() => { const c = VIVID_COLORS[Math.floor(Math.random() * VIVID_COLORS.length)]; return { color: c.color, border: c.border }; })(),
 };
 
 // Permutation applied to blockNums on each 90° CW spin step.
 // ROT_PERM[rotIndex][i] = which OLD slot feeds new slot i.
-// Derived from the geometric 90° CW rotation of the L-piece bounding box.
+// Derived from the geometric 90° CW rotation of the L-tetromino bounding box.
 const ROT_PERM = [
   [2, 1, 0, 3], // rot 0 → 1
   [3, 0, 1, 2], // rot 1 → 2
@@ -94,15 +196,109 @@ const ROT_PERM = [
   [1, 2, 3, 0], // rot 3 → 0
 ];
 
-function rot() { return ROTATIONS[piece.rotIndex]; }
+// ── All tetrominos ─────────────────────────────────────────────────────────────
+const TETROMINOS = [
+  { // L — orange
+    ...vc(2),
+    rotations: ROTATIONS,
+    rotPerms: ROT_PERM,
+  },
+  { // J — blue
+    ...vc(7),
+    rotations: [
+      { blocks: [[1,0],[1,1],[0,2],[1,2]], w: 2, h: 3 },
+      { blocks: [[0,0],[0,1],[1,1],[2,1]], w: 3, h: 2 },
+      { blocks: [[0,0],[1,0],[0,1],[0,2]], w: 2, h: 3 },
+      { blocks: [[0,0],[1,0],[2,0],[2,1]], w: 3, h: 2 },
+    ],
+    rotPerms: null,
+  },
+  { // I — cyan
+    ...vc(6),
+    rotations: [
+      { blocks: [[0,0],[1,0],[2,0],[3,0]], w: 4, h: 1 },
+      { blocks: [[0,0],[0,1],[0,2],[0,3]], w: 1, h: 4 },
+      { blocks: [[0,0],[1,0],[2,0],[3,0]], w: 4, h: 1 },
+      { blocks: [[0,0],[0,1],[0,2],[0,3]], w: 1, h: 4 },
+    ],
+    rotPerms: null,
+  },
+  { // O — yellow
+    ...vc(3),
+    rotations: [
+      { blocks: [[0,0],[1,0],[0,1],[1,1]], w: 2, h: 2 },
+      { blocks: [[0,0],[1,0],[0,1],[1,1]], w: 2, h: 2 },
+      { blocks: [[0,0],[1,0],[0,1],[1,1]], w: 2, h: 2 },
+      { blocks: [[0,0],[1,0],[0,1],[1,1]], w: 2, h: 2 },
+    ],
+    rotPerms: null,
+  },
+  { // T — purple
+    ...vc(8),
+    rotations: [
+      { blocks: [[0,0],[1,0],[2,0],[1,1]], w: 3, h: 2 },
+      { blocks: [[1,0],[0,1],[1,1],[1,2]], w: 2, h: 3 },
+      { blocks: [[1,0],[0,1],[1,1],[2,1]], w: 3, h: 2 },
+      { blocks: [[0,0],[0,1],[1,1],[0,2]], w: 2, h: 3 },
+    ],
+    rotPerms: null,
+  },
+  { // S — green
+    ...vc(5),
+    rotations: [
+      { blocks: [[1,0],[2,0],[0,1],[1,1]], w: 3, h: 2 },
+      { blocks: [[0,0],[0,1],[1,1],[1,2]], w: 2, h: 3 },
+      { blocks: [[1,0],[2,0],[0,1],[1,1]], w: 3, h: 2 },
+      { blocks: [[0,0],[0,1],[1,1],[1,2]], w: 2, h: 3 },
+    ],
+    rotPerms: null,
+  },
+  { // Z — red
+    ...vc(1),
+    rotations: [
+      { blocks: [[0,0],[1,0],[1,1],[2,1]], w: 3, h: 2 },
+      { blocks: [[1,0],[0,1],[1,1],[0,2]], w: 2, h: 3 },
+      { blocks: [[0,0],[1,0],[1,1],[2,1]], w: 3, h: 2 },
+      { blocks: [[1,0],[0,1],[1,1],[0,2]], w: 2, h: 3 },
+    ],
+    rotPerms: null,
+  },
+];
 
-// Current blocks as pixel offsets {dx,dy} from piece.x, piece.y
+// Initialize with L-tetromino
+tetromino.rotations = ROTATIONS;
+tetromino.rotPerms  = ROT_PERM;
+
+function spawnNewTetromino() {
+  const shape = TETROMINOS[Math.floor(Math.random() * TETROMINOS.length)];
+  const clr   = VIVID_COLORS[Math.floor(Math.random() * VIVID_COLORS.length)];
+  tetromino.rotations    = shape.rotations;
+  tetromino.rotPerms     = shape.rotPerms;
+  tetromino.color        = clr.color;
+  tetromino.border       = clr.border;
+  tetromino.rotIndex     = 0;
+  tetromino.customBlocks = null;
+  tetromino.blockNums    = [1, 2, 3, 4];
+  tetromino.spinning     = false;
+  tetromino.spinAngle    = 0;
+  tetromino.totalDeg     = 0;
+  tetromino.vx           = 0;
+  tetromino.vy           = 0;
+  tetromino.onGround     = false;
+  const w = shape.rotations[0].w * CELL;
+  tetromino.x = Math.round((canvas.width / 2 - w / 2) / CELL) * CELL;
+  tetromino.y = 2 * CELL;
+}
+
+function rot() { return tetromino.rotations[tetromino.rotIndex]; }
+
+// Current blocks as pixel offsets {dx,dy} from tetromino.x, tetromino.y
 function getBlockOffsets() {
-  if (piece.customBlocks) return piece.customBlocks;
+  if (tetromino.customBlocks) return tetromino.customBlocks;
   return rot().blocks.map(([c, r]) => ({ dx: c * CELL, dy: r * CELL }));
 }
 
-// Pixel width/height of current piece bounding box
+// Pixel width/height of current tetromino bounding box
 function blockBounds() {
   const bs = getBlockOffsets();
   if (bs.length === 0) return { w: CELL, h: CELL };
@@ -115,8 +311,8 @@ function blockBounds() {
 // Grid col/row of the centre of a block at offset {dx,dy}
 function blockCell(dx, dy) {
   return {
-    col: Math.floor((piece.x + dx + CELL / 2) / CELL),
-    row: Math.floor((piece.y + dy + CELL / 2) / CELL),
+    col: Math.floor((tetromino.x + dx + CELL / 2) / CELL),
+    row: Math.floor((tetromino.y + dy + CELL / 2) / CELL),
   };
 }
 
@@ -152,9 +348,9 @@ document.addEventListener('keydown', e => {
 document.addEventListener('keyup', e => { keys[e.code] = false; });
 
 function triggerSpin() {
-  if (piece.spinning || transitioning) return;
-  piece.spinning  = true;
-  piece.spinAngle = 0;
+  if (tetromino.spinning || transitioning) return;
+  tetromino.spinning  = true;
+  tetromino.spinAngle = 0;
 }
 
 // ── Sounds ─────────────────────────────────────────────────────────────────────
@@ -247,24 +443,25 @@ function findBlockAtCell(offsets, col, row, validNums = null) {
   const gLeft = col * CELL, gRight = gLeft + CELL;
   const gTop  = row * CELL, gBottom = gTop  + CELL;
   for (let i = 0; i < offsets.length; i++) {
-    if (validNums && !validNums.includes(piece.blockNums[i])) continue;
-    const bLeft = piece.x + offsets[i].dx;
-    const bTop  = piece.y + offsets[i].dy;
+    if (validNums && !validNums.includes(tetromino.blockNums[i])) continue;
+    const bLeft = tetromino.x + offsets[i].dx;
+    const bTop  = tetromino.y + offsets[i].dy;
     if (bLeft + CELL > gLeft && bLeft < gRight && bTop + CELL > gTop && bTop < gBottom)
-      return piece.blockNums[i];
+      return tetromino.blockNums[i];
   }
   return null;
 }
 
-// Tag offsets with block numbers, keep those passing keepFn, update piece to
+// Tag offsets with block numbers, keep those passing keepFn, update tetromino to
 // the largest remaining connected group.
 function applyBlockExplosion(offsets, keepFn) {
-  const tagged    = offsets.map((b, i) => ({ ...b, num: piece.blockNums[i] }));
+  const tagged    = offsets.map((b, i) => ({ ...b, num: tetromino.blockNums[i] }));
   const surviving = tagged.filter(({ dx, dy }) => keepFn(blockCell(dx, dy)));
   const connected = largestConnected(surviving);
-  piece.customBlocks = connected.map(({ dx, dy }) => ({ dx, dy }));
-  piece.blockNums    = connected.map(b => b.num);
-  piece.spinning     = false;
+  tetromino.customBlocks = connected.map(({ dx, dy }) => ({ dx, dy }));
+  tetromino.blockNums    = connected.map(b => b.num);
+  tetromino.spinning     = false;
+  if (tetromino.customBlocks.length === 0) spawnNewTetromino();
 }
 
 // ── Explosion state ────────────────────────────────────────────────────────────
@@ -273,7 +470,7 @@ let pendingChain = null;   // { axis, index, chain } being tracked
 const FILL_DELAY = 1500;   // ms
 
 // Find the largest group of adjacent blocks (4-connected) and return them
-// with offsets re-normalised so min(dx)=0, min(dy)=0 (adjusts piece.x/y too).
+// with offsets re-normalised so min(dx)=0, min(dy)=0 (adjusts tetromino.x/y too).
 function largestConnected(blocks) {
   if (blocks.length === 0) return [];
 
@@ -307,11 +504,11 @@ function largestConnected(blocks) {
 
   const result = best.map(({ gc, gr, ...rest }) => rest); // drop gc/gr, keep dx/dy/num/etc.
 
-  // Normalise so min(dx)=0 and min(dy)=0 and shift piece position accordingly
+  // Normalise so min(dx)=0 and min(dy)=0 and shift tetromino position accordingly
   const minDX = Math.min(...result.map(b => b.dx));
   const minDY = Math.min(...result.map(b => b.dy));
-  piece.x += minDX;
-  piece.y += minDY;
+  tetromino.x += minDX;
+  tetromino.y += minDY;
   return result.map(b => ({ ...b, dx: b.dx - minDX, dy: b.dy - minDY }));
 }
 
@@ -337,30 +534,66 @@ function findMixedChain5(playerVals, filledVals) {
   return best;
 }
 
-// Scan every column and every row for a mixed chain of ≥5.
-// Returns { axis:'col'|'row', index, chain } or null.
+// Find a 4-connected group of ≥5 cells mixing player blocks + same-color static cells.
+// Returns { cells: [{col,row,p},...] } or null.
 function findChain5() {
-  if (!piece.onGround) return null;
+  if (!tetromino.onGround) return null;
   const offsets = getBlockOffsets();
   const pCells  = offsets.map(b => blockCell(b.dx, b.dy));
+  const sameColor = [
+    ...filledCells.filter(c => c.color === tetromino.color),
+    ...PLATFORMS.filter(p => p.color === tetromino.color),
+  ];
+  if (!sameColor.length) return null;
 
-  const cols = new Set([...pCells.map(c => c.col), ...filledCells.map(c => c.col)]);
-  for (const col of cols) {
-    const pV = pCells.filter(c => c.col === col).map(c => c.row);
-    const fV = filledCells.filter(c => c.col === col).map(c => c.row);
-    const ch = findMixedChain5(pV, fV);
-    if (ch) return { axis: 'col', index: col, chain: ch };
+  const staticSet = new Set(sameColor.map(c => `${c.col},${c.row}`));
+  const playerSet = new Set(pCells.map(c => `${c.col},${c.row}`));
+  const allSet    = new Set([...staticSet, ...playerSet]);
+
+  const visited = new Set();
+  let best = null;
+
+  for (const start of [...pCells, ...sameColor.map(c => ({ col: c.col, row: c.row }))]) {
+    const key = `${start.col},${start.row}`;
+    if (visited.has(key)) continue;
+
+    const group = [];
+    const queue = [{ col: start.col, row: start.row }];
+    const gv = new Set([key]);
+
+    while (queue.length) {
+      const { col, row } = queue.shift();
+      group.push({ col, row, p: playerSet.has(`${col},${row}`) });
+      for (const [dc, dr] of [[0,1],[0,-1],[1,0],[-1,0]]) {
+        const nk = `${col+dc},${row+dr}`;
+        if (!gv.has(nk) && allSet.has(nk)) { gv.add(nk); queue.push({ col: col+dc, row: row+dr }); }
+      }
+    }
+
+    for (const c of group) visited.add(`${c.col},${c.row}`);
+
+    // Qualify only if some single column OR row has ≥5 cells with ≥1 player and ≥1 static
+    const qualifies = (() => {
+      for (const axis of ['col', 'row']) {
+        const buckets = {};
+        for (const c of group) {
+          const k = c[axis];
+          if (!buckets[k]) buckets[k] = { p: 0, s: 0 };
+          c.p ? buckets[k].p++ : buckets[k].s++;
+        }
+        for (const b of Object.values(buckets)) {
+          if (b.p >= 1 && b.s >= 1 && b.p + b.s >= 5) return true;
+        }
+      }
+      return false;
+    })();
+
+    if (qualifies) {
+      if (!best || group.length > best.length) best = group;
+    }
   }
 
-  const rows = new Set([...pCells.map(c => c.row), ...filledCells.map(c => c.row)]);
-  for (const row of rows) {
-    const pV = pCells.filter(c => c.row === row).map(c => c.col);
-    const fV = filledCells.filter(c => c.row === row).map(c => c.col);
-    const ch = findMixedChain5(pV, fV);
-    if (ch) return { axis: 'row', index: row, chain: ch };
-  }
-
-  return null;
+  return best ? { cells: best } : null;
 }
 
 function checkExplosion() {
@@ -369,13 +602,10 @@ function checkExplosion() {
   const found = findChain5();
   if (!found) { fillTimer = null; pendingChain = null; return; }
 
-  // Reset timer when the chain changes (different line or different extent)
-  if (!pendingChain
-      || pendingChain.axis  !== found.axis
-      || pendingChain.index !== found.index
-      || pendingChain.chain[0].v !== found.chain[0].v) {
+  const chainKey = found.cells.map(c => `${c.col},${c.row}`).sort().join('|');
+  if (!pendingChain || pendingChain.key !== chainKey) {
     fillTimer    = performance.now();
-    pendingChain = found;
+    pendingChain = { cells: found.cells, key: chainKey };
   }
   if (performance.now() - fillTimer < FILL_DELAY) return;
 
@@ -384,30 +614,42 @@ function checkExplosion() {
   pendingChain = null;
   playExplosionSound();
 
-  const { axis, index, chain } = found;
-  const chainVals = new Set(chain.map(x => x.v));
+  const { cells } = found;
   const offsets   = getBlockOffsets();
 
+  // Find the qualifying axis/index (the line with ≥5 mixed cells)
+  const allCells = cells;
+  let axis, index;
+  outer: for (const ax of ['col', 'row']) {
+    const buckets = {};
+    for (const c of allCells) {
+      const k = c[ax];
+      if (!buckets[k]) buckets[k] = { p: 0, s: 0, val: k };
+      c.p ? buckets[k].p++ : buckets[k].s++;
+    }
+    for (const b of Object.values(buckets)) {
+      if (b.p >= 1 && b.s >= 1 && b.p + b.s >= 5) {
+        axis = ax; index = b.val; break outer;
+      }
+    }
+  }
+
+  // Only blast cells on the qualifying line
+  const inlineSet = new Set(
+    allCells.filter(c => c[axis] === index).map(c => `${c.col},${c.row}`)
+  );
+
+  for (const { col, row } of allCells.filter(c => inlineSet.has(`${c.col},${c.row}`)))
+    spawnExplosion(col * CELL + CELL / 2, row * CELL + CELL / 2);
+
+  filledCells = filledCells.filter(c => !inlineSet.has(`${c.col},${c.row}`));
+  PLATFORMS   = PLATFORMS.filter(p => !inlineSet.has(`${p.col},${p.row}`));
+
+  // Only remove player blocks inline with the blast axis
   if (axis === 'col') {
-    for (const x of chain.filter(x => !x.p))
-      spawnExplosion(index * CELL + CELL / 2, x.v * CELL + CELL / 2);
-    for (const b of offsets) {
-      const { col, row } = blockCell(b.dx, b.dy);
-      if (col === index && chainVals.has(row))
-        spawnExplosion(index * CELL + CELL / 2, row * CELL + CELL / 2);
-    }
-    filledCells = filledCells.filter(c => !(c.col === index && chainVals.has(c.row)));
-    applyBlockExplosion(offsets, ({ col, row }) => !(col === index && chainVals.has(row)));
+    applyBlockExplosion(offsets, ({ col }) => col !== index);
   } else {
-    for (const x of chain.filter(x => !x.p))
-      spawnExplosion(x.v * CELL + CELL / 2, index * CELL + CELL / 2);
-    for (const b of offsets) {
-      const { col, row } = blockCell(b.dx, b.dy);
-      if (row === index && chainVals.has(col))
-        spawnExplosion(col * CELL + CELL / 2, index * CELL + CELL / 2);
-    }
-    filledCells = filledCells.filter(c => !(c.row === index && chainVals.has(c.col)));
-    applyBlockExplosion(offsets, ({ col, row }) => !(row === index && chainVals.has(col)));
+    applyBlockExplosion(offsets, ({ row }) => row !== index);
   }
 }
 
@@ -420,12 +662,12 @@ function update() {
       roomX += transitionDirX;
       roomY += transitionDirY;
       const { w, h } = blockBounds();
-      if      (transitionDirX ===  1) piece.x = 2;
-      else if (transitionDirX === -1) piece.x = canvas.width  - w - 2;
-      else if (transitionDirY === -1) piece.y = canvas.height - h;
-      else if (transitionDirY ===  1) piece.y = 0;
-      piece.vy           = 0;
-      piece.onGround     = false;
+      if      (transitionDirX ===  1) tetromino.x = 2;
+      else if (transitionDirX === -1) tetromino.x = canvas.width  - w - 2;
+      else if (transitionDirY === -1) tetromino.y = canvas.height - h;
+      else if (transitionDirY ===  1) tetromino.y = 0;
+      tetromino.vy           = 0;
+      tetromino.onGround     = false;
       transitioning      = false;
       transitionDirX     = 0;
       transitionDirY     = 0;
@@ -437,74 +679,83 @@ function update() {
   const { w, h } = blockBounds();
 
   // Spin animation
-  if (piece.spinning) {
-    piece.spinAngle += SPIN_SPEED;
-    if (piece.spinAngle >= 90) {
-      piece.spinAngle = 0;
-      piece.spinning  = false;
-      if (!piece.customBlocks) {
-        // Normal L-piece: advance rotation and permute block numbers accordingly
-        const perm = ROT_PERM[piece.rotIndex];
-        piece.blockNums = perm.map(p => piece.blockNums[p]);
-        piece.rotIndex  = (piece.rotIndex + 1) % 4;
+  if (tetromino.spinning) {
+    tetromino.spinAngle += SPIN_SPEED;
+    if (tetromino.spinAngle >= 90) {
+      tetromino.spinAngle = 0;
+      tetromino.spinning  = false;
+      tetromino.totalDeg  = (tetromino.totalDeg + 90) % 360;
+      if (!tetromino.customBlocks) {
+        if (tetromino.rotPerms) {
+          const perm = tetromino.rotPerms[tetromino.rotIndex];
+          tetromino.blockNums = perm.map(p => tetromino.blockNums[p]);
+        }
+        tetromino.rotIndex  = (tetromino.rotIndex + 1) % 4;
       } else {
         // Custom blocks: rotate each offset 90° CW around the bounding centre
         const { w, h } = blockBounds();
-        piece.customBlocks = piece.customBlocks.map(({ dx, dy }) => ({
+        tetromino.customBlocks = tetromino.customBlocks.map(({ dx, dy }) => ({
           dx: (h - CELL) - dy,
           dy: dx,
         }));
         // Normalise so min offsets are 0
-        const minDX = Math.min(...piece.customBlocks.map(b => b.dx));
-        const minDY = Math.min(...piece.customBlocks.map(b => b.dy));
-        piece.x += minDX; piece.y += minDY;
-        piece.customBlocks = piece.customBlocks.map(b => ({ dx: b.dx - minDX, dy: b.dy - minDY }));
+        const minDX = Math.min(...tetromino.customBlocks.map(b => b.dx));
+        const minDY = Math.min(...tetromino.customBlocks.map(b => b.dy));
+        tetromino.x += minDX; tetromino.y += minDY;
+        tetromino.customBlocks = tetromino.customBlocks.map(b => ({ dx: b.dx - minDX, dy: b.dy - minDY }));
       }
       const { w: nw, h: nh } = blockBounds();
-      if (piece.x + nw > canvas.width)  piece.x = canvas.width  - nw;
-      if (piece.x < 0)                  piece.x = 0;
-      if (piece.y + nh > canvas.height) piece.y = canvas.height - nh;
+      if (tetromino.x + nw > canvas.width)  tetromino.x = canvas.width  - nw;
+      if (tetromino.x < 0)                  tetromino.x = 0;
+      if (tetromino.y + nh > canvas.height) tetromino.y = canvas.height - nh;
     }
   }
 
   // Snap: while the fill timer is running, pixel-align the contributing player block
   // exactly onto its cell. Pressing left/right releases the snap.
-  const movingLaterally = keys['ArrowLeft'] || keys['KeyA'] || keys['ArrowRight'] || keys['KeyD'];
-  if (!movingLaterally && pendingChain !== null) {
+
+  tetromino.vx = 0;
+  if (keys['ArrowLeft']  || keys['KeyA']) tetromino.vx = -SPEED;
+  if (keys['ArrowRight'] || keys['KeyD']) tetromino.vx =  SPEED;
+
+  // Jump
+  if ((keys['ArrowUp'] || keys['KeyW'] || keys['Space']) && tetromino.onGround) {
+    tetromino.vy       = JUMP_VEL;
+    tetromino.onGround = false;
+    playJumpSound();
+  }
+
+  tetromino.vy += GRAVITY;
+  tetromino.x  += tetromino.vx;
+
+  // Horizontal side collision: only against solids at the same grid row as each block.
+  // Resting-on-top blocks have blockRow = platformRow - 1, so they never match.
+  if (roomX === 0 && roomY === 0 && tetromino.vx !== 0) {
     const offs = getBlockOffsets();
-    const { axis, index, chain } = pendingChain;
-    const playerVals = new Set(chain.filter(x => x.p).map(x => x.v));
+    const solids = [...PLATFORMS, ...filledCells];
     for (const { dx, dy } of offs) {
-      const { col, row } = blockCell(dx, dy);
-      if (axis === 'col' && col === index) {
-        piece.x = index * CELL - dx; break;
-      } else if (axis === 'row' && row === index && playerVals.has(col)) {
-        piece.x = col * CELL - dx; break;
+      const blockRow = Math.floor((tetromino.y + dy + CELL / 2) / CELL);
+      const bLeft    = tetromino.x + dx;
+      const bRight   = bLeft + CELL;
+      for (const s of solids) {
+        if (s.row !== blockRow) continue;
+        const pLeft = s.col * CELL, pRight = pLeft + CELL;
+        if (bRight > pLeft && bLeft < pRight) {
+          tetromino.x = tetromino.vx > 0 ? pLeft - dx - CELL : pRight - dx;
+          break;
+        }
       }
     }
   }
 
-  piece.vx = 0;
-  if (keys['ArrowLeft']  || keys['KeyA']) piece.vx = -SPEED;
-  if (keys['ArrowRight'] || keys['KeyD']) piece.vx =  SPEED;
-
-  // Jump
-  if ((keys['ArrowUp'] || keys['KeyW'] || keys['Space']) && piece.onGround) {
-    piece.vy       = JUMP_VEL;
-    piece.onGround = false;
-    playJumpSound();
-  }
-
-  piece.vy += GRAVITY;
-  piece.x  += piece.vx;
-  piece.y  += piece.vy;
+  tetromino.y  += tetromino.vy;
 
   // Floor collision
-  piece.onGround = false;
-  if (piece.y >= canvas.height - h) {
-    piece.y        = canvas.height - h;
-    piece.vy       = 0;
-    piece.onGround = true;
+  tetromino.onGround = false;
+  if (tetromino.y >= canvas.height - h) {
+    tetromino.y        = canvas.height - h;
+    tetromino.vy       = 0;
+    tetromino.onGround = true;
   }
 
   // Platform + filled-cell collision (room 0,0 only)
@@ -512,30 +763,39 @@ function update() {
     const offsets = getBlockOffsets();
 
     // Land-on-top helper.
-    // For filledCells, skip a block whose center is in a gap column — a column that
-    // has no filledCell in this same row — so it can fall into the gap rather than
-    // landing on top of adjacent filled squares.
-    function landOn(px, py, filledRow = -1) {
+    // Skip a block whose center column has no solid cell (platform or filledCell)
+    // at this row — so the block can fall into a gap rather than catching on edges.
+    function landOn(px, py) {
+      const solidRow = Math.floor(py / CELL);
+      const solidCol = Math.floor(px / CELL);
       for (const { dx, dy } of offsets) {
-        const bLeft      = piece.x + dx;
+        const bLeft      = tetromino.x + dx;
         const bRight     = bLeft + CELL;
         const bCenterCol = Math.floor((bLeft + CELL / 2) / CELL);
-        if (filledRow >= 0
-            && bCenterCol !== Math.floor(px / CELL)
-            && !filledCells.some(c => c.col === bCenterCol && c.row === filledRow)) continue;
-        const bBottom = piece.y + dy + CELL;
+        if (bCenterCol !== solidCol) {
+          const hasSolid = PLATFORMS.some(p => p.col === bCenterCol && p.row === solidRow)
+                        || filledCells.some(c => c.col === bCenterCol && c.row === solidRow);
+          if (!hasSolid) continue;
+        }
+        const bBottom = tetromino.y + dy + CELL;
         if (bRight > px && bLeft < px + CELL) {
-          if (piece.vy >= 0 && bBottom >= py && bBottom <= py + CELL + Math.abs(piece.vy) + 1) {
-            piece.y        = py - dy - CELL;
-            piece.vy       = 0;
-            piece.onGround = true;
+          if (tetromino.vy >= 0 && bBottom >= py && bBottom <= py + CELL + Math.abs(tetromino.vy) + 1) {
+            tetromino.y        = py - dy - CELL;
+            tetromino.vy       = 0;
+            tetromino.onGround = true;
           }
         }
       }
     }
 
     for (const plat of PLATFORMS) landOn(plat.col * CELL, plat.row * CELL);
-    for (const cell of filledCells) landOn(cell.col * CELL, cell.row * CELL, cell.row);
+    for (const cell of filledCells) landOn(cell.col * CELL, cell.row * CELL);
+
+    // Snap to grid when explosion is pending and player isn't moving laterally
+    const movingLaterally = keys['ArrowLeft'] || keys['KeyA'] || keys['ArrowRight'] || keys['KeyD'];
+    if (!movingLaterally && pendingChain !== null) {
+      tetromino.x = Math.round(tetromino.x / CELL) * CELL;
+    }
 
     checkExplosion();
   }
@@ -545,46 +805,44 @@ function update() {
     transitioning = true; transitionDirX = dx; transitionDirY = dy; transitionProgress = 0;
   }
 
-  if (piece.x + w >= canvas.width) {
-    piece.x = canvas.width - w;
+  if (tetromino.x + w >= canvas.width) {
+    tetromino.x = canvas.width - w;
     startTransition(1, 0);
-  } else if (piece.x <= 0) {
-    piece.x = 0;
+  } else if (tetromino.x <= 0) {
+    tetromino.x = 0;
     startTransition(-1, 0);
-  } else if (piece.y <= 0) {
-    piece.y = 0; piece.vy = 0;
+  } else if (tetromino.y <= 0) {
+    tetromino.y = 0; tetromino.vy = 0;
     startTransition(0, -1);
-  } else if (piece.onGround && piece.y >= canvas.height - h
+  } else if (tetromino.onGround && tetromino.y >= canvas.height - h
              && (keys['ArrowDown'] || keys['KeyS'])) {
     startTransition(0, 1);
   }
 }
 
-// ── Draw piece ─────────────────────────────────────────────────────────────────
+// ── Draw tetromino ─────────────────────────────────────────────────────────────────
 function drawPiece(offX = 0, offY = 0) {
   const offsets = getBlockOffsets();
   if (offsets.length === 0) return;
 
   const { w, h } = blockBounds();
-  const cx = piece.x + w / 2 + offX;
-  const cy = piece.y + h / 2 + offY;
+  const cx = tetromino.x + w / 2 + offX;
+  const cy = tetromino.y + h / 2 + offY;
 
   ctx.save();
-  if (piece.spinning) {
+  if (tetromino.spinning) {
     ctx.translate(cx, cy);
-    ctx.rotate(piece.spinAngle * Math.PI / 180);
+    ctx.rotate(tetromino.spinAngle * Math.PI / 180);
     ctx.translate(-cx, -cy);
   }
 
   offsets.forEach(({ dx, dy }, i) => {
-    const px = piece.x + dx + offX;
-    const py = piece.y + dy + offY;
-    ctx.fillStyle = '#ff6b00';
+    const px = tetromino.x + dx + offX;
+    const py = tetromino.y + dy + offY;
+    ctx.fillStyle   = tetromino.color;
     ctx.fillRect(px, py, CELL, CELL);
-    ctx.fillStyle = 'rgba(255,180,80,0.35)';
-    ctx.fillRect(px + 2, py + 2, CELL - 4, CELL - 4);
-    ctx.strokeStyle = '#ffaa44';
-    ctx.lineWidth   = 1;
+    ctx.strokeStyle = tetromino.border;
+    ctx.lineWidth   = 1.5;
     ctx.strokeRect(px + 0.5, py + 0.5, CELL - 1, CELL - 1);
 
     // Block number — persistent across rotations
@@ -592,7 +850,7 @@ function drawPiece(offX = 0, offY = 0) {
     ctx.fillStyle    = 'rgba(255,255,255,0.9)';
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(piece.blockNums[i], px + CELL / 2, py + CELL / 2);
+    ctx.fillText(tetromino.blockNums[i], px + CELL / 2, py + CELL / 2);
   });
 
   ctx.restore();
@@ -625,12 +883,12 @@ function drawRoom(rx, ry, offX, offY) {
       ctx.strokeStyle = plat.border; ctx.lineWidth = 1.5;
       ctx.strokeRect(px + 0.5, py + 0.5, CELL - 1, CELL - 1);
     }
-    // Filled cells (orange, same as player)
+    // Filled cells — drawn in their stored color
     for (const cell of filledCells) {
       const px = cell.col * CELL, py = cell.row * CELL;
-      ctx.fillStyle = '#ff6b00'; ctx.fillRect(px, py, CELL, CELL);
-      ctx.fillStyle = 'rgba(255,180,80,0.35)'; ctx.fillRect(px + 2, py + 2, CELL - 4, CELL - 4);
-      ctx.strokeStyle = '#ffaa44'; ctx.lineWidth = 1.5;
+      ctx.fillStyle = cell.color; ctx.fillRect(px, py, CELL, CELL);
+      ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.fillRect(px + 2, py + 2, CELL - 4, CELL - 4);
+      ctx.strokeStyle = cell.color; ctx.lineWidth = 1.5;
       ctx.strokeRect(px + 0.5, py + 0.5, CELL - 1, CELL - 1);
     }
   }
@@ -694,16 +952,110 @@ const ROTATION_DEGREES = ['0°', '90°', '180°', '270°'];
 
 function loop() {
   update(); updateParticles(); drawGrid();
-  elDegrees.textContent = piece.customBlocks ? '—' : ROTATION_DEGREES[piece.rotIndex];
+  elDegrees.textContent = tetromino.spinning
+    ? (tetromino.totalDeg + tetromino.spinAngle) + '°'
+    : tetromino.totalDeg + '°';
   updateFillBar();
   requestAnimationFrame(loop);
 }
 
-// ── Mouse events ───────────────────────────────────────────────────────────────
-if (sessionStorage.getItem('ptMusic')) {
-  sessionStorage.removeItem('ptMusic');
-  startRetroSong();
+// ── Tetromino selector ─────────────────────────────────────────────────────────
+const TETROMINO_NAMES = ['L','J','I','O','T','S','Z'];
+const PREVIEW_CELL    = 12;
+const PREVIEW_SIZE    = 4 * PREVIEW_CELL + 8;
+let selectedTetrominoIndex = 0;
+
+const COLOR_NAMES = ['red','orange','yellow','hot pink','green','cyan','blue','purple','gray','dark green'];
+
+function drawTetrominoPreviews() {
+  document.querySelectorAll('.tet-preview').forEach((cvs, i) => {
+    cvs.width  = PREVIEW_SIZE;
+    cvs.height = PREVIEW_SIZE;
+    const c   = cvs.getContext('2d');
+    const rot = TETROMINOS[i].rotations[0];
+    const ox  = Math.floor((4 - rot.w) / 2) * PREVIEW_CELL + 4;
+    const oy  = Math.floor((4 - rot.h) / 2) * PREVIEW_CELL + 4;
+    c.clearRect(0, 0, PREVIEW_SIZE, PREVIEW_SIZE);
+    for (const [col, row] of rot.blocks) {
+      const px = ox + col * PREVIEW_CELL;
+      const py = oy + row * PREVIEW_CELL;
+      c.fillStyle   = '#ffffff';
+      c.fillRect(px, py, PREVIEW_CELL, PREVIEW_CELL);
+      c.strokeStyle = '#aaaacc';
+      c.lineWidth   = 1.5;
+      c.strokeRect(px + 0.5, py + 0.5, PREVIEW_CELL - 1, PREVIEW_CELL - 1);
+    }
+    cvs.classList.toggle('selected', i === selectedTetrominoIndex);
+  });
 }
+
+// ── Color modal ────────────────────────────────────────────────────────────────
+const colorModal     = document.getElementById('color-modal');
+const colorModalGrid = document.getElementById('color-modal-grid');
+let pendingTetrominoIndex = 0;
+
+VIVID_COLORS.forEach(vc => {
+  const btn = document.createElement('button');
+  btn.className = 'color-btn';
+  btn.style.background   = vc.color;
+  btn.style.borderColor  = vc.border;
+  btn.style.color        = '#000';
+  btn.textContent        = `${vc.id} · ${COLOR_NAMES[vc.id - 1]}`;
+  btn.addEventListener('click', () => {
+    applyTetrominoSelection(pendingTetrominoIndex, vc);
+    colorModal.classList.remove('open');
+  });
+  colorModalGrid.appendChild(btn);
+});
+
+colorModal.addEventListener('click', e => {
+  if (e.target === colorModal) colorModal.classList.remove('open');
+});
+
+function applyTetrominoSelection(index, clr) {
+  selectedTetrominoIndex = index;
+  const shape = TETROMINOS[index];
+  tetromino.rotations    = shape.rotations;
+  tetromino.rotPerms     = shape.rotPerms;
+  tetromino.color        = clr.color;
+  tetromino.border       = clr.border;
+  tetromino.rotIndex     = 0;
+  tetromino.customBlocks = null;
+  tetromino.blockNums    = [1, 2, 3, 4];
+  tetromino.spinning     = false;
+  tetromino.spinAngle    = 0;
+  tetromino.totalDeg     = 0;
+  tetromino.vx           = 0;
+  tetromino.vy           = 0;
+  tetromino.onGround     = false;
+  const w = shape.rotations[0].w * CELL;
+  tetromino.x = Math.round((canvas.width / 2 - w / 2) / CELL) * CELL;
+  tetromino.y = 2 * CELL;
+  drawTetrominoPreviews();
+}
+
+document.querySelectorAll('.tet-preview').forEach((cvs, i) => {
+  cvs.addEventListener('click', () => {
+    pendingTetrominoIndex = i;
+    colorModal.classList.add('open');
+  });
+});
+
+// ── Start screen ───────────────────────────────────────────────────────────────
+const startScreen = document.getElementById('start-screen');
+let gameStarted = false;
+
+function beginGame() {
+  if (gameStarted) return;
+  gameStarted = true;
+  startRetroSong();
+  startScreen.style.display = 'none';
+  drawTetrominoPreviews();
+  loop();
+}
+
+startScreen.addEventListener('click',   beginGame, { once: true });
+document.addEventListener('keydown',    beginGame, { once: true });
 
 canvas.addEventListener('mousemove', (e) => {
   const rect = canvas.getBoundingClientRect();
@@ -748,5 +1100,3 @@ document.addEventListener('mousemove', (e) => {
 
 document.addEventListener('mouseleave', () => { bgTooltip.style.display = 'none'; });
 canvas.addEventListener('mouseenter',   () => { bgTooltip.style.display = 'none'; });
-
-loop();

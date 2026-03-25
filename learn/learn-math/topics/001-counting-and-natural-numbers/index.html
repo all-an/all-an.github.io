@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>01 — Counting &amp; Natural Numbers</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <a href="../../index.html" class="back">← back to learn math</a>
+
+  <header>
+    <div class="tag">Foundations · 01</div>
+    <h1>Counting &amp; Natural Numbers</h1>
+    <p class="intro">
+      The most fundamental act in mathematics is counting. Natural numbers are the first numbers
+      humans ever used — they arise simply from the idea of "one more."
+    </p>
+  </header>
+
+  <main class="content">
+
+    <!-- 1. What are natural numbers -->
+    <div class="section">
+      <div class="section-label">Definition</div>
+      <h2>What are Natural Numbers?</h2>
+      <p>
+        Natural numbers are the counting numbers you use every day: 1, 2, 3, 4, 5, … and so on
+        forever. They have no end — no matter how large a number you name, there is always one more.
+      </p>
+      <p>
+        There is a small disagreement among mathematicians about whether 0 belongs to the natural
+        numbers. In number theory and most everyday contexts the naturals start at 1. In set theory
+        and computer science they often start at 0. Both conventions are correct — the important
+        thing is to be consistent about which one you are using.
+      </p>
+
+      <div class="callout">
+        <strong>ℕ (starting at 1):</strong> &nbsp;{ 1, 2, 3, 4, 5, 6, … }<br>
+        <strong>ℕ₀ (starting at 0):</strong> &nbsp;{ 0, 1, 2, 3, 4, 5, … }
+      </div>
+
+      <p>The symbol <strong style="color:#00ff88">ℕ</strong> (blackboard bold N) is standard notation for this set.</p>
+
+      <div class="number-set">
+        <span class="num-chip zero">0</span>
+        <span class="num-chip">1</span>
+        <span class="num-chip">2</span>
+        <span class="num-chip">3</span>
+        <span class="num-chip">4</span>
+        <span class="num-chip">5</span>
+        <span class="num-chip">6</span>
+        <span class="num-chip">7</span>
+        <span class="num-chip">8</span>
+        <span class="num-chip">9</span>
+        <span class="num-chip">10</span>
+        <span class="num-chip">11</span>
+        <span class="num-chip">12</span>
+        <span style="color:#333;padding:6px 4px;font-size:1rem;align-self:center">…</span>
+      </div>
+    </div>
+
+    <!-- 2. Counting -->
+    <div class="section">
+      <div class="section-label">Counting</div>
+      <h2>The Act of Counting</h2>
+      <p>
+        Counting means assigning a unique natural number to each object in a collection, starting
+        from 1 and going up by one for each new object. The last number you say tells you "how many"
+        there are — this is called the <em style="color:#ccc">cardinality</em> of the collection.
+      </p>
+      <p>
+        Two key principles underlie all of counting:
+      </p>
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-title">One-to-one correspondence</div>
+          <p>Each object gets exactly one number, and each number is used for exactly one object.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">Stable order</div>
+          <p>You always count in the same sequence: 1, 2, 3, … — never skipping or repeating.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">Cardinality</div>
+          <p>The final number reached tells you the total size (count) of the collection.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">Order independence</div>
+          <p>You get the same total no matter which object you count first.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. The number line -->
+    <div class="section">
+      <div class="section-label">Visualization</div>
+      <h2>The Number Line</h2>
+      <p>
+        A number line places every natural number at an equal distance from its neighbours.
+        Moving right always means "bigger"; moving left means "smaller."
+        The line extends infinitely to the right — there is no largest natural number.
+      </p>
+
+      <div id="number-line-wrap">
+        <svg id="number-line-svg" width="680" height="68" viewBox="0 0 680 68">
+          <!-- axis line -->
+          <line x1="20" y1="34" x2="660" y2="34" stroke="#1e4a1e" stroke-width="1.5"/>
+          <!-- arrowhead -->
+          <polygon points="660,34 648,28 648,40" fill="#1e4a1e"/>
+          <!-- ticks and labels -->
+        </svg>
+      </div>
+
+      <p style="color:#444;font-size:0.8rem">The gap between consecutive numbers is always exactly 1 — natural numbers are equally spaced.</p>
+    </div>
+
+    <!-- 4. Successor function -->
+    <div class="section">
+      <div class="section-label">Core Concept</div>
+      <h2>The Successor Function</h2>
+      <p>
+        Every natural number has a unique <em style="color:#ccc">successor</em> — the next number,
+        obtained by adding 1. This is written S(n) or n + 1.
+      </p>
+
+      <div class="math-block">
+        S(n) = n + 1<br>
+        <span class="comment">// examples</span><br>
+        S(1) = 2 &nbsp;&nbsp; S(5) = 6 &nbsp;&nbsp; S(99) = 100
+      </div>
+
+      <p>
+        No two different numbers have the same successor (S is injective), and 1 (or 0,
+        depending on convention) is never a successor of anything — it is the "first" natural number.
+        These two facts are the seeds of the Peano axioms below.
+      </p>
+    </div>
+
+    <!-- 5. Properties -->
+    <div class="section">
+      <div class="section-label">Properties</div>
+      <h2>Key Properties of ℕ</h2>
+      <p>Natural numbers behave predictably under ordering and arithmetic operations:</p>
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-title">Well-ordered</div>
+          <p>Every non-empty subset has a smallest element. There is no infinite decreasing sequence.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">Closed under + and ×</div>
+          <p>Adding or multiplying two naturals always gives another natural. Subtraction and division may not.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">Totally ordered</div>
+          <p>For any two naturals a and b, exactly one holds: a &lt; b, a = b, or a &gt; b.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">Infinite</div>
+          <p>There is no largest natural number — the set ℕ is countably infinite.</p>
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong>Why "countably" infinite?</strong><br>
+        A set is countably infinite when its elements can be listed in a sequence: 1, 2, 3, 4, …
+        Some infinite sets (like the real numbers) are too large to list this way — they are
+        <em>uncountably</em> infinite. ℕ is the simplest infinite set.
+      </div>
+    </div>
+
+    <!-- 6. Peano axioms -->
+    <div class="section">
+      <div class="section-label">Foundations</div>
+      <h2>Peano's Axioms (brief)</h2>
+      <p>
+        In 1889, Giuseppe Peano gave a rigorous foundation for the natural numbers using five axioms.
+        Everything about ℕ can be proved from just these rules:
+      </p>
+      <ul class="axiom-list">
+        <li><span class="ax-num">P1</span>0 (or 1) is a natural number.</li>
+        <li><span class="ax-num">P2</span>Every natural number n has a successor S(n) that is also a natural number.</li>
+        <li><span class="ax-num">P3</span>0 (or 1) is not the successor of any natural number.</li>
+        <li><span class="ax-num">P4</span>If S(m) = S(n), then m = n — different numbers have different successors.</li>
+        <li><span class="ax-num">P5</span><strong style="color:#ccc">Induction:</strong> if a property holds for 0 and whenever it holds for n it also holds for S(n), then it holds for all natural numbers.</li>
+      </ul>
+      <p>
+        Axiom P5 is mathematical induction — the powerful proof technique you will use throughout
+        this series.
+      </p>
+    </div>
+
+    <!-- 7. Interactive demo -->
+    <div class="section">
+      <div class="section-label">Interactive</div>
+      <h2>Try It</h2>
+
+      <div class="demo">
+        <div class="demo-title">Counting demo</div>
+
+        <div class="counter-area">
+          <div id="count-display">0</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <button class="btn" id="btn-increment">+ count one more</button>
+            <button class="btn secondary" id="btn-reset">reset to 0</button>
+          </div>
+        </div>
+        <div class="counter-info" id="counter-info">Press the button to start counting.</div>
+      </div>
+
+      <div class="demo">
+        <div class="demo-title">Successor explorer</div>
+        <div class="successor-row">
+          <label>Enter any natural number:</label>
+          <input type="number" id="succ-input" class="num-input" value="1" min="0" max="999999">
+        </div>
+        <div class="successor-result" id="succ-result"></div>
+      </div>
+    </div>
+
+    <!-- 8. Summary -->
+    <div class="section">
+      <div class="section-label">Summary</div>
+      <h2>Key Takeaways</h2>
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-title">ℕ = { 1, 2, 3, … }</div>
+          <p>The counting numbers, starting from 1 (or 0 in some contexts).</p>
+        </div>
+        <div class="card">
+          <div class="card-title">S(n) = n + 1</div>
+          <p>Every number has exactly one successor. The sequence never ends.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">Well-ordered</div>
+          <p>Every non-empty set of naturals has a smallest element.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">Countably infinite</div>
+          <p>Infinitely many numbers, but they can be listed one by one.</p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <div class="nav-footer content">
+    <span style="color:#222">← (first topic)</span>
+    <a href="exercises/index.html" class="exercises-link">exercises →</a>
+    <a href="../002-addition-and-subtraction/index.html">02 Addition &amp; Subtraction →</a>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

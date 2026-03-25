@@ -2,6 +2,7 @@
 
 const AudioCtx = window.AudioContext || window.webkitAudioContext;
 let ac = null;
+let loopStarted = false;
 
 const BPM      = 140;
 const BEAT     = 60 / BPM;
@@ -111,9 +112,17 @@ function hihat(t, out) {
 }
 
 // ── Scheduler ─────────────────────────────────────────────────────────────────
+let firstLoop = true;
+
 function scheduleLoop(startTime) {
   const master = ac.createGain();
-  master.gain.value = 0.15;
+  if (firstLoop) {
+    firstLoop = false;
+    master.gain.setValueAtTime(0, startTime);
+    master.gain.linearRampToValueAtTime(0.15, startTime + 1.5);
+  } else {
+    master.gain.value = 0.15;
+  }
   master.connect(ac.destination);
 
   const len = MELODY.length;
@@ -131,7 +140,11 @@ function scheduleLoop(startTime) {
 }
 
 export function startRetroSong() {
-  if (ac) return;
-  ac = new AudioCtx();
-  scheduleLoop(ac.currentTime + 0.05);
+  if (loopStarted) return;
+  if (!ac) ac = new AudioCtx();
+  ac.resume().then(() => {
+    if (loopStarted) return;
+    loopStarted = true;
+    scheduleLoop(ac.currentTime + 0.05);
+  });
 }

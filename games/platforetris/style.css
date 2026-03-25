@@ -28,6 +28,39 @@ body {
   letter-spacing: 1px;
 }
 
+#start-screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #111;
+  z-index: 200;
+  cursor: pointer;
+  gap: 20px;
+}
+
+#start-title {
+  font-family: monospace;
+  font-size: 2.4rem;
+  letter-spacing: 4px;
+  color: #ffaa44;
+  text-shadow: 0 0 24px #ffaa4488;
+}
+
+#start-prompt {
+  font-family: monospace;
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+  color: #8888cc;
+  animation: blink 1.2s step-end infinite;
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
 #game-container {
   position: relative;
 }
@@ -64,6 +97,86 @@ body {
 #game-canvas {
   display: block;
   border: 2px solid #444;
+}
+
+#tetromino-selector {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.tet-preview {
+  cursor: pointer;
+  border: 2px solid #444;
+  background: #1a1a2e;
+  border-radius: 4px;
+  display: block;
+}
+
+.tet-preview:hover {
+  border-color: #8888cc;
+}
+
+.tet-preview.selected {
+  border-color: #ffaa44;
+  box-shadow: 0 0 8px #ffaa4488;
+}
+
+#color-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 300;
+  align-items: center;
+  justify-content: center;
+}
+
+#color-modal.open {
+  display: flex;
+}
+
+#color-modal-box {
+  background: #12122a;
+  border: 2px solid #5555cc;
+  border-radius: 10px;
+  padding: 24px 28px;
+  box-shadow: 0 0 40px #5555cc88;
+}
+
+#color-modal-title {
+  font-family: monospace;
+  font-size: 1rem;
+  letter-spacing: 3px;
+  color: #8888cc;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+#color-modal-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.color-btn {
+  font-family: monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  padding: 8px 10px;
+  cursor: pointer;
+  color: #000;
+  font-weight: bold;
+  text-align: center;
+  min-width: 80px;
+}
+
+.color-btn:hover {
+  border-color: #fff;
+  filter: brightness(1.2);
 }
 
 #cell-tooltip {

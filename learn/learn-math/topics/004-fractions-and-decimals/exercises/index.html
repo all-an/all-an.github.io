@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exercises — Fractions &amp; Decimals</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <a href="../index.html" class="back">← back to lesson</a>
+
+  <header>
+    <div class="tag">Foundations · 04 · Exercises</div>
+    <h1>Fractions &amp; Decimals</h1>
+    <p class="subtitle">8 JavaScript exercises — write real code, run it in the browser</p>
+  </header>
+
+  <div class="content">
+
+    <div class="score-bar">
+      <div>
+        <div class="score-label">SCORE</div>
+        <div id="score-display">0 / 8</div>
+      </div>
+      <div class="progress-bar-outer"><div id="progress-bar"></div></div>
+      <div id="progress-text">0 passed</div>
+    </div>
+
+    <!-- 1 -->
+    <div class="exercise" id="ex-1">
+      <div class="ex-header">
+        <span class="ex-num">01</span>
+        <span class="ex-title">Simplify a fraction</span>
+        <span class="ex-badge" id="badge-1"></span>
+      </div>
+      <p class="ex-desc">
+        Write <code>simplify(num, den)</code> that returns the fraction in simplest form
+        as a two-element array <code>[num, den]</code>. Use the GCD to reduce.
+        E.g. <code>simplify(6, 4)</code> → <code>[3, 2]</code>.
+      </p>
+      <button class="hint-toggle" data-hint="hint-1">▸ show hint</button>
+      <div class="hint-box" id="hint-1">
+        First write a <span class="hl">gcd(a, b)</span> helper using the Euclidean algorithm,
+        then divide both <span class="hl">num</span> and <span class="hl">den</span> by
+        <span class="hl">gcd(Math.abs(num), Math.abs(den))</span>.
+      </div>
+      <div class="editor-wrap">
+        <textarea class="code-editor" id="code-1" rows="9">function simplify(num, den) {
+  // hint: write a gcd helper first
+  // return [num / g, den / g]
+  return [num, den];
+}</textarea>
+      </div>
+      <div class="action-row">
+        <button class="btn-run" id="run-1">▶ run</button>
+        <button class="btn-reset" id="reset-1">reset</button>
+        <span class="run-status" id="status-1"></span>
+      </div>
+      <div class="output-box" id="out-1"></div>
+    </div>
+
+    <!-- 2 -->
+    <div class="exercise" id="ex-2">
+      <div class="ex-header">
+        <span class="ex-num">02</span>
+        <span class="ex-title">Add two fractions</span>
+        <span class="ex-badge" id="badge-2"></span>
+      </div>
+      <p class="ex-desc">
+        Write <code>addFractions(n1, d1, n2, d2)</code> that adds the fractions
+        <code>n1/d1 + n2/d2</code> and returns the result as a simplified
+        <code>[num, den]</code> array.
+      </p>
+      <button class="hint-toggle" data-hint="hint-2">▸ show hint</button>
+      <div class="hint-box" id="hint-2">
+        Cross-multiply: <span class="hl">num = n1 * d2 + n2 * d1</span>,
+        <span class="hl">den = d1 * d2</span>, then call <span class="hl">simplify</span>.
+      </div>
+      <div class="editor-wrap">
+        <textarea class="code-editor" id="code-2" rows="8">function addFractions(n1, d1, n2, d2) {
+  // cross-multiply then simplify
+  // you may reuse or rewrite gcd/simplify here
+  return [0, 1];
+}</textarea>
+      </div>
+      <div class="action-row">
+        <button class="btn-run" id="run-2">▶ run</button>
+        <button class="btn-reset" id="reset-2">reset</button>
+        <span class="run-status" id="status-2"></span>
+      </div>
+      <div class="output-box" id="out-2"></div>
+    </div>
+
+    <!-- 3 -->
+    <div class="exercise" id="ex-3">
+      <div class="ex-header">
+        <span class="ex-num">03</span>
+        <span class="ex-title">Fraction to decimal</span>
+        <span class="ex-badge" id="badge-3"></span>
+      </div>
+      <p class="ex-desc">
+        Write <code>toDecimal(num, den)</code> that returns the decimal value of the
+        fraction <code>num / den</code> as a JavaScript number.
+      </p>
+      <button class="hint-toggle" data-hint="hint-3">▸ show hint</button>
+      <div class="hint-box" id="hint-3">
+        Simply <span class="hl">return num / den;</span> — JavaScript division always
+        produces a float when the result is not an integer.
+      </div>
+      <div class="editor-wrap">
+        <textarea class="code-editor" id="code-3" rows="5">function toDecimal(num, den) {
+  // your code here
+  return 0;
+}</textarea>
+      </div>
+      <div class="action-row">
+        <button class="btn-run" id="run-3">▶ run</button>
+        <button class="btn-reset" id="reset-3">reset</button>
+        <span class="run-status" id="status-3"></span>
+      </div>
+      <div class="output-box" id="out-3"></div>
+    </div>
+
+    <!-- 4 -->
+    <div class="exercise" id="ex-4">
+      <div class="ex-header">
+        <span class="ex-num">04</span>
+        <span class="ex-title">Is it a proper fraction?</span>
+        <span class="ex-badge" id="badge-4"></span>
+      </div>
+      <p class="ex-desc">
+        Write <code>isProper(num, den)</code> that returns <code>true</code> if
+        <code>num/den</code> is a proper fraction (absolute value of numerator
+        is less than the denominator), and <code>false</code> otherwise.
+      </p>
+      <button class="hint-toggle" data-hint="hint-4">▸ show hint</button>
+      <div class="hint-box" id="hint-4">
+        <span class="hl">return Math.abs(num) &lt; den;</span>
+      </div>
+      <div class="editor-wrap">
+        <textarea class="code-editor" id="code-4" rows="5">function isProper(num, den) {
+  // return true if |num| < den
+  return false;
+}</textarea>
+      </div>
+      <div class="action-row">
+        <button class="btn-run" id="run-4">▶ run</button>
+        <button class="btn-reset" id="reset-4">reset</button>
+        <span class="run-status" id="status-4"></span>
+      </div>
+      <div class="output-box" id="out-4"></div>
+    </div>
+
+    <!-- 5 -->
+    <div class="exercise" id="ex-5">
+      <div class="ex-header">
+        <span class="ex-num">05</span>
+        <span class="ex-title">Convert to mixed number</span>
+        <span class="ex-badge" id="badge-5"></span>
+      </div>
+      <p class="ex-desc">
+        Write <code>toMixed(num, den)</code> that converts an improper fraction to a
+        mixed number. Return a three-element array <code>[whole, remainderNum, den]</code>.
+        E.g. <code>toMixed(7, 2)</code> → <code>[3, 1, 2]</code> (= 3½).
+      </p>
+      <button class="hint-toggle" data-hint="hint-5">▸ show hint</button>
+      <div class="hint-box" id="hint-5">
+        <span class="hl">const whole = Math.floor(num / den);</span>
+        <span class="hl">const rem = num % den;</span>
+        then return <span class="hl">[whole, rem, den]</span>.
+      </div>
+      <div class="editor-wrap">
+        <textarea class="code-editor" id="code-5" rows="7">function toMixed(num, den) {
+  // whole part = Math.floor(num / den)
+  // remainder numerator = num % den
+  return [0, 0, den];
+}</textarea>
+      </div>
+      <div class="action-row">
+        <button class="btn-run" id="run-5">▶ run</button>
+        <button class="btn-reset" id="reset-5">reset</button>
+        <span class="run-status" id="status-5"></span>
+      </div>
+      <div class="output-box" id="out-5"></div>
+    </div>
+
+    <!-- 6 -->
+    <div class="exercise" id="ex-6">
+      <div class="ex-header">
+        <span class="ex-num">06</span>
+        <span class="ex-title">Multiply two fractions</span>
+        <span class="ex-badge" id="badge-6"></span>
+      </div>
+      <p class="ex-desc">
+        Write <code>multiplyFractions(n1, d1, n2, d2)</code> that multiplies the two
+        fractions and returns the result as a simplified <code>[num, den]</code> array.
+      </p>
+      <button class="hint-toggle" data-hint="hint-6">▸ show hint</button>
+      <div class="hint-box" id="hint-6">
+        Multiply numerators together and denominators together:
+        <span class="hl">simplify(n1 * n2, d1 * d2)</span>.
+      </div>
+      <div class="editor-wrap">
+        <textarea class="code-editor" id="code-6" rows="7">function multiplyFractions(n1, d1, n2, d2) {
+  // numerators multiply, denominators multiply, then simplify
+  return [0, 1];
+}</textarea>
+      </div>
+      <div class="action-row">
+        <button class="btn-run" id="run-6">▶ run</button>
+        <button class="btn-reset" id="reset-6">reset</button>
+        <span class="run-status" id="status-6"></span>
+      </div>
+      <div class="output-box" id="out-6"></div>
+    </div>
+
+    <!-- 7 -->
+    <div class="exercise" id="ex-7">
+      <div class="ex-header">
+        <span class="ex-num">07</span>
+        <span class="ex-title">Round to decimal places</span>
+        <span class="ex-badge" id="badge-7"></span>
+      </div>
+      <p class="ex-desc">
+        Write <code>roundTo(n, places)</code> that rounds the number <code>n</code>
+        to <code>places</code> decimal places and returns the result.
+        E.g. <code>roundTo(3.14159, 2)</code> → <code>3.14</code>.
+      </p>
+      <button class="hint-toggle" data-hint="hint-7">▸ show hint</button>
+      <div class="hint-box" id="hint-7">
+        <span class="hl">const factor = 10 ** places;</span>
+        then <span class="hl">return Math.round(n * factor) / factor;</span>
+      </div>
+      <div class="editor-wrap">
+        <textarea class="code-editor" id="code-7" rows="6">function roundTo(n, places) {
+  // use 10 ** places as a scaling factor
+  return n;
+}</textarea>
+      </div>
+      <div class="action-row">
+        <button class="btn-run" id="run-7">▶ run</button>
+        <button class="btn-reset" id="reset-7">reset</button>
+        <span class="run-status" id="status-7"></span>
+      </div>
+      <div class="output-box" id="out-7"></div>
+    </div>
+
+    <!-- 8 -->
+    <div class="exercise" id="ex-8">
+      <div class="ex-header">
+        <span class="ex-num">08</span>
+        <span class="ex-title">Fraction to percentage</span>
+        <span class="ex-badge" id="badge-8"></span>
+      </div>
+      <p class="ex-desc">
+        Write <code>fractionToPercent(num, den)</code> that converts the fraction
+        to a percentage value (0–100). E.g. <code>fractionToPercent(3, 4)</code>
+        → <code>75</code>.
+      </p>
+      <button class="hint-toggle" data-hint="hint-8">▸ show hint</button>
+      <div class="hint-box" id="hint-8">
+        <span class="hl">return (num / den) * 100;</span>
+      </div>
+      <div class="editor-wrap">
+        <textarea class="code-editor" id="code-8" rows="5">function fractionToPercent(num, den) {
+  // multiply the decimal form by 100
+  return 0;
+}</textarea>
+      </div>
+      <div class="action-row">
+        <button class="btn-run" id="run-8">▶ run</button>
+        <button class="btn-reset" id="reset-8">reset</button>
+        <span class="run-status" id="status-8"></span>
+      </div>
+      <div class="output-box" id="out-8"></div>
+    </div>
+
+  </div>
+
+  <div class="nav-footer">
+    <a href="../index.html">← back to lesson</a>
+    <a href="../../005-percentages-and-ratios/index.html">05 Percentages &amp; Ratios →</a>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

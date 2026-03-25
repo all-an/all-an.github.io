@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exercises — Counting &amp; Natural Numbers</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <a href="../index.html" class="back">← back to lesson</a>
+
+  <header>
+    <div class="tag">Foundations · 01 · Exercises</div>
+    <h1>Counting &amp; Natural Numbers</h1>
+    <p class="subtitle">10 exercises — multiple choice &amp; fill in the blank</p>
+  </header>
+
+  <div class="content">
+
+    <!-- Score -->
+    <div class="score-bar">
+      <div>
+        <div class="score-label">SCORE</div>
+        <div id="score-display">0 / 10</div>
+      </div>
+      <div class="progress-bar-outer">
+        <div id="progress-bar-inner"></div>
+      </div>
+      <div id="progress-text">0 answered</div>
+    </div>
+
+    <!-- Exercise 1 -->
+    <div class="exercise" id="ex-1">
+      <div class="ex-header">
+        <span class="ex-num">01</span>
+        <span class="ex-question">Which of the following is the correct standard symbol for the set of natural numbers?</span>
+        <span class="ex-status" id="st-1"></span>
+      </div>
+      <div class="choices" id="ch-1">
+        <button class="choice-btn" data-value="Z">ℤ</button>
+        <button class="choice-btn" data-value="N">ℕ</button>
+        <button class="choice-btn" data-value="R">ℝ</button>
+        <button class="choice-btn" data-value="Q">ℚ</button>
+      </div>
+      <div class="ex-actions">
+        <button class="btn-check" id="chk-1">check</button>
+        <button class="btn-reveal" id="rev-1">reveal</button>
+      </div>
+      <div class="feedback" id="fb-1"></div>
+    </div>
+
+    <!-- Exercise 2 -->
+    <div class="exercise" id="ex-2">
+      <div class="ex-header">
+        <span class="ex-num">02</span>
+        <span class="ex-question">What is S(7), the successor of 7?</span>
+        <span class="ex-status" id="st-2"></span>
+      </div>
+      <div class="fill-row">
+        <span class="fill-context">S(7) =</span>
+        <input type="number" class="fill-input" id="fi-2" min="0" placeholder="?">
+      </div>
+      <div class="ex-actions">
+        <button class="btn-check" id="chk-2">check</button>
+        <button class="btn-reveal" id="rev-2">reveal</button>
+      </div>
+      <div class="feedback" id="fb-2"></div>
+    </div>
+
+    <!-- Exercise 3 -->
+    <div class="exercise" id="ex-3">
+      <div class="ex-header">
+        <span class="ex-num">03</span>
+        <span class="ex-question">How many natural numbers are there?</span>
+        <span class="ex-status" id="st-3"></span>
+      </div>
+      <div class="choices" id="ch-3">
+        <button class="choice-btn" data-value="100">Exactly 100</button>
+        <button class="choice-btn" data-value="finite">Finite but unknown</button>
+        <button class="choice-btn" data-value="infinite">Infinitely many (countably infinite)</button>
+        <button class="choice-btn" data-value="uncountable">Uncountably infinite</button>
+      </div>
+      <div class="ex-actions">
+        <button class="btn-check" id="chk-3">check</button>
+        <button class="btn-reveal" id="rev-3">reveal</button>
+      </div>
+      <div class="feedback" id="fb-3"></div>
+    </div>
+
+    <!-- Exercise 4 -->
+    <div class="exercise" id="ex-4">
+      <div class="ex-header">
+        <span class="ex-num">04</span>
+        <span class="ex-question">Fill in the blank: S(S(S(0))) = ___</span>
+        <span class="ex-status" id="st-4"></span>
+      </div>
+      <div class="fill-row">
+        <span class="fill-context">S(S(S(0))) =</span>
+        <input type="number" class="fill-input" id="fi-4" min="0" placeholder="?">
+      </div>
+      <div class="ex-actions">
+        <button class="btn-check" id="chk-4">check</button>
+        <button class="btn-reveal" id="rev-4">reveal</button>
+      </div>
+      <div class="feedback" id="fb-4"></div>
+    </div>
+
+    <!-- Exercise 5 -->
+    <div class="exercise" id="ex-5">
+      <div class="ex-header">
+        <span class="ex-num">05</span>
+        <span class="ex-question">Which property guarantees that every non-empty set of natural numbers has a smallest element?</span>
+        <span class="ex-status" id="st-5"></span>
+      </div>
+      <div class="choices" id="ch-5">
+        <button class="choice-btn" data-value="closure">Closure under addition</button>
+        <button class="choice-btn" data-value="wellordered">Well-ordering</button>
+        <button class="choice-btn" data-value="commutativity">Commutativity</button>
+        <button class="choice-btn" data-value="infinity">Countable infinity</button>
+      </div>
+      <div class="ex-actions">
+        <button class="btn-check" id="chk-5">check</button>
+        <button class="btn-reveal" id="rev-5">reveal</button>
+      </div>
+      <div class="feedback" id="fb-5"></div>
+    </div>
+
+    <!-- Exercise 6 -->
+    <div class="exercise" id="ex-6">
+      <div class="ex-header">
+        <span class="ex-num">06</span>
+        <span class="ex-question">Is 0 always considered a natural number?</span>
+        <span class="ex-status" id="st-6"></span>
+      </div>
+      <div class="choices" id="ch-6">
+        <button class="choice-btn" data-value="yes">Yes, universally</button>
+        <button class="choice-btn" data-value="no">No, never</button>
+        <button class="choice-btn" data-value="depends">It depends on the convention used</button>
+        <button class="choice-btn" data-value="irrational">0 is irrational so it cannot be natural</button>
+      </div>
+      <div class="ex-actions">
+        <button class="btn-check" id="chk-6">check</button>
+        <button class="btn-reveal" id="rev-6">reveal</button>
+      </div>
+      <div class="feedback" id="fb-6"></div>
+    </div>
+
+    <!-- Exercise 7 -->
+    <div class="exercise" id="ex-7">
+      <div class="ex-header">
+        <span class="ex-num">07</span>
+        <span class="ex-question">You count 5 apples, then 3 more. What is the total count?</span>
+        <span class="ex-status" id="st-7"></span>
+      </div>
+      <div class="fill-row">
+        <span class="fill-context">Total =</span>
+        <input type="number" class="fill-input" id="fi-7" min="0" placeholder="?">
+      </div>
+      <div class="ex-actions">
+        <button class="btn-check" id="chk-7">check</button>
+        <button class="btn-reveal" id="rev-7">reveal</button>
+      </div>
+      <div class="feedback" id="fb-7"></div>
+    </div>
+
+    <!-- Exercise 8 -->
+    <div class="exercise" id="ex-8">
+      <div class="ex-header">
+        <span class="ex-num">08</span>
+        <span class="ex-question">Which of the following is NOT a natural number?</span>
+        <span class="ex-status" id="st-8"></span>
+      </div>
+      <div class="choices" id="ch-8">
+        <button class="choice-btn" data-value="1">1</button>
+        <button class="choice-btn" data-value="1000">1 000 000</button>
+        <button class="choice-btn" data-value="-3">−3</button>
+        <button class="choice-btn" data-value="99">99</button>
+      </div>
+      <div class="ex-actions">
+        <button class="btn-check" id="chk-8">check</button>
+        <button class="btn-reveal" id="rev-8">reveal</button>
+      </div>
+      <div class="feedback" id="fb-8"></div>
+    </div>
+
+    <!-- Exercise 9 -->
+    <div class="exercise" id="ex-9">
+      <div class="ex-header">
+        <span class="ex-num">09</span>
+        <span class="ex-question">Which Peano axiom says: "If S(m) = S(n), then m = n"?</span>
+        <span class="ex-status" id="st-9"></span>
+      </div>
+      <div class="choices" id="ch-9">
+        <button class="choice-btn" data-value="P1">P1 — 0 is a natural number</button>
+        <button class="choice-btn" data-value="P3">P3 — 0 is not a successor of any number</button>
+        <button class="choice-btn" data-value="P4">P4 — the successor function is injective</button>
+        <button class="choice-btn" data-value="P5">P5 — mathematical induction</button>
+      </div>
+      <div class="ex-actions">
+        <button class="btn-check" id="chk-9">check</button>
+        <button class="btn-reveal" id="rev-9">reveal</button>
+      </div>
+      <div class="feedback" id="fb-9"></div>
+    </div>
+
+    <!-- Exercise 10 -->
+    <div class="exercise" id="ex-10">
+      <div class="ex-header">
+        <span class="ex-num">10</span>
+        <span class="ex-question">What is the predecessor of 1 inside the natural numbers (ℕ starting at 1)?</span>
+        <span class="ex-status" id="st-10"></span>
+      </div>
+      <div class="choices" id="ch-10">
+        <button class="choice-btn" data-value="0">0</button>
+        <button class="choice-btn" data-value="-1">−1</button>
+        <button class="choice-btn" data-value="none">1 has no predecessor in ℕ (starting at 1)</button>
+        <button class="choice-btn" data-value="0.5">0.5</button>
+      </div>
+      <div class="ex-actions">
+        <button class="btn-check" id="chk-10">check</button>
+        <button class="btn-reveal" id="rev-10">reveal</button>
+      </div>
+      <div class="feedback" id="fb-10"></div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+      <button class="btn-reset-all" id="reset-all">reset all</button>
+      <span class="final-message" id="final-msg"></span>
+    </div>
+
+  </div>
+
+  <div class="nav-footer">
+    <a href="../index.html">← back to lesson</a>
+    <a href="../../002-addition-and-subtraction/index.html">02 Addition &amp; Subtraction →</a>
+  </div>
+
+  <script src="script.js"></script>
+
+</body>
+</html>
