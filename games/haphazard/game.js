@@ -349,7 +349,7 @@ blueBtnGlowL.position.set(-CW/2+0.5, BTN_Y, BLUE_BTN_Z); scene.add(blueBtnGlowL)
 const blueBtnGlowR = new THREE.PointLight(0x2288ff, 1.0, 2.5);
 blueBtnGlowR.position.set(CW/2-0.5, BTN_Y, BLUE_BTN_Z); scene.add(blueBtnGlowR);
 
-box(1.5, 0.02, 1.5, blueAreaMat, 0, 0.01, BLUE_AREA_Z);
+box(1.5, 0.02, 1.5, blueAreaMat, 0, 0.031, BLUE_AREA_Z);
 const hatch     = box(BLOCK_SIZE+0.3, 0.1, BLOCK_SIZE+0.3, hatchMat, 0, CH-0.01, HATCH_Z);
 const blockMesh = box(BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE, blockMat, 0, CH-BLOCK_SIZE/2, HATCH_Z);
 
@@ -387,7 +387,7 @@ const yellowDoor = box(YELLOW_DOOR_W, CH, 0.2, yellowDoorMat, 0, CH/2, YELLOW_DO
     const circleMat = new THREE.MeshBasicMaterial({ color: 0x007766 });
     const circle = new THREE.Mesh(circleGeo, circleMat);
     circle.rotation.x = -Math.PI / 2;
-    circle.position.set(0, 0.01, YELLOW_DOOR_Z + 2.5);
+    circle.position.set(0, 0.031, YELLOW_DOOR_Z + 2.5);
     scene.add(circle);
 }
 
@@ -1167,16 +1167,16 @@ function loop() {
 }
 
 //── Dev mode: set corridor number (1–7) to spawn there ───────────────────────
-// const DEV_CORRIDOR = 7;
-// (c => {
-//     const z = [CL/2-1.5, DOOR_Z-2, BLUE_DOOR_Z-2, PINK_DOOR_Z-2, YELLOW_DOOR_Z-2, TEAL_DOOR_Z-2, ORANGE_DOOR_Z-2][c-1];
-//     camera.position.z = z;
-//     if (c >= 2) { door.visible = false;      greenDoor.open = true;      playerMinZ = BLUE_DOOR_Z   + 0.5; }
-//     if (c >= 3) { blueDoor.visible = false;  blueState.open = true;      playerMinZ = PINK_DOOR_Z   + 0.5; }
-//     if (c >= 4) { pinkDoor.visible = false;  pinkState.doorOpen = true;  playerMinZ = YELLOW_DOOR_Z + 0.5; }
-//     if (c >= 5) { yellowDoor.visible = false; yellowDoorState.shot = true; yellowDoorState.open = true; playerMinZ = TEAL_DOOR_Z + 0.5; }
-//     if (c >= 6) { tealDoor.visible = false;  tealDoorState.open = true;  playerMinZ = ORANGE_DOOR_Z + 0.5; }
-//     if (c >= 7) { orangeDoor.visible = false; c6OrangeDoor.open = true;  playerMinZ = PURPLE_DOOR_Z + 0.5; }
-// })(DEV_CORRIDOR);
+/* const DEV_CORRIDOR = 2;
+(c => {
+    const z = [CL/2-1.5, DOOR_Z-2, BLUE_DOOR_Z-2, PINK_DOOR_Z-2, YELLOW_DOOR_Z-2, TEAL_DOOR_Z-2, ORANGE_DOOR_Z-2][c-1];
+    camera.position.z = z;
+    if (c >= 2) { door.visible = false;      greenDoor.open = true;      playerMinZ = BLUE_DOOR_Z   + 0.5; }
+    if (c >= 3) { blueDoor.visible = false;  blueState.open = true;      playerMinZ = PINK_DOOR_Z   + 0.5; }
+    if (c >= 4) { pinkDoor.visible = false;  pinkState.doorOpen = true;  playerMinZ = YELLOW_DOOR_Z + 0.5; }
+    if (c >= 5) { yellowDoor.visible = false; yellowDoorState.shot = true; yellowDoorState.open = true; playerMinZ = TEAL_DOOR_Z + 0.5; }
+    if (c >= 6) { tealDoor.visible = false;  tealDoorState.open = true;  playerMinZ = ORANGE_DOOR_Z + 0.5; }
+    if (c >= 7) { orangeDoor.visible = false; c6OrangeDoor.open = true;  playerMinZ = PURPLE_DOOR_Z + 0.5; }
+})(DEV_CORRIDOR); */
 
 loop();
