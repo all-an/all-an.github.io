@@ -100,11 +100,9 @@ const ENEMY_SPEED  = 1.2;  // pixels per frame patrol speed
 
 // ── Platform layout ───────────────────────────────────────────────────────────
 // Stored as absolute pixel rectangles, rebuilt whenever the canvas is resized.
-// Fraction-based platforms scale with screen size; cell-based ones snap to the grid.
 let platforms = [];
 
 // Converts a 1-based grid cell number to its top-left pixel coordinate.
-// Used to place platforms at specific numbered cells visible in the background grid.
 function cellToPixel(n) {
     const cols = Math.ceil(canvas.width / GRID_STEP);
     const col  = (n - 1) % cols;
@@ -113,24 +111,15 @@ function cellToPixel(n) {
 }
 
 function buildPlatforms() {
-    const W = canvas.width;
-    const H = canvas.height;
-
-    // Cell 342 platform — pinned to the grid so it always sits on the numbered cell.
-    // Width spans 4 cells so there is room to land and stand.
-    const c342 = cellToPixel(342);
+    const W  = canvas.width;
+    const H  = canvas.height;
+    const c  = cellToPixel(274);   // solid block filling grid cell 274
 
     platforms = [
         // Ground — spans full width, 18 px tall
-        { x: 0,         y: H - 18,      w: W,              h: 18 },
-        // Floating platforms (x, y fractions chosen to make a reachable layout)
-        { x: W * 0.04,  y: H * 0.70,   w: W * 0.26,       h: 11 },
-        { x: W * 0.38,  y: H * 0.53,   w: W * 0.24,       h: 11 },
-        { x: W * 0.68,  y: H * 0.36,   w: W * 0.28,       h: 11 },
-        { x: W * 0.08,  y: H * 0.36,   w: W * 0.22,       h: 11 },
-        { x: W * 0.44,  y: H * 0.18,   w: W * 0.18,       h: 11 },
-        // Cell 342
-        { x: c342.x,    y: c342.y,      w: GRID_STEP * 4,  h: 11 },
+        { x: 0,    y: H - 18,        w: W,        h: 18        },
+        // Cell 274 — solid platform filling the entire grid square
+        { x: c.x,  y: c.y,           w: GRID_STEP, h: GRID_STEP },
     ];
 
     buildEnemies(); // one enemy per platform, rebuilt whenever platforms change
