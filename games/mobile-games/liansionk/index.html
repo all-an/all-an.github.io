@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Liansionk</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎮%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Shown from JS if screen is wider than a typical phone -->
+  <div id="desktop-warning">
+    <div class="desktop-frame">
+      <h2>Best on Mobile</h2>
+      <p>This game is designed for small touch screens and may feel awkward on a wide display.</p>
+      <button id="warning-dismiss">Play anyway</button>
+      <a href="../mobile-games.html">← Back to games</a>
+    </div>
+  </div>
+
+  <!-- Upper area: game canvas -->
+  <div id="game-area">
+    <canvas id="game-canvas"></canvas>
+    <div id="cell-tooltip"></div>
+  </div>
+
+  <!-- Lower area: Game Boy-style controller -->
+  <div id="controller">
+
+    <!-- Left: D-pad (3×3 grid, corners empty) -->
+    <div id="dpad-area">
+      <div id="dpad">
+        <div class="dpad-empty"></div>
+        <button id="btn-up"    class="dpad-btn" aria-label="Up">▲</button>
+        <div class="dpad-empty"></div>
+        <button id="btn-left"  class="dpad-btn" aria-label="Left">◄</button>
+        <div id="dpad-center"></div>
+        <button id="btn-right" class="dpad-btn" aria-label="Right">►</button>
+        <div class="dpad-empty"></div>
+        <button id="btn-down"  class="dpad-btn" aria-label="Down">▼</button>
+        <div class="dpad-empty"></div>
+      </div>
+    </div>
+
+    <!-- Middle: Select + Start -->
+    <div id="system-area">
+      <button class="sys-btn" id="btn-select">select</button>
+      <button class="sys-btn" id="btn-start">start</button>
+    </div>
+
+    <!-- Right: A and B action buttons -->
+    <div id="action-area">
+      <div id="action-btns">
+        <button id="btn-a" class="action-btn" aria-label="A">A</button>
+        <button id="btn-b" class="action-btn" aria-label="B">B</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>

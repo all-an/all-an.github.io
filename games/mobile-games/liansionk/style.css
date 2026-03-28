@@ -1,0 +1,285 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #111;
+  overflow: hidden;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ── Upper: game canvas fills remaining height ─────────────────────────────── */
+#game-area {
+  flex: 1;
+  min-height: 0;          /* allow flex child to shrink below its content size */
+  position: relative;
+  overflow: hidden;
+  background: #0a0a18;
+}
+
+#game-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Lower: controller panel ───────────────────────────────────────────────── */
+/* "below part smaller than the upper" — uses clamp so it feels right on all
+   phone sizes without being uncomfortably small or excessively large.           */
+#controller {
+  height: clamp(180px, 38vh, 260px);
+  flex-shrink: 0;
+  background: #1c1c1c;
+  border-top: 2px solid #333;
+  border-radius: 14px 14px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+}
+
+/* ── D-pad ─────────────────────────────────────────────────────────────────── */
+#dpad-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 3×3 grid — only the cross cells are buttons, corners are empty spacers */
+#dpad {
+  display: grid;
+  grid-template-columns: repeat(3, 48px);
+  grid-template-rows: repeat(3, 48px);
+  gap: 0;
+}
+
+.dpad-empty {
+  background: transparent;
+}
+
+.dpad-btn {
+  background: #2e2e2e;
+  border: 2px solid #444;
+  color: #aaa;
+  font-size: 14px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+  transition: background 0.06s, color 0.06s;
+}
+
+/* Round the outer edges of each arm to form the cross shape */
+#btn-up    { border-radius: 6px 6px 0 0; }
+#btn-left  { border-radius: 6px 0 0 6px; }
+#btn-right { border-radius: 0 6px 6px 0; }
+#btn-down  { border-radius: 0 0 6px 6px; }
+
+/* Centre cap — purely decorative, not interactive */
+#dpad-center {
+  background: #282828;
+  border: 2px solid #444;
+}
+
+.dpad-btn.pressed,
+.dpad-btn:active {
+  background: #555;
+  color: #fff;
+}
+
+/* ── Middle: Select / Start ────────────────────────────────────────────────── */
+#system-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.sys-btn {
+  background: #2a2a2a;
+  border: 1px solid #555;
+  color: #666;
+  font-family: inherit;
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 5px 13px;
+  border-radius: 10px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+  transition: background 0.06s;
+}
+
+.sys-btn:active,
+.sys-btn.pressed {
+  background: #444;
+  color: #aaa;
+}
+
+/* ── Action buttons: A (top-right) and B (bottom-left) ────────────────────── */
+#action-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Container sized so the two 52 px circles can sit in a diagonal arrangement */
+#action-btns {
+  position: relative;
+  width: 112px;
+  height: 92px;
+}
+
+.action-btn {
+  position: absolute;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: none;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: bold;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+  transition: filter 0.06s;
+}
+
+/* A — top-right, slightly higher. Shoot button. */
+#btn-a {
+  background: #bb2244;
+  box-shadow: 0 5px 0 #771122;
+  right: 0;
+  top: 0;
+}
+
+/* B — bottom-left. Jump button. */
+#btn-b {
+  background: #993322;
+  box-shadow: 0 5px 0 #551100;
+  left: 0;
+  bottom: 0;
+}
+
+.action-btn.pressed,
+.action-btn:active {
+  filter: brightness(1.3);
+  box-shadow: none !important;
+  transform: translateY(3px);
+}
+
+/* ── Cell tooltip ──────────────────────────────────────────────────────────── */
+/* Small floating box that appears near the cursor showing the hovered cell number */
+#cell-tooltip {
+  position: absolute;
+  display: none;
+  background: #12122a;
+  border: 1px solid #2a2a5a;
+  border-radius: 6px;
+  padding: 6px 12px;
+  pointer-events: none;
+  z-index: 50;
+  box-shadow: 0 0 14px #2a2a5a88;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 18px;
+  font-weight: bold;
+  color: #9090cc;
+  white-space: nowrap;
+}
+
+/* ── Desktop warning overlay ───────────────────────────────────────────────── */
+#desktop-warning {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(10, 10, 10, 0.92);
+  z-index: 400;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+}
+
+#desktop-warning.visible {
+  display: flex;
+}
+
+.desktop-frame {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 1rem;
+  padding: 2.5rem 2rem;
+  width: calc(100% - 48px);
+  max-width: 360px;
+  background: #111;
+  border: 2px solid #bb2244;
+  border-radius: 12px;
+  box-shadow: 0 0 40px rgba(187, 34, 68, 0.15);
+}
+
+.desktop-frame h2 {
+  font-size: 1.4rem;
+  color: #bb2244;
+  letter-spacing: 4px;
+  text-shadow: 0 0 16px #bb224488;
+}
+
+.desktop-frame p {
+  color: #8888cc;
+  font-size: 0.88rem;
+  letter-spacing: 1px;
+  line-height: 1.6;
+}
+
+#warning-dismiss {
+  margin-top: 0.5rem;
+  padding: 0.5rem 1.4rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+  color: #fff;
+  background: #bb2244;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  text-transform: uppercase;
+  font-weight: bold;
+  transition: opacity 0.15s;
+}
+
+#warning-dismiss:hover {
+  opacity: 0.85;
+}
+
+.desktop-frame a {
+  color: #555588;
+  text-decoration: none;
+  font-size: 0.8rem;
+  letter-spacing: 2px;
+  transition: color 0.15s;
+}
+
+.desktop-frame a:hover {
+  color: #bb2244;
+}

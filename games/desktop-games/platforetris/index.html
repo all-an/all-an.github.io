@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Platformer Tetris</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="mobile-warning">
+    <div class="phone-frame">
+      <h2>Best on Desktop</h2>
+      <p>This game requires a keyboard and mouse — it's not playable on a small screen.</p>
+      <a href="../desktop-games.html">← Back to games</a>
+    </div>
+  </div>
+
+  <div id="start-screen">
+    <div id="start-title">platforetris</div>
+    <div id="start-prompt">click or press any key to start</div>
+  </div>
+  <div id="game-container">
+    <div id="fill-bar-container"><div id="fill-bar"></div></div>
+    <canvas id="game-canvas" width="800" height="600"></canvas>
+    <div id="piece-info">
+      <span id="piece-degrees">0°</span>
+    </div>
+    <div id="tetromino-selector">
+      <canvas class="tet-preview" data-index="0" title="L"></canvas>
+      <canvas class="tet-preview" data-index="1" title="J"></canvas>
+      <canvas class="tet-preview" data-index="2" title="I"></canvas>
+      <canvas class="tet-preview" data-index="3" title="O"></canvas>
+      <canvas class="tet-preview" data-index="4" title="T"></canvas>
+      <canvas class="tet-preview" data-index="5" title="S"></canvas>
+      <canvas class="tet-preview" data-index="6" title="Z"></canvas>
+    </div>
+  </div>
+
+  <button id="menu-btn">menu</button>
+
+  <div id="menu-modal">
+    <div id="menu-modal-box">
+      <div id="menu-modal-title">controls</div>
+      <div id="menu-controls">
+        <div class="ctrl-row"><span class="ctrl-key">A / ←</span><span class="ctrl-desc">Move left</span></div>
+        <div class="ctrl-row"><span class="ctrl-key">D / →</span><span class="ctrl-desc">Move right</span></div>
+        <div class="ctrl-row"><span class="ctrl-key">W / ↑ / Space</span><span class="ctrl-desc">Jump</span></div>
+        <div class="ctrl-row"><span class="ctrl-key">S / ↓</span><span class="ctrl-desc">Drop to next room</span></div>
+        <div class="ctrl-row"><span class="ctrl-key">Enter</span><span class="ctrl-desc">Spin piece</span></div>
+        <div class="ctrl-row"><span class="ctrl-key">Click preview</span><span class="ctrl-desc">Change piece &amp; color</span></div>
+      </div>
+      <div id="menu-modal-hint">land on same-color cells to clear them</div>
+    </div>
+  </div>
+
+  <div id="color-modal">
+    <div id="color-modal-box">
+      <div id="color-modal-title">choose color</div>
+      <div id="color-modal-grid"></div>
+    </div>
+  </div>
+  <div id="bg-tooltip"></div>
+  <div id="cell-tooltip">
+    <div class="cell-number" id="tooltip-number"></div>
+    <div class="cell-coords" id="tooltip-coords"></div>
+  </div>
+  <script type="module" src="game.js"></script>
+</body>
+</html>

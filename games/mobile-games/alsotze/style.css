@@ -1,0 +1,208 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #0a0a0a;
+  overflow: hidden;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  touch-action: none; /* prevent scroll/zoom on touch */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ── Full-viewport canvas ──────────────────────────────────────────────────── */
+#game-canvas {
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+}
+
+/* ── HUD ───────────────────────────────────────────────────────────────────── */
+#hud {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+  z-index: 10;
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgba(10,10,10,0.7) 0%, transparent 100%);
+}
+
+#lives {
+  font-size: 1.2rem;
+  color: #ff4466;
+  letter-spacing: 4px;
+}
+
+#score {
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: #00ffee;
+  letter-spacing: 2px;
+}
+
+/* ── Start screen ──────────────────────────────────────────────────────────── */
+#start-screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  gap: 12px;
+  pointer-events: none; /* tap falls through to canvas handler */
+}
+
+#start-title {
+  font-size: 2.8rem;
+  letter-spacing: 6px;
+  color: #00ffee;
+  text-shadow: 0 0 24px #00ffee88;
+}
+
+#start-sub {
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+  color: #8888cc;
+}
+
+#start-prompt {
+  margin-top: 18px;
+  font-size: 0.8rem;
+  letter-spacing: 3px;
+  color: #555588;
+  animation: blink 1.2s step-end infinite;
+}
+
+/* ── Game-over screen ──────────────────────────────────────────────────────── */
+#gameover-screen {
+  position: fixed;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  gap: 12px;
+  pointer-events: none;
+}
+
+#gameover-title {
+  font-size: 2.4rem;
+  letter-spacing: 5px;
+  color: #ff4466;
+  text-shadow: 0 0 20px #ff446688;
+}
+
+#final-score {
+  font-size: 1.2rem;
+  letter-spacing: 3px;
+  color: #cccccc;
+}
+
+#gameover-prompt {
+  margin-top: 16px;
+  font-size: 0.8rem;
+  letter-spacing: 3px;
+  color: #555588;
+  animation: blink 1.2s step-end infinite;
+}
+
+/* ── Desktop warning ───────────────────────────────────────────────────────── */
+/* Hidden by default — shown from JS when screen is wider than a phone */
+#desktop-warning {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(10, 10, 10, 0.92);
+  z-index: 400;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+}
+
+#desktop-warning.visible {
+  display: flex;
+}
+
+.desktop-frame {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 1rem;
+  padding: 2.5rem 2rem;
+  width: calc(100% - 48px);
+  max-width: 360px;
+  background: #111;
+  border: 2px solid #00ffee;
+  border-radius: 12px;
+  box-shadow: 0 0 40px rgba(0, 255, 238, 0.12);
+}
+
+.desktop-frame h2 {
+  font-size: 1.4rem;
+  color: #00ffee;
+  letter-spacing: 4px;
+  text-shadow: 0 0 16px #00ffee88;
+}
+
+.desktop-frame p {
+  color: #8888cc;
+  font-size: 0.88rem;
+  letter-spacing: 1px;
+  line-height: 1.6;
+}
+
+#warning-dismiss {
+  margin-top: 0.5rem;
+  padding: 0.5rem 1.4rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+  color: #0a0a0a;
+  background: #00ffee;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  text-transform: uppercase;
+  font-weight: bold;
+  transition: opacity 0.15s;
+}
+
+#warning-dismiss:hover {
+  opacity: 0.85;
+}
+
+.desktop-frame a {
+  color: #555588;
+  text-decoration: none;
+  font-size: 0.8rem;
+  letter-spacing: 2px;
+  transition: color 0.15s;
+}
+
+.desktop-frame a:hover {
+  color: #00ffee;
+}
+
+/* ── Animations ────────────────────────────────────────────────────────────── */
+@keyframes blink {
+  50% { opacity: 0; }
+}
