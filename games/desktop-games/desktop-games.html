@@ -8,21 +8,31 @@
     <link rel="stylesheet" href="../../main-style.css">
 </head>
 <body>
-    <div id="root">
-        <div class="container">
-            <h1>Desktop Games</h1>
-            <a href="haphazard/index.html" onclick="sessionStorage.setItem('haphazardMusic','1')">
-                <button class="linkedin-btn">Haphazard</button>
-            </a>
-            <br><br>
-            <a href="platforetris/index.html">
-                <button class="linkedin-btn">platforetris</button>
-            </a>
-            <br><br>
-            <a href="../games.html">
-                <button class="linkedin-btn">Back</button>
-            </a>
+
+    <!-- Matrix rain canvas is appended here by main.js and sits behind .bwin -->
+
+    <!-- Borland-style floating window, centered over the Matrix rain desktop -->
+    <div class="bwin">
+
+        <!-- Window title bar: cyan, Borland active-window style -->
+        <div class="bwin-title">══ Desktop Games ══</div>
+
+        <!-- Window body: navigation buttons -->
+        <div class="bwin-body">
+            <div class="bwin-btns">
+                <!-- sessionStorage flag tells haphazard/index.html to start ambient music -->
+                <a href="haphazard/index.html" onclick="sessionStorage.setItem('haphazardMusic','1')">
+                    <button class="bwin-btn">Haphazard</button>
+                </a>
+                <a href="platforetris/index.html">
+                    <button class="bwin-btn">Platforetris</button>
+                </a>
+                <a href="../games.html">
+                    <button class="bwin-btn">← Back</button>
+                </a>
+            </div>
         </div>
+
     </div>
 
     <script src="../../main.js"></script>

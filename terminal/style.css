@@ -1,0 +1,380 @@
+/* ── Reset: ensure no browser defaults leak into the retro aesthetic ── */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    /* Disable sub-pixel smoothing so characters look crisp, like a real CRT/DOS font */
+    -webkit-font-smoothing: none;
+    -moz-osx-font-smoothing: unset;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   SCREEN — the outermost container; fills the entire viewport
+   Uses column flexbox so menu bar, desktop, and status bar
+   stack vertically and the desktop expands to fill remaining space.
+   ────────────────────────────────────────────────────────────── */
+.screen {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 15px;
+    /* Classic Borland IDE desktop blue */
+    background: #0000AA;
+    color: #FFFFFF;
+    overflow: hidden;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   MENU BAR — top strip (light gray, like the Borland IDE title row)
+   ────────────────────────────────────────────────────────────── */
+.menu-bar {
+    display: flex;
+    align-items: center;
+    background: #AAAAAA;     /* Borland light-gray menu background */
+    color: #000000;
+    height: 1.6em;
+    padding: 0 0.5ch;
+    flex-shrink: 0;          /* never collapse; always visible */
+    user-select: none;
+    gap: 0;
+}
+
+/* Application name in the menu bar */
+.menu-brand {
+    font-weight: bold;
+    padding: 0 1.5ch 0 0.5ch;
+    letter-spacing: 1px;
+}
+
+/* Vertical divider between brand and menu items */
+.menu-divider {
+    color: #666666;
+    padding: 0 0.5ch;
+}
+
+/* Each top-level menu word (File, Edit, Run…) */
+.menu-item {
+    padding: 0 1.2ch;
+    cursor: pointer;
+    color: #000000;
+    transition: background 0.1s, color 0.1s;
+}
+
+.menu-item:hover {
+    /* Highlight inverts to Borland blue on hover — mimics keyboard focus */
+    background: #0000AA;
+    color: #FFFFFF;
+}
+
+/* Spacer pushes the Exit button to the far right */
+.menu-flex {
+    flex: 1;
+}
+
+/* Alt+X exit link styled to look like a Borland close shortcut */
+.menu-exit {
+    padding: 0 1ch;
+    color: #000000;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.1s, color 0.1s;
+}
+
+.menu-exit:hover {
+    background: #AA0000;     /* red tint to signal "danger / exit" */
+    color: #FFFFFF;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   DESKTOP — the blue field between menu and status bars.
+   Centers and stretches the terminal window inside it.
+   ────────────────────────────────────────────────────────────── */
+.desktop {
+    flex: 1;                  /* take all remaining vertical space */
+    display: flex;
+    align-items: stretch;     /* window fills full desktop height */
+    justify-content: center;
+    padding: 0.6em 2em;
+    overflow: hidden;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   WINDOW — the floating terminal dialog.
+   CSS `double` border produces the classic Borland double-rule frame.
+   ────────────────────────────────────────────────────────────── */
+.window {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 82ch;           /* cap at 82 columns for readability */
+    /* Double-line border — classic Borland window frame */
+    border: 4px double #CCCCCC;
+    /* Drop shadow shifts right-down to mimic the IDE layered window look */
+    box-shadow: 6px 6px 0 #000044;
+    overflow: hidden;
+}
+
+/* Window title bar — cyan background, Borland style */
+.win-titlebar {
+    background: #00AAAA;       /* Borland active-window title cyan */
+    color: #000000;
+    text-align: center;
+    font-weight: bold;
+    padding: 0.15em 1ch;
+    flex-shrink: 0;
+    letter-spacing: 0.08em;
+    user-select: none;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   OUTPUT AREA — scrollable terminal output.
+   Black background with green-tinted text mimics a phosphor CRT.
+   ────────────────────────────────────────────────────────────── */
+.output {
+    flex: 1;
+    background: #000000;
+    color: #AAFFAA;            /* classic green phosphor terminal text */
+    padding: 0.5em 1.2ch;
+    overflow-y: auto;
+    overflow-x: hidden;
+    line-height: 1.5;
+}
+
+/* Scrollbar styled to match the Borland palette */
+.output::-webkit-scrollbar            { width: 14px; background: #000055; }
+.output::-webkit-scrollbar-thumb      { background: #5555AA; }
+.output::-webkit-scrollbar-thumb:hover{ background: #AAAAFF; }
+
+/* ──────────────────────────────────────────────────────────────
+   INPUT ROW — prompt + text field, pinned to the window bottom.
+   ────────────────────────────────────────────────────────────── */
+.input-row {
+    display: flex;
+    align-items: center;
+    background: #000000;
+    border-top: 1px solid #2a2a5a;
+    padding: 0.3em 1.2ch;
+    flex-shrink: 0;
+}
+
+/* DOS-style prompt label ("C:\ALLAN>") */
+.prompt-label {
+    color: #AAFFAA;
+    white-space: nowrap;
+    margin-right: 0.6ch;
+    flex-shrink: 0;
+}
+
+/* Invisible text input — styled to look like the cursor sits in the output */
+.cmd-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #FFFFFF;
+    font-family: inherit;
+    font-size: inherit;
+    caret-color: #AAFFAA;     /* green blinking caret */
+}
+
+/* ──────────────────────────────────────────────────────────────
+   STATUS BAR — bottom strip with function-key hints (Borland style)
+   ────────────────────────────────────────────────────────────── */
+.status-bar {
+    display: flex;
+    gap: 2ch;
+    background: #AAAAAA;
+    color: #000000;
+    height: 1.6em;
+    padding: 0 1ch;
+    align-items: center;
+    flex-shrink: 0;
+    user-select: none;
+}
+
+/* Function-key labels appear as small dark badges, like Borland F-key chips */
+.status-bar b {
+    background: #000000;
+    color: #AAAAAA;
+    padding: 0 0.35ch;
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   OUTPUT LINE TYPES — each line in the terminal has a class that
+   controls its colour, matching classic ANSI terminal colour roles.
+   ────────────────────────────────────────────────────────────── */
+
+/* Block display so each line occupies its own row */
+.line {
+    display: block;
+    white-space: pre-wrap;     /* honour internal spacing / ASCII art */
+    word-break: break-all;
+}
+
+/* Command echo: what the user typed, shown in bright white */
+.line-cmd  { color: #FFFFFF; }
+
+/* Normal informational output: standard green phosphor */
+.line-info { color: #AAFFAA; }
+
+/* Error messages: red, unmistakable */
+.line-err  { color: #FF5555; }
+
+/* Highlighted / accent lines: yellow, like DOS PAUSE text */
+.line-hi   { color: #FFFF55; }
+
+/* Cyan accent: headings, section titles */
+.line-cy   { color: #55FFFF; }
+
+/* Dimmed / comment text: dark gray, for decorative separators */
+.line-dim  { color: #444466; }
+
+/* ──────────────────────────────────────────────────────────────
+   DIALOG OVERLAY — full-screen veil rendered above everything.
+   Uses fixed positioning so it is independent of the scroll state.
+   Hidden by default; JS adds .visible to show it.
+   ────────────────────────────────────────────────────────────── */
+.dialog-overlay {
+    display: none;               /* off by default */
+    position: fixed;
+    inset: 0;                    /* covers the entire viewport */
+    /* Semi-transparent dark blue veil dims the terminal behind the popup */
+    background: rgba(0, 0, 60, 0.60);
+    justify-content: center;
+    align-items: center;
+    z-index: 100;                /* float above every other element */
+}
+
+/* JS toggles this class to show the overlay */
+.dialog-overlay.visible {
+    display: flex;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   DIALOG BOX — the floating Borland-style modal window.
+   Gray background and double border match FreeBSD installer dialogs.
+   ────────────────────────────────────────────────────────────── */
+.dialog {
+    background: #AAAAAA;         /* classic Borland dialog gray */
+    /* Double-line border — the same frame style as the main terminal window */
+    border: 4px double #FFFFFF;
+    /* Drop shadow gives the floating-window depth effect */
+    box-shadow: 6px 6px 0 #000044;
+    min-width: 36ch;
+    max-width: 44ch;
+    width: 90%;                  /* responsive: shrinks on small screens */
+    display: flex;
+    flex-direction: column;
+    color: #000000;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 15px;
+}
+
+/* Dialog title bar — cyan, matches the main window title style */
+.dialog-titlebar {
+    background: #00AAAA;
+    color: #000000;
+    text-align: center;
+    font-weight: bold;
+    padding: 0.2em 1ch;
+    letter-spacing: 0.08em;
+    user-select: none;
+}
+
+/* Dialog body: contains the form fields and inline error message */
+.dialog-body {
+    padding: 1em 1.5ch 0.6em;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+}
+
+/* Wrapper for one label + input pair */
+.dialog-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3em;
+}
+
+/* Label above the input field */
+.dialog-label {
+    font-weight: bold;
+    color: #000000;
+    letter-spacing: 0.04em;
+    user-select: none;
+}
+
+/* Text input: white sunken field, classic DOS look */
+.dialog-input {
+    background: #FFFFFF;
+    color: #000000;
+    /* Inset border gives the sunken-field appearance used in Borland forms */
+    border: 2px inset #555555;
+    padding: 0.15em 0.5ch;
+    font-family: inherit;
+    font-size: inherit;
+    outline: none;
+    width: 100%;
+}
+
+.dialog-input:focus {
+    /* Blue highlight border when the field is active */
+    border-color: #0000AA;
+    box-shadow: 0 0 0 1px #0000AA inset;
+}
+
+/* Inline validation error message — red, shown only when validation fails */
+.dialog-error {
+    color: #AA0000;
+    font-size: 0.88em;
+    min-height: 1.2em;           /* reserve space so layout does not jump */
+    letter-spacing: 0.03em;
+}
+
+/* Dialog footer: holds the action buttons */
+.dialog-footer {
+    display: flex;
+    justify-content: center;
+    gap: 2ch;
+    padding: 0.5em 1.5ch 0.8em;
+    border-top: 1px solid #888888;
+}
+
+/* ── Borland-style action button ── */
+.dialog-btn {
+    background: #AAAAAA;
+    color: #000000;
+    /* Solid white border with a dark drop shadow for the 3D raised look */
+    border: 2px solid #FFFFFF;
+    box-shadow: 2px 2px 0 #444444;
+    padding: 0.2em 1ch;
+    min-width: 10ch;
+    font-family: inherit;
+    font-size: inherit;
+    cursor: pointer;
+    text-align: center;
+    user-select: none;
+    transition: background 0.1s, color 0.1s;
+}
+
+.dialog-btn:hover,
+.dialog-btn:focus {
+    /* Invert to Borland blue on hover/focus — same as menu item highlight */
+    background: #0000AA;
+    color: #FFFFFF;
+    outline: none;
+}
+
+/* OK button gets a darker border to mark it as the default action */
+.dialog-btn-ok {
+    border-color: #000000;
+}

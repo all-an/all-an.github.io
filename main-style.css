@@ -1,150 +1,34 @@
+/* ── Reset ── */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
-body {
-    background: #0a0a0a;
-    color: #ffffff;
-    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden;
-    position: relative;
-}
-
-body::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background:
-        radial-gradient(circle at 20% 50%, #001122 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, #002211 0%, transparent 50%),
-        radial-gradient(circle at 40% 80%, #110022 0%, transparent 50%);
-    z-index: -1;
-}
-
-.container {
-    text-align: center;
-    z-index: 10;
-    padding: 2rem;
-    position: relative;
-}
-
-h1 {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-    background: linear-gradient(45deg, #00ff88, #00ccff, #01a4d6);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    animation: glow 2s ease-in-out infinite alternate;
-}
-
-p {
-    font-size: 1.2rem;
-    margin-bottom: 2rem;
-    color: #cccccc;
-    letter-spacing: 1px;
-}
-
-.linkedin-btn, .learn-btn {
-    border: none;
-    padding: 15px 30px;
-    font-size: 1.1rem;
-    color: white;
-    cursor: pointer;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    font-weight: bold;
-    position: relative;
-    overflow: hidden;
-    margin: 0;
-}
-
-.linkedin-btn {
-    background: linear-gradient(45deg, #0077b5, #005885);
-    box-shadow: 0 4px 15px rgba(0, 119, 181, 0.3);
-}
-
-.learn-btn {
-    background: linear-gradient(45deg, #0735ff, #00b947);
-    box-shadow: 0 4px 15px rgba(136, 0, 255, 0.3);
-}
-
-.linkedin-btn::before, .learn-btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
+html, body {
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-    transition: left 0.5s;
+    /* Disable sub-pixel smoothing for a crisp monospace look */
+    -webkit-font-smoothing: none;
+    -moz-osx-font-smoothing: unset;
 }
 
-.linkedin-btn:hover::before, .learn-btn:hover::before {
-    left: 100%;
-}
-
-.linkedin-btn:hover, .learn-btn:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(0, 119, 181, 0.5);
-}
-
-.linkedin-btn:active, .learn-btn:active {
-    transform: translateY(-1px);
-}
-
-.btn-row {
+/* ──────────────────────────────────────────────────────────────
+   BODY — near-black background; the Matrix canvas renders on top.
+   Flex centering positions the Borland window in the middle.
+   ────────────────────────────────────────────────────────────── */
+body {
+    background: #0a0a0a;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 15px;
+    height: 100vh;
     display: flex;
+    align-items: center;
     justify-content: center;
-    flex-wrap: wrap;
-    gap: 12px;
+    overflow: hidden;
 }
 
-@media (max-width: 480px) {
-    h1 {
-        font-size: 2rem;
-    }
-
-    p {
-        font-size: 1rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .btn-row {
-        flex-direction: column;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .linkedin-btn, .learn-btn {
-        width: 220px;
-        margin: 0;
-        font-size: 1rem;
-        padding: 14px 24px;
-    }
-}
-
-@keyframes glow {
-    from {
-        text-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
-    }
-    to {
-        text-shadow: 0 0 30px rgba(0, 204, 255, 0.8), 0 0 40px rgba(136, 0, 255, 0.3);
-    }
-}
-
+/* Matrix rain canvas — appended by main.js, sits behind the window */
 #c {
     position: fixed;
     top: 0;
@@ -153,49 +37,134 @@ p {
     pointer-events: none;
 }
 
-.matrix-column {
-    position: absolute;
-    top: -100%;
+/* ──────────────────────────────────────────────────────────────
+   BORLAND WINDOW — the floating dialog centered on the desktop.
+   Double border and drop shadow match the terminal's window style.
+   ────────────────────────────────────────────────────────────── */
+.bwin {
+    position: relative;
+    z-index: 10;          /* float above the Matrix canvas */
     display: flex;
     flex-direction: column;
-    animation: matrixFall 5s infinite linear;
-    pointer-events: none;
+    min-width: 30ch;
+    max-width: 42ch;
+    width: 90%;
+    /* Double-line border — classic Borland window frame */
+    border: 4px double #CCCCCC;
+    /* Drop shadow shifts right-down, same convention as the terminal window */
+    box-shadow: 8px 8px 0 #000033;
 }
 
-.matrix-char {
-    color: #00ff88;
-    font-family: 'Courier New', monospace;
-    font-size: 18px;
+/* Window title bar: cyan background, same as the terminal's win-titlebar */
+.bwin-title {
+    background: #00AAAA;
+    color: #000000;
+    text-align: center;
     font-weight: bold;
-    text-shadow: 0 0 8px #00ff88;
-    line-height: 1.2;
-    opacity: 0;
-    animation: fadeChar 0.5s ease-in-out forwards;
+    padding: 0.2em 1ch;
+    letter-spacing: 0.08em;
+    user-select: none;
 }
 
-.matrix-char:first-child {
-    color: #ffffff;
-    text-shadow: 0 0 10px #00ff88, 0 0 20px #00ff88;
-    font-size: 20px;
+/* Window body: Borland desktop blue, content centred vertically */
+.bwin-body {
+    background: #0000AA;
+    padding: 2em 2ch 1.8em;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.7em;
 }
 
-@keyframes matrixFall {
-    0% {
-        transform: translateY(0);
+/* ──────────────────────────────────────────────────────────────
+   HEADING — gradient green→cyan, the site's signature visual.
+   Renders clearly on the dark blue window background.
+   ────────────────────────────────────────────────────────────── */
+h1 {
+    font-size: 1.8em;
+    text-align: center;
+    letter-spacing: 0.05em;
+    background: linear-gradient(45deg, #00ff88, #00ccff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: glow 2s ease-in-out infinite alternate;
+}
+
+/* Subtext: green terminal colour, ties the page to the terminal aesthetic */
+p {
+    font-size: 0.9em;
+    color: #AAFFAA;
+    letter-spacing: 0.05em;
+    text-align: center;
+    margin-bottom: 0.6em;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   BUTTON ROW — flex row of the three navigation buttons
+   ────────────────────────────────────────────────────────────── */
+.bwin-btns {
+    display: flex;
+    gap: 1.5ch;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+/* Strip default anchor decoration so buttons look standalone */
+.bwin-btns a {
+    text-decoration: none;
+}
+
+/* Borland raised button: gray body, white border, dark drop shadow */
+.bwin-btn {
+    background: #AAAAAA;
+    color: #000000;
+    border: 2px solid #FFFFFF;
+    box-shadow: 3px 3px 0 #000033;
+    padding: 0.3em 1.5ch;
+    min-width: 10ch;
+    font-family: inherit;
+    font-size: 0.95em;
+    font-weight: bold;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.1s, color 0.1s;
+}
+
+.bwin-btn:hover,
+.bwin-btn:focus {
+    /* Invert on hover: white background, Borland blue text */
+    background: #FFFFFF;
+    color: #0000AA;
+    outline: none;
+}
+
+.bwin-btn:active {
+    /* Simulate key press: collapse shadow and nudge 1 px */
+    box-shadow: 1px 1px 0 #000033;
+    transform: translate(1px, 1px);
+}
+
+/* Responsive: stack buttons vertically on very small screens */
+@media (max-width: 380px) {
+    .bwin-btns {
+        flex-direction: column;
+        align-items: stretch;
     }
-    100% {
-        transform: translateY(110vh);
+
+    .bwin-btns a {
+        display: block;
+    }
+
+    .bwin-btn {
+        width: 100%;
     }
 }
 
-@keyframes fadeChar {
-    0% {
-        opacity: 0;
-    }
-    50% {
-        opacity: 1;
-    }
-    100% {
-        opacity: 0.3;
-    }
+/* ── Glow animation used by the h1 gradient text ── */
+@keyframes glow {
+    from { filter: brightness(1);   }
+    to   { filter: brightness(1.3); }
 }

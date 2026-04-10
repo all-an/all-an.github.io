@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal — Allan P. Abrahão</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Full-screen Borland/FreeBSD-style terminal shell -->
+    <div class="screen">
+
+        <!-- ── Menu bar: mimics the Borland IDE top bar ── -->
+        <div class="menu-bar" id="menu-bar">
+            <span class="menu-brand">TERMINAL</span>
+            <span class="menu-divider">│</span>
+            <span class="menu-item" data-cmd="help">File</span>
+            <span class="menu-item" data-cmd="about">Edit</span>
+            <span class="menu-item" data-cmd="contact">Run</span>
+            <span class="menu-item" data-cmd="about">Options</span>
+            <span class="menu-item" data-cmd="help">Help</span>
+            <span class="menu-flex"></span>
+            <a class="menu-exit" href="../index.html">Alt+X Exit</a>
+        </div>
+
+        <!-- ── Desktop: the blue Borland background field ── -->
+        <div class="desktop">
+
+            <!-- Floating terminal window (the main UI element) -->
+            <div class="window">
+
+                <!-- Window title bar with Borland double-rule decoration -->
+                <div class="win-titlebar" id="win-titlebar">
+                    ══ TERMINAL v1.0 &nbsp;—&nbsp; C:\&gt; ══
+                </div>
+
+                <!-- Scrollable output area where command responses appear -->
+                <div class="output" id="output"></div>
+
+                <!-- Prompt row: always pinned to the bottom of the window -->
+                <div class="input-row">
+                    <span class="prompt-label" id="prompt-label">C:\&gt;</span>
+                    <input
+                        type="text"
+                        id="cmd"
+                        class="cmd-input"
+                        autocomplete="off"
+                        spellcheck="false"
+                        autofocus
+                    >
+                </div>
+
+            </div><!-- /.window -->
+
+        </div><!-- /.desktop -->
+
+        <!-- ── F4 Create User dialog (hidden until F4 is pressed) ──
+             position:fixed so it overlays the full screen regardless of
+             scroll position. Becomes visible when JS adds .visible.       ── -->
+        <div class="dialog-overlay" id="dialog-overlay">
+            <div class="dialog">
+
+                <!-- Dialog title bar — same cyan style as the main window title -->
+                <div class="dialog-titlebar" id="dialog-titlebar">══ Create New User ══</div>
+
+                <!-- Dialog body: hostname label + text field + inline error row -->
+                <div class="dialog-body">
+                    <div class="dialog-field">
+                        <label class="dialog-label" for="hostname-input">Host Name :</label>
+                        <input
+                            type="text"
+                            id="hostname-input"
+                            class="dialog-input"
+                            maxlength="32"
+                            autocomplete="off"
+                            spellcheck="false"
+                        >
+                    </div>
+                    <!-- Validation error — empty until a submit fails validation -->
+                    <div class="dialog-error" id="dialog-error"></div>
+                </div>
+
+                <!-- Dialog footer: OK and Cancel, Borland bracket-label style -->
+                <div class="dialog-footer">
+                    <button class="dialog-btn dialog-btn-ok"     id="dialog-ok">[ OK ]</button>
+                    <button class="dialog-btn dialog-btn-cancel" id="dialog-cancel">[ Cancel ]</button>
+                </div>
+
+            </div><!-- /.dialog -->
+        </div><!-- /.dialog-overlay -->
+
+        <!-- ── Status bar: mimics the Borland IDE bottom function-key bar ── -->
+        <div class="status-bar">
+            <span><b>F1</b> Help</span>
+            <span><b>F2</b> New User</span>
+            <span><b>F9</b> About</span>
+            <span><b>Alt+X</b> Exit</span>
+        </div>
+
+    </div><!-- /.screen -->
+
+    <script src="script.js"></script>
+</body>
+</html>

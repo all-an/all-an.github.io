@@ -8,22 +8,31 @@
     <link rel="stylesheet" href="../../main-style.css">
 </head>
 <body>
-    <div id="root">
-        <div class="container">
-            <h1>Mobile Games</h1>
+
+    <!-- Matrix rain canvas is appended here by main.js and sits behind .bwin -->
+
+    <!-- Borland-style floating window, centered over the Matrix rain desktop -->
+    <div class="bwin">
+
+        <!-- Window title bar: cyan, Borland active-window style -->
+        <div class="bwin-title">══ Mobile Games ══</div>
+
+        <!-- Window body: subtext and navigation buttons -->
+        <div class="bwin-body">
             <p>tap to play</p>
-            <div class="btn-row">
+            <div class="bwin-btns">
                 <a href="alsotze/index.html">
-                    <button class="linkedin-btn">Alsotze</button>
+                    <button class="bwin-btn">Alsotze</button>
                 </a>
                 <!-- <a href="liansionk/index.html">
-                    <button class="linkedin-btn">Liansionk</button>
+                    <button class="bwin-btn">Liansionk</button>
                 </a> -->
                 <a href="../games.html">
-                    <button class="linkedin-btn">← Back</button>
+                    <button class="bwin-btn">← Back</button>
                 </a>
             </div>
         </div>
+
     </div>
 
     <script src="../../main.js"></script>
