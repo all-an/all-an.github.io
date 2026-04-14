@@ -1023,7 +1023,7 @@ function shoot() {
 
     // ── Rooftop website button ──
     if (hit === websiteBtn) {
-        window.open('https://nanocryptogames.onrender.com', '_blank');
+        window.open('https://www.linkedin.com/in/allan-pereira-abrahao/', '_blank');
     }
 
     // ── Yellow sign (corridor 4 button) ──
