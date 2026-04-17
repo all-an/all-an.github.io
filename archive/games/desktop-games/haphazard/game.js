@@ -49,6 +49,11 @@ const PURPLE_DOOR_Z = ORANGE_DOOR_Z - CL7;    // z = -145
 const C7_CENTER_Z   = ORANGE_DOOR_Z - CL7 / 2; // z = -134
 const C7_HOLE_Z     = PURPLE_DOOR_Z + 3;        // hole center z = -142
 const C7_HOLE_S     = 1.8;                       // square hole side size
+const RTOP_W        = CW + 0.6;                  // rooftop width including wall tops
+const RTOP_Y        = CH + 0.225;                // slab center, slightly above the ceiling
+const RTOP_TOP_Y    = CH + 0.25;                 // walkable top face of the rooftop slab
+const RTOP_SIDE_W   = (RTOP_W - C7_HOLE_S) / 2;  // side strip width beside the hole
+const OUTSIDE_GRID_STEP = 4;
 
 // Corridor 6 crush section (between the two side lights at TEAL_DOOR_Z-5 and TEAL_DOOR_Z-13)
 const C6_CRUSH_Z1     = TEAL_DOOR_Z - 5;
@@ -68,6 +73,10 @@ scene.fog = new THREE.Fog(0x050508, 10, 55);
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 120);
 camera.position.set(0, PLAYER_HEIGHT, CL / 2 - 1.5);
+
+const exteriorGridRay = new THREE.Raycaster();
+exteriorGridRay.params.Points.threshold = 0.35;
+const exteriorGridIds = [];
 
 // Per-corridor scene groups for visibility culling.
 // Only the active corridor and its immediate neighbours are rendered each frame.
@@ -264,6 +273,32 @@ function makeNumberSign(n, color = '#ffffff') {
     const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.FrontSide });
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1.2), mat);
     return mesh;
+}
+
+function makeFloorNumberLabel(text, color = '#7de7ff', size = 1.05) {
+    const canvas = document.createElement('canvas');
+    canvas.width  = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, 256, 256);
+    ctx.fillStyle = 'rgba(6, 18, 28, 0.75)';
+    ctx.fillRect(28, 40, 200, 176);
+    ctx.strokeStyle = 'rgba(125, 231, 255, 0.6)';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(28, 40, 200, 176);
+    ctx.font = 'bold 132px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = color;
+    ctx.fillText(String(text), 128, 136);
+    const tex = new THREE.CanvasTexture(canvas);
+    const mat = new THREE.MeshBasicMaterial({
+        map: tex,
+        transparent: true,
+        depthWrite: false,
+        side: THREE.DoubleSide
+    });
+    return new THREE.Mesh(new THREE.PlaneGeometry(size, size), mat);
 }
 
 // Sign on left wall of corridor 1 (center z = 0)
@@ -496,6 +531,74 @@ _cg = null; // starfield and rooftop are global — not corridor-specific
     scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.18, sizeAttenuation: true })));
 }
 
+// ── Exterior reference grid ───────────────────────────────────────────────────
+{
+    const xMin = -40;
+    const xMax = 40;
+    const yMin = CH + 0.25;
+    const yMax = CH + 24.25;
+    const zMin = PURPLE_DOOR_Z - 6;
+    const zMax = CL / 2 + 6;
+
+    const xs = [];
+    const ys = [];
+    const zs = [];
+    for (let x = xMin; x <= xMax + 0.001; x += OUTSIDE_GRID_STEP) xs.push(x);
+    for (let y = yMin; y <= yMax + 0.001; y += OUTSIDE_GRID_STEP) ys.push(y);
+    for (let z = zMin; z <= zMax + 0.001; z += OUTSIDE_GRID_STEP) zs.push(z);
+
+    const linePos = [];
+    xs.forEach(x => {
+        ys.forEach(y => {
+            linePos.push(x, y, zMin, x, y, zMax);
+        });
+        zs.forEach(z => {
+            linePos.push(x, yMin, z, x, yMax, z);
+        });
+    });
+    ys.forEach(y => {
+        zs.forEach(z => {
+            linePos.push(xMin, y, z, xMax, y, z);
+        });
+    });
+
+    const lineGeo = new THREE.BufferGeometry();
+    lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(linePos, 3));
+    const lineMat = new THREE.LineBasicMaterial({
+        color: 0x8ceeff,
+        transparent: true,
+        opacity: 0.045,
+        depthWrite: false
+    });
+    const gridLines = new THREE.LineSegments(lineGeo, lineMat);
+    scene.add(gridLines);
+
+    const vertexPos = [];
+    let vertexId = 1;
+    xs.forEach(x => {
+        ys.forEach(y => {
+            zs.forEach(z => {
+                vertexPos.push(x, y, z);
+                exteriorGridIds.push(vertexId++);
+            });
+        });
+    });
+
+    const vertexGeo = new THREE.BufferGeometry();
+    vertexGeo.setAttribute('position', new THREE.Float32BufferAttribute(vertexPos, 3));
+    const vertexMat = new THREE.PointsMaterial({
+        color: 0xaef5ff,
+        size: 0.12,
+        sizeAttenuation: true,
+        transparent: true,
+        opacity: 0.09,
+        depthWrite: false
+    });
+    const gridVertices = new THREE.Points(vertexGeo, vertexMat);
+    scene.add(gridVertices);
+    scene.userData.exteriorGridVertices = gridVertices;
+}
+
 // ── Rooftop surface (walkable exterior on top of all corridors) ───────────────
 // Four-piece slab matching the ceiling hole gap in corridor 7 so the hole stays open.
 // Slightly emissive to read clearly as a floor when the player is outside in the dark.
@@ -517,7 +620,60 @@ _cg = null; // starfield and rooftop are global — not corridor-specific
 // ── Rooftop website button ────────────────────────────────────────────────────
 // Flat glowing panel on the rooftop — shooting it opens the personal website in a new tab.
 const WEBSITE_BTN_Z  = C7_HOLE_Z + 5;                          // z ≈ -137, clear of the hole
-const RTOP_TOP_Y     = CH + 0.25;                               // top face of the rooftop slab
+{
+    const gridMat      = new THREE.MeshBasicMaterial({ color: 0x7de7ff, transparent: true, opacity: 0.34 });
+    const cellDepth    = 2.0;
+    const cellWidth    = RTOP_W / 2;
+    const lineT        = 0.03;
+    const gridY        = RTOP_TOP_Y + 0.012;
+    const labelY       = RTOP_TOP_Y + 0.02;
+    const labelSize    = 0.68;
+    let nextCellNumber = 1;
+
+    function addGridLine(w, d, x, z) {
+        const line = new THREE.Mesh(new THREE.BoxGeometry(w, 0.012, d), gridMat);
+        line.position.set(x, gridY, z);
+        scene.add(line);
+    }
+
+    function addCellLabel(x, z) {
+        const label = makeFloorNumberLabel(nextCellNumber++, '#7de7ff', labelSize);
+        label.rotation.x = -Math.PI / 2;
+        label.position.set(x, labelY, z);
+        scene.add(label);
+    }
+
+    function buildStripGrid(xMin, xMax, zStart, zEnd) {
+        const width = xMax - xMin;
+        const depth = zStart - zEnd;
+        const cols = Math.max(1, Math.round(width / cellWidth));
+        const rows = Math.max(1, Math.ceil(depth / cellDepth));
+        const actualCellW = width / cols;
+        const actualCellD = depth / rows;
+
+        for (let c = 0; c <= cols; c++) {
+            const x = xMin + c * actualCellW;
+            addGridLine(lineT, depth, x, zStart - depth / 2);
+        }
+        for (let r = 0; r <= rows; r++) {
+            const z = zStart - r * actualCellD;
+            addGridLine(width, lineT, xMin + width / 2, z);
+        }
+
+        for (let r = 0; r < rows; r++) {
+            const z = zStart - (r + 0.5) * actualCellD;
+            for (let c = 0; c < cols; c++) {
+                const x = xMin + (c + 0.5) * actualCellW;
+                addCellLabel(x, z);
+            }
+        }
+    }
+
+    buildStripGrid(-RTOP_W / 2, RTOP_W / 2, CL / 2, C7_HOLE_Z + C7_HOLE_S / 2);
+    buildStripGrid(-RTOP_W / 2, RTOP_W / 2, C7_HOLE_Z - C7_HOLE_S / 2, PURPLE_DOOR_Z);
+    buildStripGrid(-RTOP_W / 2, -C7_HOLE_S / 2, C7_HOLE_Z + C7_HOLE_S / 2, C7_HOLE_Z - C7_HOLE_S / 2);
+    buildStripGrid(C7_HOLE_S / 2, RTOP_W / 2, C7_HOLE_Z + C7_HOLE_S / 2, C7_HOLE_Z - C7_HOLE_S / 2);
+}
 const websiteBtn     = box(0.6, 0.08, 0.6, websiteBtnMat, 0, RTOP_TOP_Y + 0.05, WEBSITE_BTN_Z);
 const websiteBtnGlow = new THREE.PointLight(0x00ffee, 1.5, 4.0);
 websiteBtnGlow.position.set(0, RTOP_TOP_Y + 0.5, WEBSITE_BTN_Z);
@@ -598,6 +754,7 @@ document.addEventListener('keyup',   e => { keys[e.code] = false; });
 const blocker   = document.getElementById('blocker');
 const crosshair = document.getElementById('crosshair');
 const hud       = document.getElementById('hud');
+const vertexTooltip = document.getElementById('vertex-tooltip');
 let locked = false;
 
 blocker.addEventListener('click', () => renderer.domElement.requestPointerLock());
@@ -606,6 +763,7 @@ document.addEventListener('pointerlockchange', () => {
     blocker.classList.toggle('hidden', locked);
     crosshair.classList.toggle('visible', locked);
     hud.classList.toggle('visible', locked);
+    vertexTooltip.classList.toggle('visible', false);
     if (locked) startAmbient();
 });
 
@@ -630,6 +788,35 @@ const hitMarker = document.getElementById('hit-marker');
 function showHitMarker() {
     hitMarker.classList.add('active');
     setTimeout(() => hitMarker.classList.remove('active'), 80);
+}
+
+function updateExteriorVertexTooltip() {
+    if (!locked || !playerOutside || playerDead) {
+        vertexTooltip.classList.remove('visible');
+        return;
+    }
+
+    const gridVertices = scene.userData.exteriorGridVertices;
+    if (!gridVertices) {
+        vertexTooltip.classList.remove('visible');
+        return;
+    }
+
+    exteriorGridRay.setFromCamera({ x: 0, y: 0 }, camera);
+    const hits = exteriorGridRay.intersectObject(gridVertices);
+    if (hits.length === 0 || hits[0].index == null) {
+        vertexTooltip.classList.remove('visible');
+        return;
+    }
+
+    const vertexId = exteriorGridIds[hits[0].index];
+    if (vertexId == null) {
+        vertexTooltip.classList.remove('visible');
+        return;
+    }
+
+    vertexTooltip.textContent = `VERTEX ${vertexId}`;
+    vertexTooltip.classList.add('visible');
 }
 
 const _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1160,6 +1347,8 @@ function updateC6CrushWalls(dt) {
         c6CrushRight.position.x = Math.min(c6CrushRight.position.x + C6_CRUSH_SPEED * dt,  CW);
     }
 
+    if (playerOutside) return;
+
     // AABB push-out (only while blocks are not fully retracted)
     const PR = 0.45;
     const HW = CW / 2;
@@ -1254,7 +1443,7 @@ function updateBlock(dt) {
 
 // ── Player ↔ block push (AABB) ────────────────────────────────────────────────
 function applyBlockPush() {
-    if (!block.active || !block.onFloor) return;
+    if (playerOutside || !block.active || !block.onFloor) return;
 
     const r  = 0.45;
     const h  = BLOCK_SIZE / 2;
@@ -1406,6 +1595,34 @@ function updateCorridorCulling() {
     corridorGroups.forEach((g, i) => { g.visible = Math.abs(i - idx) <= 1; });
 }
 
+function warmCorridorCulling() {
+    const startZ = camera.position.z;
+    const startLastCorridor = _lastCorridor;
+
+    // Pre-render each corridor visibility set once so geometry, materials, and
+    // light/shader combinations are prepared before the player reaches them.
+    [
+        CL / 2 - 1.5,
+        DOOR_Z - 2,
+        BLUE_DOOR_Z - 2,
+        PINK_DOOR_Z - 2,
+        YELLOW_DOOR_Z - 2,
+        TEAL_DOOR_Z - 2,
+        ORANGE_DOOR_Z - 2
+    ].forEach(z => {
+        camera.position.z = z;
+        _lastCorridor = -1;
+        updateCorridorCulling();
+        renderer.compile(scene, camera);
+        renderer.render(scene, camera);
+    });
+
+    camera.position.z = startZ;
+    _lastCorridor = -1;
+    updateCorridorCulling();
+    _lastCorridor = startLastCorridor;
+}
+
 let last = performance.now();
 
 function loop() {
@@ -1427,11 +1644,12 @@ function loop() {
         updateBlock(dt);
         updateC7Platform(dt);
     }
+    updateExteriorVertexTooltip();
     renderer.render(scene, camera);
 }
 
 //── Dev mode: set corridor number (1–7) to spawn there ───────────────────────
-/* const DEV_CORRIDOR = 2;
+/* const DEV_CORRIDOR = 7;
 (c => {
     const z = [CL/2-1.5, DOOR_Z-2, BLUE_DOOR_Z-2, PINK_DOOR_Z-2, YELLOW_DOOR_Z-2, TEAL_DOOR_Z-2, ORANGE_DOOR_Z-2][c-1];
     camera.position.z = z;
@@ -1443,4 +1661,5 @@ function loop() {
     if (c >= 7) { orangeDoor.visible = false; c6OrangeDoor.open = true;  playerMinZ = PURPLE_DOOR_Z + 0.5; }
 })(DEV_CORRIDOR); */
 
+warmCorridorCulling();
 loop();

@@ -171,6 +171,29 @@ canvas {
     display: flex;
 }
 
+#vertex-tooltip {
+    position: fixed;
+    top: 24px;
+    right: 28px;
+    min-width: 120px;
+    padding: 0.45rem 0.7rem;
+    border: 1px solid rgba(125, 231, 255, 0.22);
+    background: rgba(4, 12, 18, 0.28);
+    color: rgba(125, 231, 255, 0.88);
+    font-size: 0.82rem;
+    letter-spacing: 1px;
+    text-shadow: 0 0 8px rgba(125, 231, 255, 0.35);
+    box-shadow: 0 0 24px rgba(125, 231, 255, 0.05);
+    pointer-events: none;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 0.12s ease;
+}
+
+#vertex-tooltip.visible {
+    opacity: 1;
+}
+
 #hud span {
     color: #00ff46;
     font-size: 1.1rem;
