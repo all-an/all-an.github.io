@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Result / error value</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Result / error value</h1>
+  <p class="desc">A result type represents either a successful value or an error value in the type system, instead of signaling failure with exceptions or nulls.<br>
+  It forces the caller to handle both cases explicitly, which makes control flow around failure more visible.<br>
+  Java does not have a standard built-in <code>Result</code> type, but C++23 does with <code>std::expected</code>.</p>
+  <pre><code class="language-cpp">// C++
+#include &lt;expected&gt;
+#include &lt;string&gt;
+
+std::expected&lt;int, std::string&gt; parseAge(const std::string&amp; text) {
+  if (text == "42") return 42;
+  return std::unexpected("invalid age");
+}
+
+auto age = parseAge("42");
+
+if (age) {
+  // success
+  int value = *age;
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

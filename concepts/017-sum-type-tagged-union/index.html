@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sum type / tagged union</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Sum type / tagged union</h1>
+  <p class="desc">A sum type represents a value that can be exactly one of several alternatives, rather than having all fields at once.<br>
+  You can think of it as combining choices with an “or”: a shape is a circle or a rectangle, a result is success or failure.<br>
+  Java does not have classic algebraic data types, but sealed interfaces and records can model tagged unions in a similar way.</p>
+  <pre><code class="language-java">// Java
+sealed interface Shape permits Circle, Rectangle {}
+
+record Circle(double radius) implements Shape {}
+record Rectangle(double width, double height) implements Shape {}
+
+Shape shape = new Circle(2.0);
+
+if (shape instanceof Circle c) {
+  System.out.println(c.radius()); // 2.0
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

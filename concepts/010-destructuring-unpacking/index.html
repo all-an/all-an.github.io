@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Destructuring / unpacking</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Destructuring / unpacking</h1>
+  <p class="desc">Destructuring takes a compound value like an array or object and pulls its parts into separate variables in a single step.<br>
+  It makes code shorter when you only need a few fields or positions instead of the whole structure.<br>
+  JavaScript supports destructuring for both arrays and objects, including renaming and default values.</p>
+  <pre><code class="language-javascript">// JavaScript
+const point = { x: 4, y: 7 };
+const [first, second] = ["red", "blue"];
+const { x, y } = point;
+
+console.log(first);  // "red"
+console.log(x, y);   // 4 7</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

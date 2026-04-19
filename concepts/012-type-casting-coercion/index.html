@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Type casting / coercion</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Type casting / coercion</h1>
+  <p class="desc">Casting changes how a value is treated by the type system, while coercion is an automatic conversion the language performs for you.<br>
+  Some conversions are safe and widening, while others are narrowing and may lose information or fail at runtime.<br>
+  In Java, numeric coercion can happen implicitly, but explicit reference or narrowing conversions use cast syntax like <code>(int)</code> or <code>(String)</code>.</p>
+  <pre><code class="language-java">// Java
+double price = 9.99;
+int rounded = (int) price;   // explicit narrowing cast
+
+int count = 5;
+double total = count;        // implicit widening coercion
+
+System.out.println(rounded); // 9
+System.out.println(total);   // 5.0</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

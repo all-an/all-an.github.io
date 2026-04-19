@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Operator overloading</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Operator overloading</h1>
+  <p class="desc">Operator overloading lets user-defined types give meaning to built-in operators like <code>+</code>, <code>-</code>, or <code>==</code>.<br>
+  Instead of writing a named method call, code can use familiar symbols while the language redirects the operation to custom logic.<br>
+  It can make abstractions feel natural, but if used carelessly it also hides behavior behind syntax that looks simple.</p>
+  <pre><code class="language-cpp">// C++
+struct Vector {
+  int x, y;
+
+  Vector operator+(const Vector& other) const {
+    return {x + other.x, y + other.y};
+  }
+};
+
+Vector a{2, 3};
+Vector b{4, 1};
+Vector sum = a + b;   // {6, 4}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interface / protocol / trait</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Interface / protocol / trait</h1>
+  <p class="desc">An interface describes a set of operations a type must provide without fixing the concrete implementation.<br>
+  It lets different types share the same contract, which is useful for substitution and polymorphism.<br>
+  In Java, interfaces define methods that classes can implement, and code can depend on the interface instead of a specific class.</p>
+  <pre><code class="language-java">// Java
+interface Greeter {
+  String greet();
+}
+
+class EnglishGreeter implements Greeter {
+  public String greet() {
+    return "Hello";
+  }
+}
+
+Greeter greeter = new EnglishGreeter();
+System.out.println(greeter.greet()); // Hello</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

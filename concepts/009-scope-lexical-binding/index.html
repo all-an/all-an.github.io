@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scope / lexical binding</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Scope / lexical binding</h1>
+  <p class="desc">Scope decides where a name can be seen, and lexical binding means that visibility is determined by where code is written, not by who calls it at runtime.<br>
+  Inner blocks and functions can read names from outer scopes, which is what makes closures work.<br>
+  JavaScript uses lexical scope, so a function keeps access to the variables that were in scope when the function was defined.</p>
+  <pre><code class="language-javascript">// JavaScript
+function makeCounter() {
+  let count = 0;
+
+  return function () {
+    count += 1;
+    return count;
+  };
+}
+
+const counter = makeCounter();
+
+counter(); // 1
+counter(); // 2</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

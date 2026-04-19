@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nullable / absent value</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Nullable / absent value</h1>
+  <p class="desc">An absent value represents the idea that data might be missing instead of always being present.<br>
+  Some languages use a dedicated option type, while others use a special null-like value that requires extra care.<br>
+  In Java, the traditional absent value is <code>null</code>, and modern code often uses <code>Optional</code> to make absence more explicit.</p>
+  <pre><code class="language-java">// Java
+import java.util.Optional;
+
+Optional&lt;String&gt; nickname = Optional.ofNullable(null);
+
+String value = nickname.orElse("anonymous");
+System.out.println(value); // anonymous</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

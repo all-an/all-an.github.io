@@ -3,21 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Variable / binding</title>
+  <title>Loop / iteration</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
 </head>
 <body>
 <div class="wrap">
   <a class="back" href="../index.html">← back</a>
-  <h1>Variable / binding</h1>
-  <p class="desc">A variable is a named binding that associates an identifier with a value stored in memory.<br>
-  In Java, every variable has a declared type and must be initialized before use — the compiler enforces this.<br>
-  <code>var</code> (Java 10+) lets the compiler infer the type locally, reducing verbosity without losing static typing.</p>
+  <h1>Loop / iteration</h1>
+  <p class="desc">Iteration repeats a block of code while a condition holds or while elements remain in a sequence.<br>
+  Common forms include <code>for</code>, <code>while</code>, and collection-based loops, each trading control for readability and convenience.<br>
+  It is the standard way to process repeated work without manually duplicating the same statements.</p>
   <pre><code class="language-java">// Java
-int score = 100;           // explicit type
-var name  = "Allan";       // type inferred as String
-final double PI = 3.14159; // binding that cannot be reassigned</code></pre>
+for (int i = 0; i < 3; i++) {
+  System.out.println("step " + i);
+}</code></pre>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <script>hljs.highlightAll();</script>

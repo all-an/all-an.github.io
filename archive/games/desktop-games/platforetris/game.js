@@ -42,7 +42,155 @@ const VIVID_COLORS = [
 ];
 const vc = id => VIVID_COLORS[id - 1];
 
-// ── Platforms ──────────────────────────────────────────────────────────────────
+// ── Platforms for non-origin rooms ────────────────────────────────────────────
+// Key format: 'roomX,roomY'. Cells use the same {col,row,color,border} shape.
+const EXTRA_PLATFORMS = {
+  '1,0': [
+    // floor strip
+    ...Array.from({length: COLS}, (_, c) => ({ col: c, row: 29, ...vc(((c)   % 10) + 1) })),
+    ...Array.from({length: COLS}, (_, c) => ({ col: c, row: 28, ...vc(((c+5) % 10) + 1) })),
+    // ledges
+    { col:  3, row: 23, ...vc(2) }, { col:  4, row: 23, ...vc(2) }, { col:  5, row: 23, ...vc(2) },
+    { col: 10, row: 20, ...vc(1) }, { col: 11, row: 20, ...vc(1) }, { col: 12, row: 20, ...vc(1) }, { col: 13, row: 20, ...vc(1) },
+    { col: 18, row: 17, ...vc(3) }, { col: 19, row: 17, ...vc(3) }, { col: 20, row: 17, ...vc(3) },
+    { col: 26, row: 14, ...vc(5) }, { col: 27, row: 14, ...vc(5) }, { col: 28, row: 14, ...vc(5) }, { col: 29, row: 14, ...vc(5) },
+    { col: 33, row: 11, ...vc(7) }, { col: 34, row: 11, ...vc(7) }, { col: 35, row: 11, ...vc(7) },
+    { col:  6, row:  8, ...vc(4) }, { col:  7, row:  8, ...vc(4) }, { col:  8, row:  8, ...vc(4) },
+    { col: 14, row:  5, ...vc(6) }, { col: 15, row:  5, ...vc(6) }, { col: 16, row:  5, ...vc(6) }, { col: 17, row:  5, ...vc(6) },
+    { col: 23, row:  3, ...vc(8) }, { col: 24, row:  3, ...vc(8) },
+    { col: 30, row:  6, ...vc(9) }, { col: 31, row:  6, ...vc(9) }, { col: 32, row:  6, ...vc(9) },
+    { col: 37, row:  3, ...vc(10)}, { col: 38, row:  3, ...vc(10)},
+    // vertical pillars
+    { col:  0, row: 25, ...vc(6) }, { col:  0, row: 26, ...vc(6) }, { col:  0, row: 27, ...vc(6) },
+    { col: 39, row: 25, ...vc(3) }, { col: 39, row: 26, ...vc(3) }, { col: 39, row: 27, ...vc(3) },
+  ],
+  '-1,0': [
+    ...Array.from({length: COLS}, (_, c) => ({ col: c, row: 29, ...vc(((c+2) % 10) + 1) })),
+    ...Array.from({length: COLS}, (_, c) => ({ col: c, row: 28, ...vc(((c+7) % 10) + 1) })),
+    { col:  2, row: 24, ...vc(7) }, { col:  3, row: 24, ...vc(7) }, { col:  4, row: 24, ...vc(7) }, { col:  5, row: 24, ...vc(7) },
+    { col: 10, row: 21, ...vc(8) }, { col: 11, row: 21, ...vc(8) }, { col: 12, row: 21, ...vc(8) },
+    { col: 17, row: 18, ...vc(6) }, { col: 18, row: 18, ...vc(6) }, { col: 19, row: 18, ...vc(6) }, { col: 20, row: 18, ...vc(6) },
+    { col: 25, row: 15, ...vc(5) }, { col: 26, row: 15, ...vc(5) }, { col: 27, row: 15, ...vc(5) },
+    { col: 32, row: 12, ...vc(4) }, { col: 33, row: 12, ...vc(4) }, { col: 34, row: 12, ...vc(4) },
+    { col:  7, row:  9, ...vc(1) }, { col:  8, row:  9, ...vc(1) }, { col:  9, row:  9, ...vc(1) },
+    { col: 15, row:  6, ...vc(2) }, { col: 16, row:  6, ...vc(2) }, { col: 17, row:  6, ...vc(2) }, { col: 18, row:  6, ...vc(2) },
+    { col: 23, row:  4, ...vc(3) }, { col: 24, row:  4, ...vc(3) },
+    { col: 30, row:  7, ...vc(9) }, { col: 31, row:  7, ...vc(9) }, { col: 32, row:  7, ...vc(9) },
+    { col: 36, row:  4, ...vc(10)}, { col: 37, row:  4, ...vc(10)}, { col: 38, row:  4, ...vc(10)},
+    { col:  0, row: 25, ...vc(5) }, { col:  0, row: 26, ...vc(5) }, { col:  0, row: 27, ...vc(5) },
+    { col: 39, row: 24, ...vc(2) }, { col: 39, row: 25, ...vc(2) }, { col: 39, row: 26, ...vc(2) },
+  ],
+  '0,-1': [
+    ...Array.from({length: COLS}, (_, c) => ({ col: c, row: 29, ...vc(((c+4) % 10) + 1) })),
+    ...Array.from({length: COLS}, (_, c) => ({ col: c, row: 28, ...vc(((c+9) % 10) + 1) })),
+    { col:  1, row: 23, ...vc(4) }, { col:  2, row: 23, ...vc(4) }, { col:  3, row: 23, ...vc(4) }, { col:  4, row: 23, ...vc(4) },
+    { col:  8, row: 20, ...vc(8) }, { col:  9, row: 20, ...vc(8) }, { col: 10, row: 20, ...vc(8) },
+    { col: 14, row: 17, ...vc(6) }, { col: 15, row: 17, ...vc(6) }, { col: 16, row: 17, ...vc(6) }, { col: 17, row: 17, ...vc(6) },
+    { col: 21, row: 14, ...vc(2) }, { col: 22, row: 14, ...vc(2) }, { col: 23, row: 14, ...vc(2) },
+    { col: 27, row: 11, ...vc(5) }, { col: 28, row: 11, ...vc(5) }, { col: 29, row: 11, ...vc(5) }, { col: 30, row: 11, ...vc(5) },
+    { col: 34, row:  8, ...vc(1) }, { col: 35, row:  8, ...vc(1) }, { col: 36, row:  8, ...vc(1) },
+    { col:  5, row:  7, ...vc(9) }, { col:  6, row:  7, ...vc(9) }, { col:  7, row:  7, ...vc(9) },
+    { col: 12, row:  4, ...vc(3) }, { col: 13, row:  4, ...vc(3) }, { col: 14, row:  4, ...vc(3) },
+    { col: 19, row:  3, ...vc(7) }, { col: 20, row:  3, ...vc(7) }, { col: 21, row:  3, ...vc(7) }, { col: 22, row:  3, ...vc(7) },
+    { col: 28, row:  5, ...vc(10)}, { col: 29, row:  5, ...vc(10)}, { col: 30, row:  5, ...vc(10)},
+    { col: 36, row:  3, ...vc(4) }, { col: 37, row:  3, ...vc(4) },
+    { col:  0, row: 26, ...vc(8) }, { col:  0, row: 27, ...vc(8) },
+    { col: 39, row: 25, ...vc(6) }, { col: 39, row: 26, ...vc(6) }, { col: 39, row: 27, ...vc(6) },
+  ],
+  '0,1': [
+    ...Array.from({length: COLS}, (_, c) => ({ col: c, row: 29, ...vc(((c+1) % 10) + 1) })),
+    ...Array.from({length: COLS}, (_, c) => ({ col: c, row: 28, ...vc(((c+6) % 10) + 1) })),
+    { col:  0, row: 25, ...vc(1) }, { col:  1, row: 25, ...vc(1) }, { col:  2, row: 25, ...vc(2) }, { col:  3, row: 25, ...vc(2) },
+    { col:  4, row: 25, ...vc(3) }, { col:  5, row: 25, ...vc(3) }, { col:  6, row: 25, ...vc(4) }, { col:  7, row: 25, ...vc(4) },
+    { col:  8, row: 25, ...vc(5) }, { col:  9, row: 25, ...vc(5) }, { col: 10, row: 25, ...vc(6) }, { col: 11, row: 25, ...vc(6) },
+    { col: 12, row: 25, ...vc(7) }, { col: 13, row: 25, ...vc(7) }, { col: 14, row: 25, ...vc(8) }, { col: 15, row: 25, ...vc(8) },
+    { col: 16, row: 25, ...vc(9) }, { col: 17, row: 25, ...vc(9) }, { col: 18, row: 25, ...vc(10)}, { col: 19, row: 25, ...vc(10)},
+    { col: 20, row: 25, ...vc(1) }, { col: 21, row: 25, ...vc(1) }, { col: 22, row: 25, ...vc(2) }, { col: 23, row: 25, ...vc(2) },
+    { col: 24, row: 25, ...vc(3) }, { col: 25, row: 25, ...vc(3) }, { col: 26, row: 25, ...vc(4) }, { col: 27, row: 25, ...vc(4) },
+    { col: 28, row: 25, ...vc(5) }, { col: 29, row: 25, ...vc(5) }, { col: 30, row: 25, ...vc(6) }, { col: 31, row: 25, ...vc(6) },
+    { col: 32, row: 25, ...vc(7) }, { col: 33, row: 25, ...vc(7) }, { col: 34, row: 25, ...vc(8) }, { col: 35, row: 25, ...vc(8) },
+    { col: 36, row: 25, ...vc(9) }, { col: 37, row: 25, ...vc(9) }, { col: 38, row: 25, ...vc(10)}, { col: 39, row: 25, ...vc(10)},
+    { col:  3, row: 21, ...vc(5) }, { col:  4, row: 21, ...vc(5) }, { col:  5, row: 21, ...vc(5) },
+    { col: 11, row: 18, ...vc(3) }, { col: 12, row: 18, ...vc(3) }, { col: 13, row: 18, ...vc(3) }, { col: 14, row: 18, ...vc(3) },
+    { col: 19, row: 15, ...vc(7) }, { col: 20, row: 15, ...vc(7) }, { col: 21, row: 15, ...vc(7) },
+    { col: 27, row: 12, ...vc(2) }, { col: 28, row: 12, ...vc(2) }, { col: 29, row: 12, ...vc(2) }, { col: 30, row: 12, ...vc(2) },
+    { col: 34, row:  9, ...vc(8) }, { col: 35, row:  9, ...vc(8) }, { col: 36, row:  9, ...vc(8) },
+    { col:  7, row:  6, ...vc(6) }, { col:  8, row:  6, ...vc(6) }, { col:  9, row:  6, ...vc(6) },
+    { col: 15, row:  4, ...vc(1) }, { col: 16, row:  4, ...vc(1) }, { col: 17, row:  4, ...vc(1) }, { col: 18, row:  4, ...vc(1) },
+    { col: 23, row:  3, ...vc(9) }, { col: 24, row:  3, ...vc(9) }, { col: 25, row:  3, ...vc(9) },
+  ],
+  '1,-1': [
+    ...Array.from({length: COLS}, (_, c) => ({ col: c, row: 29, ...vc(((c+3) % 10) + 1) })),
+    ...Array.from({length: COLS}, (_, c) => ({ col: c, row: 28, ...vc(((c+8) % 10) + 1) })),
+    { col:  2, row: 24, ...vc(3) }, { col:  3, row: 24, ...vc(3) }, { col:  4, row: 24, ...vc(3) },
+    { col:  8, row: 22, ...vc(1) }, { col:  9, row: 22, ...vc(1) },
+    { col: 13, row: 20, ...vc(5) }, { col: 14, row: 20, ...vc(5) }, { col: 15, row: 20, ...vc(5) }, { col: 16, row: 20, ...vc(5) },
+    { col: 20, row: 18, ...vc(2) }, { col: 21, row: 18, ...vc(2) }, { col: 22, row: 18, ...vc(2) },
+    { col: 26, row: 15, ...vc(7) }, { col: 27, row: 15, ...vc(7) }, { col: 28, row: 15, ...vc(7) },
+    { col: 32, row: 12, ...vc(6) }, { col: 33, row: 12, ...vc(6) }, { col: 34, row: 12, ...vc(6) }, { col: 35, row: 12, ...vc(6) },
+    { col: 37, row:  9, ...vc(4) }, { col: 38, row:  9, ...vc(4) },
+    { col:  4, row:  8, ...vc(8) }, { col:  5, row:  8, ...vc(8) }, { col:  6, row:  8, ...vc(8) },
+    { col: 11, row:  6, ...vc(9) }, { col: 12, row:  6, ...vc(9) }, { col: 13, row:  6, ...vc(9) },
+    { col: 18, row:  4, ...vc(10)}, { col: 19, row:  4, ...vc(10)}, { col: 20, row:  4, ...vc(10)}, { col: 21, row:  4, ...vc(10)},
+    { col: 25, row:  3, ...vc(1) }, { col: 26, row:  3, ...vc(1) },
+    { col: 30, row:  5, ...vc(2) }, { col: 31, row:  5, ...vc(2) }, { col: 32, row:  5, ...vc(2) },
+  ],
+  '-1,-1': [
+    ...Array.from({length: COLS}, (_, c) => ({ col: c, row: 29, ...vc(((c+6) % 10) + 1) })),
+    ...Array.from({length: COLS}, (_, c) => ({ col: c, row: 28, ...vc(((c+1) % 10) + 1) })),
+    { col:  1, row: 24, ...vc(9) }, { col:  2, row: 24, ...vc(9) }, { col:  3, row: 24, ...vc(9) }, { col:  4, row: 24, ...vc(9) },
+    { col:  7, row: 21, ...vc(10)}, { col:  8, row: 21, ...vc(10)}, { col:  9, row: 21, ...vc(10)},
+    { col: 13, row: 18, ...vc(1) }, { col: 14, row: 18, ...vc(1) }, { col: 15, row: 18, ...vc(1) },
+    { col: 19, row: 15, ...vc(4) }, { col: 20, row: 15, ...vc(4) }, { col: 21, row: 15, ...vc(4) }, { col: 22, row: 15, ...vc(4) },
+    { col: 26, row: 12, ...vc(7) }, { col: 27, row: 12, ...vc(7) }, { col: 28, row: 12, ...vc(7) },
+    { col: 31, row:  9, ...vc(5) }, { col: 32, row:  9, ...vc(5) }, { col: 33, row:  9, ...vc(5) }, { col: 34, row:  9, ...vc(5) },
+    { col: 36, row:  6, ...vc(2) }, { col: 37, row:  6, ...vc(2) }, { col: 38, row:  6, ...vc(2) },
+    { col:  5, row:  7, ...vc(6) }, { col:  6, row:  7, ...vc(6) }, { col:  7, row:  7, ...vc(6) },
+    { col: 12, row:  5, ...vc(3) }, { col: 13, row:  5, ...vc(3) }, { col: 14, row:  5, ...vc(3) },
+    { col: 18, row:  3, ...vc(8) }, { col: 19, row:  3, ...vc(8) }, { col: 20, row:  3, ...vc(8) }, { col: 21, row:  3, ...vc(8) },
+    { col: 24, row:  5, ...vc(2) }, { col: 25, row:  5, ...vc(2) },
+    { col: 29, row:  3, ...vc(7) }, { col: 30, row:  3, ...vc(7) }, { col: 31, row:  3, ...vc(7) },
+  ],
+  '1,1': [
+    ...Array.from({length: COLS}, (_, c) => ({ col: c, row: 29, ...vc(((c+9) % 10) + 1) })),
+    ...Array.from({length: COLS}, (_, c) => ({ col: c, row: 28, ...vc(((c+4) % 10) + 1) })),
+    ...Array.from({length: COLS}, (_, c) => ({ col: c, row: 27, ...vc(((c+2) % 10) + 1) })),
+    { col:  2, row: 22, ...vc(1) }, { col:  3, row: 22, ...vc(1) }, { col:  4, row: 22, ...vc(1) }, { col:  5, row: 22, ...vc(2) },
+    { col:  6, row: 22, ...vc(2) }, { col:  7, row: 22, ...vc(3) }, { col:  8, row: 22, ...vc(3) }, { col:  9, row: 22, ...vc(4) },
+    { col: 10, row: 22, ...vc(4) }, { col: 11, row: 22, ...vc(5) }, { col: 12, row: 22, ...vc(5) }, { col: 13, row: 22, ...vc(6) },
+    { col: 14, row: 22, ...vc(6) }, { col: 15, row: 22, ...vc(7) }, { col: 16, row: 22, ...vc(7) }, { col: 17, row: 22, ...vc(8) },
+    { col: 18, row: 22, ...vc(8) }, { col: 19, row: 22, ...vc(9) }, { col: 20, row: 22, ...vc(9) }, { col: 21, row: 22, ...vc(10)},
+    { col: 22, row: 22, ...vc(10)}, { col: 23, row: 22, ...vc(1) }, { col: 24, row: 22, ...vc(1) }, { col: 25, row: 22, ...vc(2) },
+    { col: 26, row: 22, ...vc(2) }, { col: 27, row: 22, ...vc(3) }, { col: 28, row: 22, ...vc(3) }, { col: 29, row: 22, ...vc(4) },
+    { col: 30, row: 22, ...vc(4) }, { col: 31, row: 22, ...vc(5) }, { col: 32, row: 22, ...vc(5) }, { col: 33, row: 22, ...vc(6) },
+    { col: 34, row: 22, ...vc(6) }, { col: 35, row: 22, ...vc(7) }, { col: 36, row: 22, ...vc(7) }, { col: 37, row: 22, ...vc(8) },
+    { col:  4, row: 18, ...vc(5) }, { col:  5, row: 18, ...vc(5) }, { col:  6, row: 18, ...vc(5) },
+    { col: 12, row: 15, ...vc(7) }, { col: 13, row: 15, ...vc(7) }, { col: 14, row: 15, ...vc(7) }, { col: 15, row: 15, ...vc(7) },
+    { col: 20, row: 12, ...vc(2) }, { col: 21, row: 12, ...vc(2) }, { col: 22, row: 12, ...vc(2) },
+    { col: 28, row:  9, ...vc(4) }, { col: 29, row:  9, ...vc(4) }, { col: 30, row:  9, ...vc(4) }, { col: 31, row:  9, ...vc(4) },
+    { col: 35, row:  6, ...vc(9) }, { col: 36, row:  6, ...vc(9) }, { col: 37, row:  6, ...vc(9) },
+    { col:  8, row:  5, ...vc(3) }, { col:  9, row:  5, ...vc(3) }, { col: 10, row:  5, ...vc(3) },
+    { col: 16, row:  3, ...vc(6) }, { col: 17, row:  3, ...vc(6) }, { col: 18, row:  3, ...vc(6) }, { col: 19, row:  3, ...vc(6) },
+    { col: 24, row:  4, ...vc(1) }, { col: 25, row:  4, ...vc(1) },
+  ],
+  '-1,1': [
+    ...Array.from({length: COLS}, (_, c) => ({ col: c, row: 29, ...vc(((c+7) % 10) + 1) })),
+    ...Array.from({length: COLS}, (_, c) => ({ col: c, row: 28, ...vc(((c+2) % 10) + 1) })),
+    { col:  1, row: 23, ...vc(2) }, { col:  2, row: 23, ...vc(2) }, { col:  3, row: 23, ...vc(2) },
+    { col:  8, row: 20, ...vc(6) }, { col:  9, row: 20, ...vc(6) }, { col: 10, row: 20, ...vc(6) }, { col: 11, row: 20, ...vc(6) },
+    { col: 15, row: 17, ...vc(4) }, { col: 16, row: 17, ...vc(4) }, { col: 17, row: 17, ...vc(4) },
+    { col: 22, row: 14, ...vc(1) }, { col: 23, row: 14, ...vc(1) }, { col: 24, row: 14, ...vc(1) }, { col: 25, row: 14, ...vc(1) },
+    { col: 29, row: 11, ...vc(8) }, { col: 30, row: 11, ...vc(8) }, { col: 31, row: 11, ...vc(8) },
+    { col: 35, row:  8, ...vc(3) }, { col: 36, row:  8, ...vc(3) }, { col: 37, row:  8, ...vc(3) }, { col: 38, row:  8, ...vc(3) },
+    { col:  5, row:  7, ...vc(7) }, { col:  6, row:  7, ...vc(7) }, { col:  7, row:  7, ...vc(7) },
+    { col: 13, row:  4, ...vc(5) }, { col: 14, row:  4, ...vc(5) }, { col: 15, row:  4, ...vc(5) },
+    { col: 20, row:  3, ...vc(10)}, { col: 21, row:  3, ...vc(10)}, { col: 22, row:  3, ...vc(10)}, { col: 23, row:  3, ...vc(10)},
+    { col: 27, row:  5, ...vc(9) }, { col: 28, row:  5, ...vc(9) }, { col: 29, row:  5, ...vc(9) },
+    { col: 33, row:  3, ...vc(6) }, { col: 34, row:  3, ...vc(6) },
+  ],
+};
+
+// ── Platforms (room 0,0) ───────────────────────────────────────────────────────
 let PLATFORMS = [
   { col: 22, row: 25, ...vc( 1) }, // 782 red
   { col: 23, row: 25, ...vc( 5) }, //     green
@@ -540,10 +688,10 @@ function findChain5() {
   if (!tetromino.onGround) return null;
   const offsets = getBlockOffsets();
   const pCells  = offsets.map(b => blockCell(b.dx, b.dy));
-  const sameColor = [
-    ...filledCells.filter(c => c.color === tetromino.color),
-    ...PLATFORMS.filter(p => p.color === tetromino.color),
-  ];
+  const roomStaticCells = roomX === 0 && roomY === 0
+    ? [...filledCells, ...PLATFORMS]
+    : (EXTRA_PLATFORMS[`${roomX},${roomY}`] || []);
+  const sameColor = roomStaticCells.filter(c => c.color === tetromino.color);
   if (!sameColor.length) return null;
 
   const staticSet = new Set(sameColor.map(c => `${c.col},${c.row}`));
@@ -597,8 +745,6 @@ function findChain5() {
 }
 
 function checkExplosion() {
-  if (roomX !== 0 || roomY !== 0) return;
-
   const found = findChain5();
   if (!found) { fillTimer = null; pendingChain = null; return; }
 
@@ -642,8 +788,15 @@ function checkExplosion() {
   for (const { col, row } of allCells.filter(c => inlineSet.has(`${c.col},${c.row}`)))
     spawnExplosion(col * CELL + CELL / 2, row * CELL + CELL / 2);
 
-  filledCells = filledCells.filter(c => !inlineSet.has(`${c.col},${c.row}`));
-  PLATFORMS   = PLATFORMS.filter(p => !inlineSet.has(`${p.col},${p.row}`));
+  if (roomX === 0 && roomY === 0) {
+    filledCells = filledCells.filter(c => !inlineSet.has(`${c.col},${c.row}`));
+    PLATFORMS   = PLATFORMS.filter(p => !inlineSet.has(`${p.col},${p.row}`));
+    room00Dirty = true;
+  } else {
+    const key = `${roomX},${roomY}`;
+    EXTRA_PLATFORMS[key] = (EXTRA_PLATFORMS[key] || []).filter(p => !inlineSet.has(`${p.col},${p.row}`));
+    roomCache.delete(key);
+  }
 
   // Only remove player blocks inline with the blast axis
   if (axis === 'col') {
@@ -730,9 +883,11 @@ function update() {
 
   // Horizontal side collision: only against solids at the same grid row as each block.
   // Resting-on-top blocks have blockRow = platformRow - 1, so they never match.
-  if (roomX === 0 && roomY === 0 && tetromino.vx !== 0) {
-    const offs = getBlockOffsets();
-    const solids = [...PLATFORMS, ...filledCells];
+  if (tetromino.vx !== 0) {
+    const offs   = getBlockOffsets();
+    const solids = roomX === 0 && roomY === 0
+      ? [...PLATFORMS, ...filledCells]
+      : (EXTRA_PLATFORMS[`${roomX},${roomY}`] || []);
     for (const { dx, dy } of offs) {
       const blockRow = Math.floor((tetromino.y + dy + CELL / 2) / CELL);
       const bLeft    = tetromino.x + dx;
@@ -758,13 +913,17 @@ function update() {
     tetromino.onGround = true;
   }
 
-  // Platform + filled-cell collision (room 0,0 only)
-  if (roomX === 0 && roomY === 0) {
-    const offsets = getBlockOffsets();
+  // Platform + filled-cell collision (all rooms)
+  {
+    const offsets  = getBlockOffsets();
+    const roomKey  = `${roomX},${roomY}`;
+    const solids   = roomX === 0 && roomY === 0
+      ? [...PLATFORMS, ...filledCells]
+      : (EXTRA_PLATFORMS[roomKey] || []);
 
     // Land-on-top helper.
-    // Skip a block whose center column has no solid cell (platform or filledCell)
-    // at this row — so the block can fall into a gap rather than catching on edges.
+    // Skip a block whose center column has no solid cell at this row —
+    // so the block can fall into a gap rather than catching on edges.
     function landOn(px, py) {
       const solidRow = Math.floor(py / CELL);
       const solidCol = Math.floor(px / CELL);
@@ -773,9 +932,7 @@ function update() {
         const bRight     = bLeft + CELL;
         const bCenterCol = Math.floor((bLeft + CELL / 2) / CELL);
         if (bCenterCol !== solidCol) {
-          const hasSolid = PLATFORMS.some(p => p.col === bCenterCol && p.row === solidRow)
-                        || filledCells.some(c => c.col === bCenterCol && c.row === solidRow);
-          if (!hasSolid) continue;
+          if (!solids.some(s => s.col === bCenterCol && s.row === solidRow)) continue;
         }
         const bBottom = tetromino.y + dy + CELL;
         if (bRight > px && bLeft < px + CELL) {
@@ -788,15 +945,13 @@ function update() {
       }
     }
 
-    for (const plat of PLATFORMS) landOn(plat.col * CELL, plat.row * CELL);
-    for (const cell of filledCells) landOn(cell.col * CELL, cell.row * CELL);
+    for (const s of solids) landOn(s.col * CELL, s.row * CELL);
 
     // Snap to grid when explosion is pending and player isn't moving laterally
     const movingLaterally = keys['ArrowLeft'] || keys['KeyA'] || keys['ArrowRight'] || keys['KeyD'];
     if (!movingLaterally && pendingChain !== null) {
       tetromino.x = Math.round(tetromino.x / CELL) * CELL;
     }
-
     checkExplosion();
   }
 
@@ -856,60 +1011,101 @@ function drawPiece(offX = 0, offY = 0) {
   ctx.restore();
 }
 
-// ── Draw one room ──────────────────────────────────────────────────────────────
-function drawRoom(rx, ry, offX, offY) {
+// ── Offscreen room cache ───────────────────────────────────────────────────────
+// Each room is pre-rendered into an offscreen canvas so drawGrid only needs a
+// single drawImage blit per room instead of 1200 fillText + 72 stroke calls.
+const roomCache   = new Map();
+let   room00Dirty = true; // set true whenever platforms or filledCells change
+
+function invalidateRoom00() {
+  room00Dirty = true;
+}
+
+// Renders the full static content of a room into targetCtx at origin (0,0).
+// Hover highlight is intentionally excluded so the cache stays valid across frames.
+function renderRoom(rx, ry, targetCtx) {
   const startN = getRoomIndex(rx, ry) * COLS * ROWS + 1;
+  const W = canvas.width, H = canvas.height;
 
-  ctx.save();
-  ctx.translate(offX, offY);
+  targetCtx.fillStyle = '#1a1a2e';
+  targetCtx.fillRect(0, 0, W, H);
 
-  ctx.fillStyle = '#1a1a2e';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  ctx.strokeStyle = '#2a2a4a';
-  ctx.lineWidth   = 0.5;
+  targetCtx.strokeStyle = '#2a2a4a';
+  targetCtx.lineWidth   = 0.5;
   for (let x = 0; x <= COLS; x++) {
-    ctx.beginPath(); ctx.moveTo(x * CELL, 0); ctx.lineTo(x * CELL, canvas.height); ctx.stroke();
+    targetCtx.beginPath(); targetCtx.moveTo(x * CELL, 0); targetCtx.lineTo(x * CELL, H); targetCtx.stroke();
   }
   for (let y = 0; y <= ROWS; y++) {
-    ctx.beginPath(); ctx.moveTo(0, y * CELL); ctx.lineTo(canvas.width, y * CELL); ctx.stroke();
+    targetCtx.beginPath(); targetCtx.moveTo(0, y * CELL); targetCtx.lineTo(W, y * CELL); targetCtx.stroke();
   }
 
   if (rx === 0 && ry === 0) {
-    // Platforms
     for (const plat of PLATFORMS) {
       const px = plat.col * CELL, py = plat.row * CELL;
-      ctx.fillStyle = plat.color; ctx.fillRect(px, py, CELL, CELL);
-      ctx.strokeStyle = plat.border; ctx.lineWidth = 1.5;
-      ctx.strokeRect(px + 0.5, py + 0.5, CELL - 1, CELL - 1);
+      targetCtx.fillStyle = plat.color; targetCtx.fillRect(px, py, CELL, CELL);
+      targetCtx.strokeStyle = plat.border; targetCtx.lineWidth = 1.5;
+      targetCtx.strokeRect(px + 0.5, py + 0.5, CELL - 1, CELL - 1);
     }
-    // Filled cells — drawn in their stored color
     for (const cell of filledCells) {
       const px = cell.col * CELL, py = cell.row * CELL;
-      ctx.fillStyle = cell.color; ctx.fillRect(px, py, CELL, CELL);
-      ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.fillRect(px + 2, py + 2, CELL - 4, CELL - 4);
-      ctx.strokeStyle = cell.color; ctx.lineWidth = 1.5;
-      ctx.strokeRect(px + 0.5, py + 0.5, CELL - 1, CELL - 1);
+      targetCtx.fillStyle = cell.color; targetCtx.fillRect(px, py, CELL, CELL);
+      targetCtx.fillStyle = 'rgba(255,255,255,0.2)'; targetCtx.fillRect(px + 2, py + 2, CELL - 4, CELL - 4);
+      targetCtx.strokeStyle = cell.color; targetCtx.lineWidth = 1.5;
+      targetCtx.strokeRect(px + 0.5, py + 0.5, CELL - 1, CELL - 1);
+    }
+  } else {
+    // Draw pre-defined platforms for non-origin rooms
+    for (const plat of (EXTRA_PLATFORMS[`${rx},${ry}`] || [])) {
+      const px = plat.col * CELL, py = plat.row * CELL;
+      targetCtx.fillStyle = plat.color; targetCtx.fillRect(px, py, CELL, CELL);
+      targetCtx.strokeStyle = plat.border; targetCtx.lineWidth = 1.5;
+      targetCtx.strokeRect(px + 0.5, py + 0.5, CELL - 1, CELL - 1);
     }
   }
 
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  targetCtx.font = '7px monospace'; targetCtx.fillStyle = '#8888cc';
+  targetCtx.textAlign = 'center'; targetCtx.textBaseline = 'middle';
   for (let row = 0; row < ROWS; row++) {
     for (let col = 0; col < COLS; col++) {
-      const n  = startN + row * COLS + col;
-      const cx = col * CELL + CELL / 2;
-      const cy = row * CELL + CELL / 2;
-      const isHovered = rx === roomX && ry === roomY && !transitioning
-                     && col === hoveredCol && row === hoveredRow;
-      if (isHovered) {
-        ctx.fillStyle = '#2a2a5a';
-        ctx.fillRect(col * CELL + 0.5, row * CELL + 0.5, CELL - 1, CELL - 1);
-        ctx.font = 'bold 8px monospace'; ctx.fillStyle = '#e0e0ff';
-      } else {
-        ctx.font = '7px monospace'; ctx.fillStyle = '#8888cc';
-      }
-      ctx.fillText(n, cx, cy);
+      targetCtx.fillText(startN + row * COLS + col, col * CELL + CELL / 2, row * CELL + CELL / 2);
     }
+  }
+}
+
+// Returns the cached offscreen canvas for a room, rendering it first if needed.
+function getCachedRoom(rx, ry) {
+  const key = `${rx},${ry}`;
+  if (key === '0,0' && room00Dirty) {
+    roomCache.delete('0,0');
+    room00Dirty = false;
+  }
+  if (!roomCache.has(key)) {
+    const off  = document.createElement('canvas');
+    off.width  = canvas.width;
+    off.height = canvas.height;
+    renderRoom(rx, ry, off.getContext('2d'));
+    roomCache.set(key, off);
+  }
+  return roomCache.get(key);
+}
+
+// ── Draw one room ──────────────────────────────────────────────────────────────
+// Blits the cached room image then draws the hover highlight on top.
+function drawRoom(rx, ry, offX, offY) {
+  ctx.save();
+  ctx.translate(offX, offY);
+  ctx.drawImage(getCachedRoom(rx, ry), 0, 0);
+
+  // Hover overlay — only for the current room when not transitioning
+  if (rx === roomX && ry === roomY && !transitioning && hoveredCol >= 0 && hoveredRow >= 0) {
+    const startN = getRoomIndex(rx, ry) * COLS * ROWS + 1;
+    const n  = startN + hoveredRow * COLS + hoveredCol;
+    const px = hoveredCol * CELL, py = hoveredRow * CELL;
+    ctx.fillStyle = '#2a2a5a';
+    ctx.fillRect(px + 0.5, py + 0.5, CELL - 1, CELL - 1);
+    ctx.font = 'bold 8px monospace'; ctx.fillStyle = '#e0e0ff';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(n, px + CELL / 2, py + CELL / 2);
   }
 
   ctx.restore();
@@ -922,7 +1118,9 @@ function drawGrid() {
   ctx.beginPath(); ctx.rect(0, 0, canvas.width, canvas.height); ctx.clip();
 
   if (transitioning) {
-    const p = transitionProgress;
+    // Ease-in-out so rooms accelerate out and decelerate in rather than sliding at constant speed.
+    const t = Math.min(transitionProgress, 1);
+    const p = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
     const W = canvas.width, H = canvas.height;
     let curOffX = 0, curOffY = 0, nxtOffX = 0, nxtOffY = 0;
     let nxtRX = roomX, nxtRY = roomY;
@@ -958,6 +1156,7 @@ function loop() {
   updateFillBar();
   requestAnimationFrame(loop);
 }
+
 
 // ── Tetromino selector ─────────────────────────────────────────────────────────
 const TETROMINO_NAMES = ['L','J','I','O','T','S','Z'];
@@ -1051,6 +1250,8 @@ function beginGame() {
   startRetroSong();
   startScreen.style.display = 'none';
   drawTetrominoPreviews();
+  // Pre-render the 4 adjacent rooms so the first transition never hitches.
+  [[-1,0],[1,0],[0,-1],[0,1]].forEach(([rx,ry]) => getCachedRoom(rx, ry));
   loop();
 }
 

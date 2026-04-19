@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Immutability / const</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Immutability / const</h1>
+  <p class="desc">Immutability means a value cannot be reassigned or mutated after it is created, which makes program state easier to reason about.<br>
+  Languages expose this with bindings like <code>const</code>, <code>final</code>, or <code>val</code>, though some lock the reference while others also protect the object itself.<br>
+  The result is safer code with fewer accidental side effects, especially in concurrent and functional styles.</p>
+  <pre><code class="language-java">// Java
+final int maxRetries = 3;      // cannot be reassigned
+final String name = "Allan";   // reference stays fixed
+var message = name + " ok";    // derived value from immutable data</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

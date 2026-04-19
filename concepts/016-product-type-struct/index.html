@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Product type / struct</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Product type / struct</h1>
+  <p class="desc">A product type groups several values together into one compound value, where each field exists at the same time.<br>
+  You can think of it as combining pieces with an “and”: a point has an <code>x</code> and a <code>y</code>, a user has a name and an email.<br>
+  In Java, classes and records can model product types, and records are a compact way to declare immutable data carriers.</p>
+  <pre><code class="language-java">// Java
+record Point(int x, int y) {}
+
+Point p = new Point(4, 7);
+
+System.out.println(p.x()); // 4
+System.out.println(p.y()); // 7</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

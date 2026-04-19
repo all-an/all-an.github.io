@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Recursion / tail call</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Recursion / tail call</h1>
+  <p class="desc">Recursion solves a problem by having a function call itself on a smaller piece of the same problem until it reaches a base case.<br>
+  A tail call is a recursive call made as the final action of a function, which some languages can optimize to avoid growing the call stack.<br>
+  JavaScript supports recursion directly, but tail call optimization is only partial in practice, so deep recursion can still overflow the stack.</p>
+  <pre><code class="language-javascript">// JavaScript
+function factorial(n) {
+  if (n <= 1) return 1;
+  return n * factorial(n - 1);
+}
+
+console.log(factorial(5)); // 120</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

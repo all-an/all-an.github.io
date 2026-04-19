@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>String / interpolation</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>String / interpolation</h1>
+  <p class="desc">String interpolation builds text by embedding values directly inside a string literal instead of concatenating pieces manually.<br>
+  It usually reads better because the final output format stays visible in one place.<br>
+  In JavaScript, template literals use backticks and expressions inside <code>${...}</code>.</p>
+  <pre><code class="language-javascript">// JavaScript
+const name = "Allan";
+const score = 42;
+const message = `${name} scored ${score} points`;
+
+console.log(message); // "Allan scored 42 points"</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

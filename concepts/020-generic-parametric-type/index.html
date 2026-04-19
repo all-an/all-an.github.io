@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Generic / parametric type</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Generic / parametric type</h1>
+  <p class="desc">A generic type is written once but can work with many element types through a type parameter.<br>
+  It improves reuse while still preserving type checking, so the compiler can enforce which values are allowed.<br>
+  In Java, generics use angle brackets like <code>&lt;T&gt;</code> on classes, methods, and interfaces.</p>
+  <pre><code class="language-java">// Java
+class Box&lt;T&gt; {
+  T value;
+
+  Box(T value) {
+    this.value = value;
+  }
+}
+
+Box&lt;String&gt; box = new Box&lt;&gt;("hello");
+System.out.println(box.value); // hello</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

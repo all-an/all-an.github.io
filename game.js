@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { startAmbient } from '../music/ambient-sound.js';
+import { startAmbient } from './ambient-sound.js';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const PLAYER_SPEED     = 5;
@@ -86,36 +86,22 @@ let _cg = null; // active group — geometry/lights route here during scene setu
 // ── Lighting ─────────────────────────────────────────────────────────────────
 scene.add(new THREE.AmbientLight(0x606880, 3.0));
 
-// Corridor 1
-for (let i = 0; i < 7; i++) {
-    const pl = new THREE.PointLight(0xddeeff, 2.0, 10);
-    pl.position.set(0, CH - 0.1, CL / 2 - 1.5 - i * (CL / 6));
+// Corridor 1 — 2 ceiling strips (replaces 7 ceiling + 6 wall fill lights)
+[-CL / 4, CL / 4].forEach(dz => {
+    const pl = new THREE.PointLight(0xddeeff, 4.0, 22);
+    pl.position.set(0, CH - 0.1, dz);
     corridorGroups[0].add(pl);
-}
-[-CW / 2 + 0.2, CW / 2 - 0.2].forEach(x =>
-    [-6, 0, 6].forEach(z => {
-        const pl = new THREE.PointLight(0xaabbff, 1.2, 8);
-        pl.position.set(x, 2, z);
-        corridorGroups[0].add(pl);
-    })
-);
+});
 const doorGlow = new THREE.PointLight(0x00ff44, 2.5, 9);
 doorGlow.position.set(0, 1.8, DOOR_Z + 2);
 corridorGroups[0].add(doorGlow);
 
-// Corridor 2
-for (let i = 0; i < 7; i++) {
-    const pl = new THREE.PointLight(0xbbddff, 2.0, 10);
-    pl.position.set(0, CH - 0.1, DOOR_Z - 1.5 - i * (CL2 / 6));
+// Corridor 2 — 2 ceiling strips (replaces 7 ceiling + 6 wall fill lights)
+[-CL2 / 4, CL2 / 4].forEach(dz => {
+    const pl = new THREE.PointLight(0xbbddff, 4.0, 22);
+    pl.position.set(0, CH - 0.1, C2_CENTER_Z + dz);
     corridorGroups[1].add(pl);
-}
-[-CW / 2 + 0.2, CW / 2 - 0.2].forEach(x =>
-    [DOOR_Z - 6, DOOR_Z - 13, DOOR_Z - 20].forEach(z => {
-        const pl = new THREE.PointLight(0x4488ff, 1.2, 8);
-        pl.position.set(x, 2, z);
-        corridorGroups[1].add(pl);
-    })
-);
+});
 const blueDoorGlow = new THREE.PointLight(0x0055ff, 2.0, 9);
 blueDoorGlow.position.set(0, 1.8, BLUE_DOOR_Z + 2);
 corridorGroups[1].add(blueDoorGlow);
@@ -123,19 +109,12 @@ const blueAreaGlow = new THREE.PointLight(0x0088ff, 2.0, 4);
 blueAreaGlow.position.set(0, 0.6, BLUE_AREA_Z);
 corridorGroups[1].add(blueAreaGlow);
 
-// Corridor 3
-for (let i = 0; i < 6; i++) {
-    const pl = new THREE.PointLight(0xffbbee, 2.0, 10);
-    pl.position.set(0, CH - 0.1, BLUE_DOOR_Z - 1.5 - i * (CL3 / 5));
+// Corridor 3 — 2 ceiling strips (replaces 6 ceiling + 4 wall fill lights)
+[-CL3 / 4, CL3 / 4].forEach(dz => {
+    const pl = new THREE.PointLight(0xffbbee, 4.0, 22);
+    pl.position.set(0, CH - 0.1, C3_CENTER_Z + dz);
     corridorGroups[2].add(pl);
-}
-[-CW / 2 + 0.2, CW / 2 - 0.2].forEach(x =>
-    [BLUE_DOOR_Z - 5, BLUE_DOOR_Z - 13].forEach(z => {
-        const pl = new THREE.PointLight(0xff66cc, 1.2, 8);
-        pl.position.set(x, 2, z);
-        corridorGroups[2].add(pl);
-    })
-);
+});
 const pinkDoorGlow = new THREE.PointLight(0xff44aa, 2.0, 9);
 pinkDoorGlow.position.set(0, 1.8, PINK_DOOR_Z + 2);
 corridorGroups[2].add(pinkDoorGlow);
@@ -143,19 +122,12 @@ const pinkBtnGlow = new THREE.PointLight(0xff44aa, 1.2, 3);
 pinkBtnGlow.position.set(-CW / 2 + 0.5, 1.35, PINK_BTN_Z);
 corridorGroups[2].add(pinkBtnGlow);
 
-// Corridor 4
-for (let i = 0; i < 6; i++) {
-    const pl = new THREE.PointLight(0xffeeaa, 2.0, 10);
-    pl.position.set(0, CH - 0.1, PINK_DOOR_Z - 1.5 - i * (CL4 / 5));
+// Corridor 4 — 2 ceiling strips (replaces 6 ceiling + 4 wall fill lights)
+[-CL4 / 4, CL4 / 4].forEach(dz => {
+    const pl = new THREE.PointLight(0xffeeaa, 4.0, 22);
+    pl.position.set(0, CH - 0.1, C4_CENTER_Z + dz);
     corridorGroups[3].add(pl);
-}
-[-CW / 2 + 0.2, CW / 2 - 0.2].forEach(x =>
-    [PINK_DOOR_Z - 5, PINK_DOOR_Z - 13].forEach(z => {
-        const pl = new THREE.PointLight(0xffcc44, 1.2, 8);
-        pl.position.set(x, 2, z);
-        corridorGroups[3].add(pl);
-    })
-);
+});
 const yellowDoorGlow = new THREE.PointLight(0xffcc00, 2.0, 9);
 yellowDoorGlow.position.set(0, 1.8, YELLOW_DOOR_Z + 2);
 corridorGroups[3].add(yellowDoorGlow);
@@ -163,53 +135,32 @@ const sign4Glow = new THREE.PointLight(0xffdd44, 1.4, 3.5);
 sign4Glow.position.set(-CW / 2 + 0.8, CH / 2, C4_CENTER_Z);
 corridorGroups[3].add(sign4Glow);
 
-// Corridor 5
-for (let i = 0; i < 6; i++) {
-    const pl = new THREE.PointLight(0xaaffee, 2.0, 10);
-    pl.position.set(0, CH - 0.1, YELLOW_DOOR_Z - 1.5 - i * (CL5 / 5));
+// Corridor 5 — 2 ceiling strips (replaces 6 ceiling + 4 wall fill lights)
+[-CL5 / 4, CL5 / 4].forEach(dz => {
+    const pl = new THREE.PointLight(0xaaffee, 4.0, 22);
+    pl.position.set(0, CH - 0.1, C5_CENTER_Z + dz);
     corridorGroups[4].add(pl);
-}
-[-CW / 2 + 0.2, CW / 2 - 0.2].forEach(x =>
-    [YELLOW_DOOR_Z - 6, YELLOW_DOOR_Z - 14].forEach(z => {
-        const pl = new THREE.PointLight(0x00ccaa, 1.2, 8);
-        pl.position.set(x, 2, z);
-        corridorGroups[4].add(pl);
-    })
-);
+});
 const tealDoorGlow = new THREE.PointLight(0x00bbaa, 2.0, 9);
 tealDoorGlow.position.set(0, 1.8, TEAL_DOOR_Z + 2);
 corridorGroups[4].add(tealDoorGlow);
 
-// Corridor 6
-for (let i = 0; i < 6; i++) {
-    const pl = new THREE.PointLight(0xffccaa, 2.0, 10);
-    pl.position.set(0, CH - 0.1, TEAL_DOOR_Z - 1.5 - i * (CL6 / 5));
+// Corridor 6 — 2 ceiling strips (replaces 6 ceiling + 4 wall fill lights)
+[-CL6 / 4, CL6 / 4].forEach(dz => {
+    const pl = new THREE.PointLight(0xffccaa, 4.0, 22);
+    pl.position.set(0, CH - 0.1, C6_CENTER_Z + dz);
     corridorGroups[5].add(pl);
-}
-[-CW / 2 + 0.2, CW / 2 - 0.2].forEach(x =>
-    [TEAL_DOOR_Z - 5, TEAL_DOOR_Z - 13].forEach(z => {
-        const pl = new THREE.PointLight(0xff7722, 1.2, 8);
-        pl.position.set(x, 2, z);
-        corridorGroups[5].add(pl);
-    })
-);
+});
 const orangeDoorGlow = new THREE.PointLight(0xff6600, 2.0, 9);
 orangeDoorGlow.position.set(0, 1.8, ORANGE_DOOR_Z + 2);
 corridorGroups[5].add(orangeDoorGlow);
 
-// Corridor 7
-for (let i = 0; i < 6; i++) {
-    const pl = new THREE.PointLight(0xddaaff, 2.0, 10);
-    pl.position.set(0, CH - 0.1, ORANGE_DOOR_Z - 1.5 - i * (CL7 / 5));
+// Corridor 7 — 2 ceiling strips (replaces 6 ceiling + 4 wall fill lights)
+[-CL7 / 4, CL7 / 4].forEach(dz => {
+    const pl = new THREE.PointLight(0xddaaff, 4.0, 22);
+    pl.position.set(0, CH - 0.1, C7_CENTER_Z + dz);
     corridorGroups[6].add(pl);
-}
-[-CW / 2 + 0.2, CW / 2 - 0.2].forEach(x =>
-    [ORANGE_DOOR_Z - 5, ORANGE_DOOR_Z - 13].forEach(z => {
-        const pl = new THREE.PointLight(0xaa44ff, 1.2, 8);
-        pl.position.set(x, 2, z);
-        corridorGroups[6].add(pl);
-    })
-);
+});
 const purpleDoorGlow = new THREE.PointLight(0x8800ff, 2.0, 9);
 purpleDoorGlow.position.set(0, 1.8, PURPLE_DOOR_Z + 2);
 corridorGroups[6].add(purpleDoorGlow);
@@ -617,6 +568,17 @@ _cg = null; // starfield and rooftop are global — not corridor-specific
     box(RTOP_SIDE_W, 0.05, C7_HOLE_S, rooftopMat,  (C7_HOLE_S / 2 + RTOP_SIDE_W / 2), RTOP_Y, C7_HOLE_Z);
 }
 
+// ── Rooftop floating platform (midpoint of exterior vertices 2715 and 2415) ──
+// Vertex 2715 is at (-4, RTOP_TOP_Y, -131) and 2415 at (-8, RTOP_TOP_Y, -127).
+// Elevated 1 unit above the slab — reachable with a running jump from the rooftop edge.
+const FLOAT_PLAT_X   = -6;    // midpoint between x=-4 (v2715) and x=-8 (v2415)
+const FLOAT_PLAT_Z   = -129;  // midpoint between z=-131 (v2715) and z=-127 (v2415)
+const FLOAT_PLAT_TOP = RTOP_TOP_Y + 1.0;  // walkable top face y
+const FLOAT_PLAT_HW  = 2.0;               // half-width in x: spans x=-8 to x=-4
+const FLOAT_PLAT_HD  = 2.0;               // half-depth in z: spans z=-131 to z=-127
+box(FLOAT_PLAT_HW * 2, 0.25, FLOAT_PLAT_HD * 2,
+    rooftopMat, FLOAT_PLAT_X, FLOAT_PLAT_TOP - 0.125, FLOAT_PLAT_Z);
+
 // ── Rooftop website button ────────────────────────────────────────────────────
 // Flat glowing panel on the rooftop — shooting it opens the personal website in a new tab.
 const WEBSITE_BTN_Z  = C7_HOLE_Z + 5;                          // z ≈ -137, clear of the hole
@@ -757,16 +719,14 @@ const hud       = document.getElementById('hud');
 const vertexTooltip = document.getElementById('vertex-tooltip');
 let locked = false;
 
-blocker.addEventListener('click', () => {
-    startAmbient(); // must be called inside a user gesture so AudioContext is allowed to start
-    renderer.domElement.requestPointerLock();
-});
+blocker.addEventListener('click', () => renderer.domElement.requestPointerLock());
 document.addEventListener('pointerlockchange', () => {
     locked = document.pointerLockElement === renderer.domElement;
     blocker.classList.toggle('hidden', locked);
     crosshair.classList.toggle('visible', locked);
     hud.classList.toggle('visible', locked);
     vertexTooltip.classList.toggle('visible', false);
+    if (locked) startAmbient();
 });
 
 if (sessionStorage.getItem('haphazardMusic')) {
@@ -1212,7 +1172,7 @@ function shoot() {
 
     // ── Rooftop website button ──
     if (hit === websiteBtn) {
-        window.open('https://www.linkedin.com/in/allan-pereira-abrahao/', '_blank');
+        window.location.href = 'archive/games/desktop-games/platforetris/index.html';
     }
 
     // ── Yellow sign (corridor 4 button) ──
@@ -1541,6 +1501,15 @@ function updatePlayer(dt) {
             player.velocity.y = 0;
             player.onGround   = true;
         }
+        // ── Floating platform collision ──
+        const onFloatPlatXZ      = Math.abs(camera.position.x - FLOAT_PLAT_X) < FLOAT_PLAT_HW
+                                && Math.abs(camera.position.z - FLOAT_PLAT_Z) < FLOAT_PLAT_HD;
+        const feetAboveFloatPlat = (camera.position.y - PLAYER_HEIGHT) - FLOAT_PLAT_TOP;
+        if (onFloatPlatXZ && player.velocity.y <= 0 && feetAboveFloatPlat >= -0.3 && feetAboveFloatPlat <= 0.25) {
+            camera.position.y = FLOAT_PLAT_TOP + PLAYER_HEIGHT;
+            player.velocity.y = 0;
+            player.onGround   = true;
+        }
         // Fell off the edge — die once the player drops below the ceiling line.
         if (!overHole && camera.position.y < CH) {
             triggerDeathRooftop();
@@ -1651,7 +1620,7 @@ function loop() {
 }
 
 //── Dev mode: set corridor number (1–7) to spawn there ───────────────────────
-/* const DEV_CORRIDOR = 7;
+/*const DEV_CORRIDOR = 7;
 (c => {
     const z = [CL/2-1.5, DOOR_Z-2, BLUE_DOOR_Z-2, PINK_DOOR_Z-2, YELLOW_DOOR_Z-2, TEAL_DOOR_Z-2, ORANGE_DOOR_Z-2][c-1];
     camera.position.z = z;
@@ -1661,7 +1630,7 @@ function loop() {
     if (c >= 5) { yellowDoor.visible = false; yellowDoorState.shot = true; yellowDoorState.open = true; playerMinZ = TEAL_DOOR_Z + 0.5; }
     if (c >= 6) { tealDoor.visible = false;  tealDoorState.open = true;  playerMinZ = ORANGE_DOOR_Z + 0.5; }
     if (c >= 7) { orangeDoor.visible = false; c6OrangeDoor.open = true;  playerMinZ = PURPLE_DOOR_Z + 0.5; }
-})(DEV_CORRIDOR); */
+})(DEV_CORRIDOR);*/
 
 warmCorridorCulling();
 loop();

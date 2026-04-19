@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Programming Concepts</title>
+<style>
+:root {
+  --color-background-primary:   #111113;
+  --color-background-secondary: #1a1a1e;
+  --color-text-primary:         #e8e8ea;
+  --color-text-secondary:       #9898a0;
+  --color-text-tertiary:        #5e5e66;
+  --color-border-secondary:     #2e2e33;
+  --color-border-tertiary:      #232328;
+  --border-radius-md:           7px;
+  --font-mono:                  'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+}
+body { background: var(--color-background-primary); color: var(--color-text-primary); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+.wrap { max-width: 1200px; margin: 0 auto; padding: 2.5rem 2rem 3rem; }
+h1 { font-size: 28px; font-weight: 600; color: var(--color-text-primary); margin-bottom: 1.75rem; letter-spacing: -0.01em; }
+.controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 1.25rem; align-items: center; }
+input[type=text] { flex: 1; min-width: 220px; font-size: 18px; padding: 8px 12px; border-radius: var(--border-radius-md); border: 1px solid var(--color-border-secondary); background: var(--color-background-secondary); color: var(--color-text-primary); outline: none; }
+input[type=text]:focus { border-color: #3a3a44; }
+select { font-size: 18px; padding: 8px 12px; border-radius: var(--border-radius-md); border: 1px solid var(--color-border-secondary); background: var(--color-background-secondary); color: var(--color-text-primary); outline: none; cursor: pointer; }
+.count { font-size: 17px; color: var(--color-text-secondary); white-space: nowrap; }
+.tbl-wrap { overflow-x: auto; border-radius: var(--border-radius-md); border: 1px solid var(--color-border-tertiary); }
+table { width: 100%; border-collapse: collapse; font-size: 18px; table-layout: fixed; }
+th { text-align: left; font-weight: 500; font-size: 16px; color: var(--color-text-secondary); padding: 10px 14px; border-bottom: 1px solid var(--color-border-tertiary); background: var(--color-background-secondary); letter-spacing: 0.03em; text-transform: uppercase; }
+td { padding: 11px 14px; border-bottom: 1px solid var(--color-border-tertiary); vertical-align: top; color: var(--color-text-primary); }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #16161a; }
+tr.clickable { cursor: pointer; }
+.idx { font-family: var(--font-mono); font-size: 16px; color: var(--color-text-tertiary); padding-top: 3px; }
+.concept { font-weight: 500; font-size: 18px; }
+.concept a:hover { text-decoration: underline; }
+.cat { display: inline-block; font-size: 14px; padding: 2px 8px; border-radius: 99px; margin-top: 4px; white-space: nowrap; }
+.langs { display: flex; flex-wrap: wrap; gap: 5px; }
+.lang { font-family: var(--font-mono); font-size: 15px; background: #1e1e23; border: 1px solid var(--color-border-tertiary); border-radius: 4px; padding: 2px 7px; color: var(--color-text-secondary); }
+.origin { font-size: 16px; color: var(--color-text-tertiary); font-style: italic; line-height: 1.5; }
+.no-results { text-align: center; padding: 3rem; color: var(--color-text-secondary); font-size: 20px; }
+th:nth-child(1) { width: 4%; }
+th:nth-child(2) { width: 20%; }
+th:nth-child(3) { width: 11%; }
+th:nth-child(4) { width: 44%; }
+th:nth-child(5) { width: 21%; }
+
+.cat-types    { background:#26215C; color:#CECBF6; }
+.cat-memory   { background:#4A1B0C; color:#F5C4B3; }
+.cat-conc     { background:#04342C; color:#9FE1CB; }
+.cat-async    { background:#042C53; color:#B5D4F4; }
+.cat-reactive { background:#412402; color:#FAC775; }
+.cat-coll     { background:#173404; color:#C0DD97; }
+.cat-func     { background:#4B1528; color:#F4C0D1; }
+.cat-errors   { background:#501313; color:#F7C1C1; }
+.cat-test     { background:#2C2C2A; color:#D3D1C7; }
+.cat-pat      { background:#042C53; color:#B5D4F4; }
+.cat-meta     { background:#26215C; color:#AFA9EC; }
+.cat-io       { background:#04342C; color:#5DCAA5; }
+.cat-runtime  { background:#4A1B0C; color:#F0997B; }
+.cat-safety   { background:#412402; color:#EF9F27; }
+.cat-mod      { background:#2C2C2A; color:#B4B2A9; }
+.cat-ctrl     { background:#0D2B3E; color:#7EC8E3; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:1.75rem;">
+  <div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
+    <h1 style="margin-bottom:0;">Programming Concepts</h1>
+    <span style="font-size:16px; color:var(--color-text-secondary); font-style:italic;">Click a concept to learn more.</span>
+  </div>
+  <a href="about.html" style="font-size:18px; color:var(--color-text-secondary); text-decoration:none; white-space:nowrap;">about me →</a>
+</div>
+<div class="controls">
+  <input type="text" id="search" placeholder="Search concepts, languages, theory..." />
+  <select id="catFilter">
+    <option value="">All categories</option>
+    <option value="ctrl">Control Flow</option>
+    <option value="types">Types & Data</option>
+    <option value="memory">Memory</option>
+    <option value="conc">Concurrency</option>
+    <option value="async">Async</option>
+    <option value="reactive">Reactive</option>
+    <option value="coll">Collections</option>
+    <option value="func">Functions</option>
+    <option value="errors">Errors</option>
+    <option value="test">Testing</option>
+    <option value="pat">Patterns</option>
+    <option value="meta">Metaprogramming</option>
+    <option value="io">I/O</option>
+    <option value="runtime">Runtime</option>
+    <option value="safety">Safety</option>
+    <option value="mod">Modules</option>
+  </select>
+  <span class="count" id="count"></span>
+</div>
+<div class="tbl-wrap">
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Concept</th>
+      <th>Category</th>
+      <th>Examples by language</th>
+      <th>Theory / origin</th>
+    </tr>
+  </thead>
+  <tbody id="tbody"></tbody>
+</table>
+</div>
+<div class="no-results" id="noResults" style="display:none;">No concepts match.</div>
+<div style="padding: 1rem 0; text-align: right;">
+  <a href="../archive/archive.html" style="font-size: 12px; color: var(--color-text-tertiary); text-decoration: none;">archive →</a>
+</div>
+</div>
+
+<script>
+const DATA = [
+  {c:"Primitive / scalar type",url:"001-primitive-scalar-type/",cat:"types",cl:"Types & Data",langs:[["int / float / bool / char","C","C++","Java","Go","Rust","C#"],["i32 / f64 / bool / char","Rust"],["Int / Double / Boolean","Kotlin","Scala","Java"],["number / string / boolean","JavaScript","TypeScript"],["int / str / float / bool","Python"],["integer / single-float / character","Common Lisp"]],t:"Von Neumann architecture · IEEE 754"},
+  {c:"Variable / binding",url:"002-variable-binding/",cat:"types",cl:"Types & Data",langs:[["let / var","JavaScript","Rust","Swift","Kotlin"],["val / var","Scala","Kotlin"],["let (immutable by default)","Rust"],["auto","C++11"],["defparameter / defvar","Common Lisp"],["dynamic","C#"]],t:"Name binding · λ-calculus"},
+  {c:"Immutability / const",url:"003-immutability-const/",cat:"safety",cl:"Safety",langs:[["const","JavaScript","C","C++","Rust"],["val","Kotlin","Scala"],["final","Java"],["readonly","C#","TypeScript"],["let (default)","Rust"],["freeze","Ruby · Python (frozenset)"]],t:"Referential transparency · functional purity"},
+  {c:"Conditional / branching",url:"004-conditional-branching/",cat:"ctrl",cl:"Control Flow",langs:[["if / else","all languages"],["when","Kotlin"],["unless","Ruby","Elixir"],["if expression","Rust","Scala","Kotlin"],["cond / case","Common Lisp","Clojure"]],t:"Boolean logic · structured programming"},
+  {c:"Loop / iteration",url:"005-loop-iteration/",cat:"ctrl",cl:"Control Flow",langs:[["for / while / do-while","C","Java","JavaScript","C#"],["loop","Rust"],["for-in / for-of","Python","JavaScript","Swift"],["each","Ruby"],["recursion (preferred)","Haskell","Erlang","Clojure"]],t:"Structured programming (Dijkstra 1968)"},
+  {c:"Pattern matching",url:"006-pattern-matching/",cat:"ctrl",cl:"Control Flow",langs:[["match","Rust","Scala","Swift","Python 3.10+"],["switch expression","Java 21+","C# 8+"],["case / guard","Haskell","Scala"],["when","Ruby","Elixir"],["typecase","Common Lisp"]],t:"Structural decomposition · unification"},
+  {c:"Ternary / inline conditional",url:"007-ternary-inline-conditional/",cat:"ctrl",cl:"Control Flow",langs:[["? :","C","Java","JavaScript","C++","Go"],["if expression","Rust","Kotlin","Scala"],["x if cond else y","Python"],["if","Common Lisp (expression)"]],t:"Conditional expression · expression vs statement"},
+  {c:"Operator overloading",url:"008-operator-overloading/",cat:"types",cl:"Types & Data",langs:[["operator fun","Kotlin"],["def + / __add__","Scala","Python","Ruby"],["operator+","C++"],["impl Add","Rust"],["overload","D","Swift"]],t:"Ad-hoc polymorphism · syntactic sugar"},
+  {c:"Scope / lexical binding",url:"009-scope-lexical-binding/",cat:"func",cl:"Functions",langs:[["block scope","JavaScript (let/const)","Rust","Go"],["lexical scope","all modern languages"],["dynamic scope","Common Lisp (special vars)","Emacs Lisp"],["let / letrec","Scheme","Haskell"],["closure capture","Rust","JavaScript","Python"]],t:"Lexical vs dynamic scoping"},
+  {c:"Destructuring / unpacking",url:"010-destructuring-unpacking/",cat:"types",cl:"Types & Data",langs:[["destructuring","JavaScript","Python"],["pattern binding","Rust","Scala"],["val (a, b) = ...","Scala"],["(a, b) = ...","Python"],["auto [a,b] = ...","C++17"],["destructuring-bind","Common Lisp"]],t:"Structural decomposition · syntactic sugar"},
+  {c:"Recursion / tail call",url:"011-recursion-tail-call/",cat:"ctrl",cl:"Control Flow",langs:[["tail call optimization","Scheme (mandatory)"],["@tailrec","Scala"],["loop / recur","Clojure"],["trampoline","Clojure","JavaScript"],["TCO","Kotlin","JavaScript (partial)"]],t:"λ-calculus · stack frames · TCO"},
+  {c:"Type casting / coercion",url:"012-type-casting-coercion/",cat:"types",cl:"Types & Data",langs:[["as","Rust","C#","TypeScript","Kotlin"],["cast<T> / (T)","C++","Java","C"],["asInstanceOf","Scala"],["implicit conversion","Scala 2","C++"],["coerce","Common Lisp"]],t:"Widening vs narrowing · subtype coercion"},
+  {c:"String / interpolation",url:"013-string-interpolation/",cat:"types",cl:"Types & Data",langs:[["`template literal`","JavaScript"],["f-string","Python"],["${}","Kotlin","Scala"],["$\"\"","C#"],["format!","Rust"],["format","Common Lisp"]],t:"Text DSL · string formatting"},
+  {c:"Variadic / spread / rest",url:"014-variadic-spread-rest/",cat:"func",cl:"Functions",langs:[["...args / rest","JavaScript","TypeScript"],["*args / **kwargs","Python"],["vararg","Kotlin","Java"],["params T[]","C#"],["fn(args: &[T])","Rust"],["&rest","Common Lisp"]],t:"Variadic functions · arity"},
+
+  {c:"Inheritance / subclassing",url:"015-inheritance-subclassing/",cat:"types",cl:"Types & Data",langs:[["extends","Java","Kotlin","TypeScript","JavaScript"],["class A(B)","Python","Scala"],["class A : B","C#","C++"],["< SuperClass","Ruby","Swift","Objective-C"],["embedding","Go (composition)"],["defclass + :class","Common Lisp (CLOS)"]],t:"OOP · Liskov substitution principle"},
+  {c:"Product type / struct",url:"016-product-type-struct/",cat:"types",cl:"Types & Data",langs:[["struct","C","C++","Rust","Go","D","Zig"],["class","Java","C#","Python","C++","Scala"],["record","Java 16+","C#","Haskell","Scala 3"],["data class","Kotlin"],["dataclass","Python"],["defstruct / defclass","Common Lisp"],["case class","Scala"]],t:"λ-calculus · type theory"},
+  {c:"Sum type / tagged union",url:"017-sum-type-tagged-union/",cat:"types",cl:"Types & Data",langs:[["enum","Rust","Swift","Kotlin"],["sealed trait / case class","Scala"],["sealed class","Kotlin"],["union / std::variant","C","C++17"],["data / newtype","Haskell"],["ADT","general term"],["deftype + dispatch","Common Lisp"]],t:"Algebraic data types · type theory"},
+  {c:"Type alias",url:"018-type-alias/",cat:"types",cl:"Types & Data",langs:[["type","TypeScript","Haskell","Rust","Go","Scala"],["typedef","C","C++"],["newtype","Haskell"],["using","C++"],["alias","Swift"]],t:"Nominal vs structural typing"},
+  {c:"Interface / protocol / trait",url:"019-interface-protocol-trait/",cat:"types",cl:"Types & Data",langs:[["interface","Java","C#","Go","TypeScript"],["trait","Rust","Scala","PHP"],["protocol","Swift","Erlang"],["typeclass","Haskell"],["concept","C++20"],["behaviour","Erlang"],["generic function","Common Lisp (CLOS)"]],t:"Subtyping · parametric polymorphism"},
+  {c:"Generic / parametric type",url:"020-generic-parametric-type/",cat:"types",cl:"Types & Data",langs:[["generics","Java","C#","Kotlin"],["templates","C++"],["type parameters","Haskell","Scala"],["anytype / T","TypeScript"],["comptime generics","Zig"],["higher-kinded types","Scala","Haskell"]],t:"Hindley-Milner · System F"},
+  {c:"Nullable / absent value",url:"021-nullable-absent-value/",cat:"types",cl:"Types & Data",langs:[["null / nil","Java","C#","Go","Ruby","Common Lisp"],["None","Python","Rust"],["Maybe","Haskell"],["Option","Rust","Scala","Swift"],["Optional","Java 8+","C++17"],["Nullable<T>","C#"]],t:"Billion-dollar mistake (Hoare)"},
+  {c:"Result / error value",url:"022-result-error-value/",cat:"types",cl:"Types & Data",langs:[["Result<T,E>","Rust","Swift"],["Either","Haskell","Scala"],["Try","Scala"],["std::expected","C++23"],["error tuple","Go"],["conditions + restarts","Common Lisp (superior)"]],t:"Railway-oriented programming"},
+  {c:"Phantom type",url:"023-phantom-type/",cat:"types",cl:"Types & Data",langs:[["PhantomData","Rust"],["phantom type","Haskell","OCaml","Scala"],["newtype wrapper","Haskell"],["branded type","TypeScript (pattern)"]],t:"Type-level state machines"},
+  {c:"Union / intersection type",cat:"types",cl:"Types & Data",langs:[["A | B / A & B","Scala 3"],["union types","TypeScript"],["std::variant","C++17"],["Either","Haskell"]],t:"Scala 3 · TypeScript structural types"},
+
+  {c:"Pointer / raw address",cat:"memory",cl:"Memory",langs:[["*T","C","C++","Rust","Go","D","Zig"],["unsafe.Pointer","Go"],["IntPtr / nint","C#"],["MemoryAddress","Java FFM"],["UnsafePointer<T>","Swift"],["sb-alien:alien","Common Lisp (SBCL)"]],t:"Von Neumann architecture"},
+  {c:"Garbage collector",cat:"memory",cl:"Memory",langs:[["GC","Java (G1/ZGC)","Go","Python","C#","Scala","Clojure"],["generational GC","SBCL (Common Lisp)"],["reference counting","CPython","Swift"],["ARC","Swift"],["shared_ptr RC","Jank"]],t:"McCarthy (Lisp 1959)"},
+  {c:"Manual memory management",cat:"memory",cl:"Memory",langs:[["malloc/free","C"],["new/delete","C++"],["alloc/dealloc","Rust unsafe"],["arena","Zig","C"],["NativeMemory.Alloc","C#"],["sb-alien","Common Lisp"]],t:"Stack vs heap · RAII"},
+  {c:"RAII / resource guard",cat:"memory",cl:"Memory",langs:[["RAII","C++ (idiom)"],["defer","Go","Zig","Swift"],["with","Python"],["Drop trait","Rust"],["using","C#"],["try-with-resources","Java"],["unwind-protect","Common Lisp"]],t:"RAII (Stroustrup 1984)"},
+  {c:"Stack allocation",cat:"memory",cl:"Memory",langs:[["stackalloc / Span<T>","C#"],["alloca","C"],["stack arrays","Zig"],["value types","C# struct"],["inline arrays","C# 12"]],t:"Stack vs heap · zero allocation"},
+  {c:"Shared memory / arena",cat:"memory",cl:"Memory",langs:[["Arena","Zig","C"],["MemorySegment","Java FFM"],["bump allocator","general"],["slab allocator","Linux kernel"]],t:"Region inference"},
+
+  {c:"Thread / unit of execution",cat:"conc",cl:"Concurrency",langs:[["Thread","Java","C#","Python"],["goroutine","Go"],["coroutine","Kotlin","Python","Lua"],["fiber","Ruby"],["virtual thread","Java 21+"],["process","Erlang/Elixir"],["green thread","Scala (via ZIO fibers)"]],t:"CSP · actor model"},
+  {c:"Mutex / lock",cat:"conc",cl:"Concurrency",langs:[["synchronized","Java"],["Mutex","Rust","C","Go","Python"],["lock","C#","Go"],["Monitor","Java","C#"],["ReentrantLock","Java"],["Mutex<T>","Rust"]],t:"Dijkstra (mutual exclusion)"},
+  {c:"Semaphore",cat:"conc",cl:"Concurrency",langs:[["Semaphore","Java","C","Python","C#"],["Semaphore::new(n)","Rust (tokio)"],["sync.WaitGroup","Go (pattern)"]],t:"Dijkstra 1965"},
+  {c:"Condition variable",cat:"conc",cl:"Concurrency",langs:[["Condvar","Rust","C (pthreads)"],["Condition","Java"],["Monitor.Wait","C#"],["sync.Cond","Go"],["notify/wait","Java"]],t:"Monitor pattern (Hoare)"},
+  {c:"Channel / message pipe",cat:"conc",cl:"Concurrency",langs:[["chan","Go"],["Channel","Kotlin","Dart"],["mpsc::channel","Rust"],["BlockingQueue","Java"],["mailbox","Erlang/Elixir"],["pipe","Unix","Node.js"]],t:"CSP (Hoare 1978)"},
+  {c:"Actor",cat:"conc",cl:"Concurrency",langs:[["Actor","Akka (Scala/Java)"],["process","Erlang/Elixir"],["agent","Clojure"],["Orleans grain","C#"],["Ractor","Ruby 3+"],["ZIO Actor","Scala"]],t:"Actor model (Hewitt 1973)"},
+  {c:"Software transactional memory",cat:"conc",cl:"Concurrency",langs:[["STM","Clojure","Haskell"],["dosync / ref","Clojure"],["TVar","Haskell"],["ScalaSTM","Scala"],["stmx","Common Lisp"]],t:"Optimistic concurrency"},
+  {c:"Concurrent map",cat:"conc",cl:"Concurrency",langs:[["ConcurrentHashMap","Java"],["sync.Map","Go"],["DashMap","Rust"],["ConcurrentDictionary","C#"],["Mutex<HashMap>","Rust"]],t:"Lock striping · lock-free"},
+  {c:"Atomic operation",cat:"conc",cl:"Concurrency",langs:[["AtomicInteger / AtomicRef","Java"],["atomic<T>","C++"],["sync/atomic","Go"],["Atomic*","Rust"],["Interlocked","C#"]],t:"Hardware CAS instructions"},
+  {c:"Thread pool / executor",cat:"conc",cl:"Concurrency",langs:[["ExecutorService","Java"],["ThreadPool","C#","Python"],["Rayon","Rust"],["ForkJoinPool","Java"],["tokio runtime","Rust"],["ZIO runtime","Scala"]],t:"Work stealing · thread pooling"},
+  {c:"Fiber / green thread",cat:"conc",cl:"Concurrency",langs:[["ZIO Fiber","Scala"],["virtual thread","Java 21"],["goroutine","Go"],["coroutine","Kotlin"],["fiber","Ruby"],["green thread","Erlang"]],t:"Cooperative multitasking · M:N scheduling"},
+
+  {c:"Future / deferred value",cat:"async",cl:"Async",langs:[["CompletableFuture","Java"],["Promise","JavaScript"],["Future","Dart","Python","Scala","Rust"],["Task","C#"],["Deferred","Kotlin"],["lparallel:future","Common Lisp"]],t:"Continuation-passing style"},
+  {c:"Async/await syntax",cat:"async",cl:"Async",langs:[["async/await","C#","JavaScript","Python","Rust","Swift","Kotlin"],["suspend fun","Kotlin"],["for comprehension","Scala (monadic)"],["do notation","Haskell"]],t:"Monadic bind · CPS transform"},
+  {c:"Effect system",cat:"async",cl:"Async",langs:[["ZIO[R,E,A]","Scala"],["IO","Cats Effect (Scala)","Haskell"],["Task","Monix (Scala)"],["Effect","TypeScript (fp-ts)"]],t:"Typed effects · purely functional IO"},
+  {c:"Event loop",cat:"async",cl:"Async",langs:[["event loop","JavaScript (libuv)"],["tokio","Rust"],["asyncio","Python"],["epoll / kqueue","OS level"],["Reactor pattern","general"],["Selector","Java NIO"]],t:"Reactor pattern (Schmidt 1995)"},
+  {c:"Continuation / callback",cat:"async",cl:"Async",langs:[["callback","JavaScript","C"],["continuation","Scheme","Racket"],["call/cc","Scheme","Common Lisp (cl-cont)"],["CompletionHandler","Java NIO"]],t:"CPS · delimited continuations"},
+  {c:"Coroutine / green thread",cat:"async",cl:"Async",langs:[["coroutine","Kotlin","Python","Lua","C++20"],["generator","Python","JavaScript"],["fiber","Ruby"],["virtual thread","Java 21"],["ZIO fiber","Scala"]],t:"Cooperative multitasking"},
+
+  {c:"Observable / reactive stream",cat:"reactive",cl:"Reactive",langs:[["Observable","RxJava","RxJS","RxSwift"],["Flow","Kotlin"],["Flux / Mono","Project Reactor (Java)"],["Publisher","Java Reactive Streams"],["Signal","SolidJS","Angular 17+"],["ZStream","ZIO Scala"],["fs2.Stream","Cats Effect Scala"]],t:"Reactive Manifesto · FRP"},
+  {c:"Subject / hot observable",cat:"reactive",cl:"Reactive",langs:[["Subject / BehaviorSubject","RxJava","RxJS"],["StateFlow / SharedFlow","Kotlin"],["Hub","ZIO Scala"],["Topic","fs2 Scala"]],t:"Observer pattern · push model"},
+  {c:"Scheduler / dispatcher",cat:"reactive",cl:"Reactive",langs:[["Scheduler","RxJava","RxJS"],["Dispatcher","Kotlin Coroutines"],["DispatchQueue","Swift"],["Executor","Java"],["ZIO runtime layers","Scala"]],t:"Work scheduling · thread affinity"},
+  {c:"Backpressure",cat:"reactive",cl:"Reactive",langs:[["backpressure","Reactive Streams spec"],["onBackpressureDrop","RxJava"],["buffer / conflate","Kotlin Flow"],["ZStream pull","Scala ZIO"]],t:"Flow control · queuing theory"},
+
+  {c:"Iterator / lazy sequence",cat:"coll",cl:"Collections",langs:[["Iterator","Java","C#","JavaScript"],["iter()","Rust"],["generator","Python","JavaScript"],["Sequence","Kotlin"],["lazy-seq","Clojure"],["IEnumerable","C#"],["view","Scala"],["series","Common Lisp (lib)"]],t:"Internal vs external iteration"},
+  {c:"Persistent / immutable collection",cat:"coll",cl:"Collections",langs:[["PersistentVector / Map","Clojure"],["List / Map / Set","Scala (default immutable)"],["immutablejs","JavaScript"],["ImmutableList","Java Guava"],["frozen","Python (frozenset)"]],t:"Structural sharing (Okasaki)"},
+  {c:"Lazy / infinite list",cat:"coll",cl:"Collections",langs:[["lazy-seq","Clojure"],["Stream","Java 8+","Haskell"],["LazyList / view","Scala"],["Sequence","Kotlin"],["range / itertools","Python"],["IEnumerable","C#"]],t:"Lazy evaluation (call-by-need)"},
+  {c:"Trie / persistent map",cat:"coll",cl:"Collections",langs:[["HAMT","Clojure","Haskell","Scala"],["HashMap (structural)","Rust","Java"],["PersistentHashMap","Clojure"],["Radix tree","general"]],t:"Hash array mapped trie (Bagwell)"},
+  {c:"Ring buffer / circular queue",cat:"coll",cl:"Collections",langs:[["ArrayDeque","Java","Python"],["VecDeque","Rust"],["ring buffer","C","Disruptor (Java)"],["channel buffer","Go","Kotlin"],["Disruptor","LMAX Java"]],t:"Circular buffer · lock-free queues"},
+  {c:"Priority queue / heap",cat:"coll",cl:"Collections",langs:[["PriorityQueue","Java","Python","Scala"],["BinaryHeap","Rust"],["priority_queue","C++"],["heapq","Python"]],t:"Heap data structure (Williams 1964)"},
+  {c:"Parallel collection",cat:"coll",cl:"Collections",langs:[["ParArray / par","Scala"],["Rayon par_iter","Rust"],["parallel streams","Java"],["pmap","Clojure"]],t:"Data parallelism · fork-join"},
+
+  {c:"First-class function / closure",cat:"func",cl:"Functions",langs:[["lambda","Python","Java 8+","C++","Scala"],["closure","Rust","Go","JavaScript","Ruby","Clojure"],["block","Ruby","Swift"],["fn / Fn trait","Rust"],["delegate","C#"],["#() / fn []","Clojure"],["lambda","Common Lisp"]],t:"λ-calculus (Church 1936)"},
+  {c:"Currying / partial application",cat:"func",cl:"Functions",langs:[["curry","Haskell (auto)","Scala","JavaScript"],["partial","Python (functools)"],["bind","JavaScript"],["partial application","Clojure","F#"],["std::bind","C++"]],t:"Schönfinkel / Curry combinators"},
+  {c:"Higher-order function",cat:"func",cl:"Functions",langs:[["map/filter/reduce","all languages"],["stream().map()","Java"],["Select/Where","C# LINQ"],["fmap","Haskell"],["collect","Rust"],["mapcar/reduce","Common Lisp"]],t:"λ-calculus · combinatory logic"},
+  {c:"Monad / chain",cat:"func",cl:"Functions",langs:[["flatMap / >>= (bind)","Haskell","Scala","Java"],["andThen","Rust"],["chain","JavaScript Promise"],["for comprehension","Scala"],["do notation","Haskell"],["IO monad","Cats Effect Scala"]],t:"Category theory (Mac Lane)"},
+  {c:"Functor / mappable",cat:"func",cl:"Functions",langs:[["fmap","Haskell"],["map","Rust (Option)","Scala","Java Stream"],["Functor typeclass","Haskell","Scala (Cats)"],["Mappable","general"]],t:"Category theory"},
+  {c:"Memoization",cat:"func",cl:"Functions",langs:[["@lru_cache","Python"],["memoize","Clojure","Lodash"],["memo","React","Haskell"],["Caffeine / Guava","Java"]],t:"Dynamic programming · tabling"},
+  {c:"For comprehension / do notation",cat:"func",cl:"Functions",langs:[["for comprehension","Scala (most expressive)"],["do notation","Haskell"],["async/await","JavaScript","C#","Rust"],["LINQ query syntax","C#"]],t:"Monadic sequencing · syntactic sugar"},
+  {c:"Typeclass / given / implicit",cat:"func",cl:"Functions",langs:[["typeclass","Haskell"],["given / using","Scala 3"],["implicit","Scala 2"],["trait impl","Rust"],["instance","Haskell"]],t:"Ad-hoc polymorphism · coherence"},
+
+  {c:"Exception / error propagation",cat:"errors",cl:"Errors",langs:[["try/catch/finally","Java","C#","Python","JavaScript","Scala"],["panic/recover","Go"],["raise/rescue","Ruby","Elixir"],["? operator","Rust"],["conditions","Common Lisp"]],t:"Structured exception handling"},
+  {c:"Typed error channel",cat:"errors",cl:"Errors",langs:[["ZIO[R,E,A]","Scala ZIO"],["Either[E,A]","Scala","Haskell"],["Result<T,E>","Rust"],["EitherT","Haskell","Scala Cats"]],t:"Typed effects · railway-oriented"},
+  {c:"Circuit breaker",cat:"errors",cl:"Errors",langs:[["Resilience4j","Java"],["Polly","C#"],["Hystrix","Java (legacy)"],["ZIO Schedule + retry","Scala"]],t:"Fault tolerance · release-it pattern"},
+
+  {c:"Mock / stub / double",cat:"test",cl:"Testing",langs:[["Mockito","Java"],["Moq / NSubstitute","C#"],["unittest.mock","Python"],["jest.fn()","JavaScript"],["ScalaMock / mockito-scala","Scala"],["RSpec doubles","Ruby"]],t:"Test doubles (Meszaros)"},
+  {c:"Argument captor / spy",cat:"test",cl:"Testing",langs:[["ArgumentCaptor","Java Mockito"],["ArgCaptor[T]","Scala mockito-scala"],["slot / capture","Kotlin MockK"],["spy()","Python","Sinon.js"],["Arg.Do","C# NSubstitute"],["with-redefs + atom","Clojure"],["flet capture","Common Lisp"]],t:"Behavior verification"},
+  {c:"Property-based testing",cat:"test",cl:"Testing",langs:[["QuickCheck","Haskell","Rust (proptest)"],["Hypothesis","Python"],["ScalaCheck","Scala"],["jqwik","Java"],["fast-check","JavaScript"],["check-it","Common Lisp"]],t:"Randomized testing (Hughes 1999)"},
+  {c:"Test fixture / setup",cat:"test",cl:"Testing",langs:[["@BeforeEach","Java JUnit"],["setUp","Python"],["beforeEach","JavaScript Jest"],["before(:each)","Ruby RSpec"],["TestInitialize","C#"],["fixture","Scala / ScalaTest"]],t:"xUnit patterns (Beck)"},
+  {c:"Snapshot testing",cat:"test",cl:"Testing",langs:[["jest snapshots","JavaScript"],["insta","Rust"],["expect-test","OCaml"],["approval tests","C#","Java"]],t:"Regression testing by serialization"},
+  {c:"Effect-based testing",cat:"test",cl:"Testing",langs:[["ZIO Test","Scala"],["IO testing","Cats Effect Scala"],["TestClock / TestConsole","Scala ZIO"],["cats-effect-testing","Scala"]],t:"Purely functional test environments"},
+
+  {c:"Dependency injection",cat:"pat",cl:"Patterns",langs:[["Spring IoC","Java"],["CDI","Jakarta EE"],["Dagger / Hilt","Android"],["ASP.NET Core DI","C#"],["Angular DI","TypeScript"],["ZLayer","Scala ZIO"],["Reader monad","Haskell","Scala"]],t:"Inversion of control (Martin)"},
+  {c:"Observer / event listener",cat:"pat",cl:"Patterns",langs:[["EventListener","Java","JavaScript"],["@EventHandler","Spring"],["event / delegate","C#"],["signal/slot","Qt C++"],["Observable","Rx*"],["ZStream","Scala ZIO"]],t:"Observer pattern (GoF 1994)"},
+  {c:"Builder pattern",cat:"pat",cl:"Patterns",langs:[["Builder","Java (Lombok)","C#"],["copy()","Kotlin","Scala case class"],["struct update ..base","Rust"],["named params","Python","Swift"],["fluent API","general"]],t:"GoF creational pattern"},
+  {c:"Decorator / wrapper",cat:"pat",cl:"Patterns",langs:[["@Decorator","Python","TypeScript"],["Proxy","Spring AOP"],["wrapper struct","Rust newtype"],["middleware","Go","Express"],["aspect","AOP general"]],t:"GoF structural pattern"},
+  {c:"Strategy pattern",cat:"pat",cl:"Patterns",langs:[["functional interface","Java"],["function pointer","C","Rust"],["trait object","Rust"],["interface","Go"],["typeclass instance","Scala","Haskell"]],t:"GoF behavioral · OCP"},
+  {c:"Repository / DAO",cat:"pat",cl:"Patterns",langs:[["JpaRepository","Spring Data"],["Repository<T>","C# EF"],["Active Record","Ruby on Rails"],["Quill / Slick","Scala"]],t:"Domain-driven design (Evans)"},
+  {c:"Event sourcing / CQRS",cat:"pat",cl:"Patterns",langs:[["Akka Persistence","Scala"],["EventSourcing","general"],["Marten","C#"],["Redux","JavaScript (CQRS lite)"]],t:"DDD · Greg Young 2010"},
+
+  {c:"Macro / compile-time code gen",cat:"meta",cl:"Metaprogramming",langs:[["macro_rules! / proc_macro","Rust"],["defmacro","Common Lisp (best)","Clojure"],["inline macro","Scala 3"],["#define","C (text substitution)"],["template","C++"],["comptime","Zig"],["macro","Racket","Scala"]],t:"Homoiconicity · syntax-rules"},
+  {c:"Reflection / introspection",cat:"meta",cl:"Metaprogramming",langs:[["Reflection API","Java","C#"],["getattr / inspect","Python"],["reflect","Go"],["MOP","Common Lisp (most powerful)"],["Mirrors","Scala"]],t:"Meta-object protocol (MOP)"},
+  {c:"Meta-object protocol",cat:"meta",cl:"Metaprogramming",langs:[["MOP","Common Lisp (CLOS) — unique"],["Mirrors","Scala 3 (partial)"],["metaclass","Python (partial)"]],t:"Kiczales et al. 1991 — full MOP unique to CL"},
+  {c:"Annotation / attribute",cat:"meta",cl:"Metaprogramming",langs:[["@Annotation","Java"],["[Attribute]","C#"],["#[derive]","Rust"],["@decorator","Python","TypeScript"],["@inline / @specialized","Scala"],["pragma","C","D"]],t:"Aspect-oriented programming"},
+  {c:"CTFE / compile-time evaluation",cat:"meta",cl:"Metaprogramming",langs:[["constexpr","C++"],["comptime","Zig"],["const fn","Rust"],["CTFE","D (best in systems langs)"],["static if","D","Zig"],["inline macro","Scala 3"],["#. read-time eval","Common Lisp"]],t:"Partial evaluation · staging"},
+  {c:"Reader macro",cat:"meta",cl:"Metaprogramming",langs:[["reader macro","Common Lisp (unique)"],["dispatch macro","Clojure (#, @, ~)"],["custom read syntax","Racket"]],t:"Read-time metaprogramming — unique to Lisps"},
+  {c:"Image-based development",cat:"meta",cl:"Metaprogramming",langs:[["save-lisp-and-die","Common Lisp SBCL — unique"],["Smalltalk image","Pharo"],["REPL state persistence","general concept"]],t:"Persistent runtime state — unique to CL/Smalltalk"},
+  {c:"DSL / embedded language",cat:"meta",cl:"Metaprogramming",langs:[["Groovy DSL","Gradle"],["EDSL","Haskell","Scala"],["macro DSL","Clojure","Common Lisp","Racket"],["JOOQ","Java"],["Slick / Quill","Scala"]],t:"Language-oriented programming"},
+
+  {c:"Stream / reader-writer",cat:"io",cl:"I/O",langs:[["InputStream/OutputStream","Java"],["io.Reader/Writer","Go"],["Read/Write trait","Rust"],["file stream","C++","Python"],["BufReader","Rust"],["fs2.Stream","Scala"]],t:"Unix streams (pipes 1964)"},
+  {c:"Non-blocking I/O",cat:"io",cl:"I/O",langs:[["NIO / Selector","Java"],["epoll","Linux"],["kqueue","BSD/macOS"],["io_uring","Linux 5.1+"],["AsyncIO","Python"],["tokio::io","Rust"],["http4s / blaze","Scala"]],t:"Proactor / Reactor patterns"},
+  {c:"Memory-mapped file",cat:"io",cl:"I/O",langs:[["MappedByteBuffer","Java"],["mmap","C","Python"],["memmap2","Rust"],["MemoryMappedFile","C#"]],t:"Virtual memory · paging"},
+  {c:"Serialization / marshalling",cat:"io",cl:"I/O",langs:[["Jackson","Java"],["serde","Rust"],["json.Marshal","Go"],["circe / upickle","Scala"],["pickle","Python"],["protobuf","polyglot"]],t:"Data interchange formats"},
+
+  {c:"Garbage collection algorithm",cat:"runtime",cl:"Runtime",langs:[["G1 / ZGC / Shenandoah","Java","Scala (JVM)"],["generational GC","SBCL (Common Lisp)"],["reference counting","CPython","Swift"],["shared_ptr RC","Jank"],["tracing GC","V8","Erlang"]],t:"McCarthy 1959 · generational hypothesis"},
+  {c:"JIT compilation",cat:"runtime",cl:"Runtime",langs:[["JIT","JVM (HotSpot) — Java/Scala/Clojure","V8","CLR"],["LuaJIT","Lua"],["PyPy","Python"],["Cranelift","Rust/Wasmtime"]],t:"Adaptive optimization · profiling"},
+  {c:"AOT compilation",cat:"runtime",cl:"Runtime",langs:[["GraalVM Native Image","Java","Scala"],["Rust (LLVM)","Rust"],["Go compiler","Go"],["NativeAOT","C#"],["Kotlin Native","Kotlin"],["LDC2","D"]],t:"Static compilation · LTO"},
+  {c:"Bytecode / IR",cat:"runtime",cl:"Runtime",langs:[["JVM bytecode","Java/Kotlin/Scala/Clojure"],["LLVM IR","C","C++","Rust","D","Jank"],["WASM","polyglot"],["CLR IL","C#","F#"],["BEAM bytecode","Erlang/Elixir"]],t:"Virtual machines · portable code"},
+  {c:"Native image / ahead-of-time",cat:"runtime",cl:"Runtime",langs:[["GraalVM Native","Java","Scala"],["NativeAOT","C#"],["Rust binary","Rust"],["Go binary","Go"],["Kotlin Native","Kotlin"]],t:"Startup time · memory footprint"},
+
+  {c:"Encapsulation / access modifier",cat:"safety",cl:"Safety",langs:[["public / private / protected","Java","C#","C++","Kotlin","TypeScript"],["pub / pub(crate)","Rust"],["private / fileprivate / internal","Swift"],["_ prefix convention","Python"],["export","JavaScript","Go"],["defpackage + export","Common Lisp"]],t:"Information hiding (Parnas 1972)"},
+  {c:"Capability / permission system",cat:"safety",cl:"Safety",langs:[["sealed/module system","Java","Kotlin","Scala"],["capability","Pony"],["Wasm capabilities","WASI"],["object capabilities","E language"]],t:"Object-capability model (Miller)"},
+  {c:"Type-safe null elimination",cat:"safety",cl:"Safety",langs:[["Option<T>","Rust","Scala"],["Maybe","Haskell"],["?. / !! operator","Kotlin"],["Optional","Java 8+"],["NonNull","Kotlin type system"]],t:"Type-driven null safety"},
+
+  {c:"Module / namespace",cat:"mod",cl:"Modules",langs:[["package","Java","Go","Python","Scala"],["module","Rust","JavaScript","D"],["namespace","C++","C#"],["ns","Clojure"],["package object","Scala 2"],["import","Python","Haskell"]],t:"Information hiding (Parnas 1972)"},
+  {c:"Package manager / build tool",cat:"mod",cl:"Modules",langs:[["Maven / Gradle","Java","Scala"],["sbt","Scala"],["Cargo","Rust"],["npm / pnpm","JavaScript"],["pip","Python"],["go mod","Go"],["dub","D"],["Quicklisp","Common Lisp"]],t:"Dependency management · SemVer"},
+  {c:"Dynamic linking / shared library",cat:"mod",cl:"Modules",langs:[[".so / .dylib / .dll","C","C++","Rust","D"],["dlopen","C","Rust"],["System.loadLibrary","Java"],["ctypes","Python"]],t:"Position-independent code · linker"},
+  {c:"FFI / foreign function interface",cat:"mod",cl:"Modules",langs:[["Panama FFM API","Java 22+"],["JNI","Java (legacy)"],["cgo","Go"],["ctypes / cffi","Python"],["extern","Rust","C++"],["P/Invoke","C#"],["sb-alien","Common Lisp"],["JavaInterop","Clojure"],["@native","Scala Native"]],t:"ABI compatibility · calling conventions"},
+  {c:"Plugin / extension system",cat:"mod",cl:"Modules",langs:[["ServiceLoader","Java"],["MEF","C#"],["trait objects","Rust"],["compiler plugin","Scala"],["gem / plugin","Ruby"]],t:"Open/closed principle · late binding"},
+];
+
+const catClass = {ctrl:"cat-ctrl",types:"cat-types",memory:"cat-memory",conc:"cat-conc",async:"cat-async",reactive:"cat-reactive",coll:"cat-coll",func:"cat-func",errors:"cat-errors",test:"cat-test",pat:"cat-pat",meta:"cat-meta",io:"cat-io",runtime:"cat-runtime",safety:"cat-safety",mod:"cat-mod"};
+const STATE_KEY = 'programming-concepts-index-state';
+
+function saveIndexState() {
+  sessionStorage.setItem(STATE_KEY, JSON.stringify({
+    search: document.getElementById('search').value,
+    category: document.getElementById('catFilter').value,
+    scrollY: window.scrollY,
+    pendingRestore: true,
+  }));
+}
+
+function consumeIndexState() {
+  const raw = sessionStorage.getItem(STATE_KEY);
+  if (!raw) return null;
+
+  try {
+    const state = JSON.parse(raw);
+    if (!state.pendingRestore) return null;
+    sessionStorage.removeItem(STATE_KEY);
+    return state;
+  } catch {
+    sessionStorage.removeItem(STATE_KEY);
+    return null;
+  }
+}
+
+function openConcept(url) {
+  saveIndexState();
+  location.href = url;
+}
+
+function renderLangs(langs) {
+  return langs.map(g => {
+    const [name, ...ls] = g;
+    const preview = ls.slice(0,3).join(' · ') + (ls.length > 3 ? '…' : '');
+    return `<span class="lang" title="${ls.join(', ')}">${name}${preview ? ' <span style="opacity:0.55">'+preview+'</span>' : ''}</span>`;
+  }).join('');
+}
+
+function render() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const cat = document.getElementById('catFilter').value;
+  let rows = DATA;
+  if (cat) rows = rows.filter(d => d.cat === cat);
+  if (q) rows = rows.filter(d => (d.c+d.t+d.langs.flat().join(' ')).toLowerCase().includes(q));
+  document.getElementById('count').textContent = rows.length + ' concepts';
+  document.getElementById('noResults').style.display = rows.length ? 'none' : 'block';
+  document.getElementById('tbody').innerHTML = rows.map((d, i) => `
+    <tr${d.url ? ` class="clickable" onclick="openConcept('${d.url}')"` : ''}>
+      <td><span class="idx">${i + 1}</span></td>
+      <td><div class="concept">${d.c}</div><span class="cat ${catClass[d.cat]}">${d.cl}</span></td>
+      <td><span class="origin">${d.cl}</span></td>
+      <td><div class="langs">${renderLangs(d.langs)}</div></td>
+      <td><span class="origin">${d.t}</span></td>
+    </tr>`).join('');
+}
+
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+
+const savedState = consumeIndexState();
+if (savedState) {
+  document.getElementById('search').value = savedState.search || '';
+  document.getElementById('catFilter').value = savedState.category || '';
+}
+
+document.getElementById('search').addEventListener('input', render);
+document.getElementById('catFilter').addEventListener('change', render);
+render();
+
+if (savedState) {
+  requestAnimationFrame(() => {
+    window.scrollTo({ top: savedState.scrollY || 0, behavior: 'auto' });
+  });
+}
+</script>
+</body>
+</html>

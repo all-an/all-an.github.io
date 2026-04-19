@@ -3,21 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Variable / binding</title>
+  <title>Pattern matching</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
 </head>
 <body>
 <div class="wrap">
   <a class="back" href="../index.html">← back</a>
-  <h1>Variable / binding</h1>
-  <p class="desc">A variable is a named binding that associates an identifier with a value stored in memory.<br>
-  In Java, every variable has a declared type and must be initialized before use — the compiler enforces this.<br>
-  <code>var</code> (Java 10+) lets the compiler infer the type locally, reducing verbosity without losing static typing.</p>
+  <h1>Pattern matching</h1>
+  <p class="desc">Pattern matching selects behavior by comparing a value against a set of shapes, cases, or structural rules.<br>
+  It goes beyond simple equality checks by letting code branch on type, form, and sometimes nested data in one expression.<br>
+  This makes complex condition handling more declarative and easier to read than long chains of manual tests.</p>
   <pre><code class="language-java">// Java
-int score = 100;           // explicit type
-var name  = "Allan";       // type inferred as String
-final double PI = 3.14159; // binding that cannot be reassigned</code></pre>
+Object value = 42;
+switch (value) {
+  case Integer n -> System.out.println("int: " + n);
+  default -> System.out.println("other");
+}</code></pre>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <script>hljs.highlightAll();</script>

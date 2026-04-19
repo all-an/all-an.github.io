@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Variadic / spread / rest</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Variadic / spread / rest</h1>
+  <p class="desc">Variadic functions accept a variable number of arguments instead of requiring a fixed arity.<br>
+  Different languages expose this with different syntax, but the idea is the same: collect many arguments and treat them as one group.<br>
+  In Java, varargs use <code>...</code> and are received as an array inside the method body.</p>
+  <pre><code class="language-java">// Java
+class Demo {
+  static int sum(int... values) {
+    int total = 0;
+    for (int v : values) total += v;
+    return total;
+  }
+
+  public static void main(String[] args) {
+    System.out.println(sum(1, 2, 3)); // 6
+  }
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Type alias</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Type alias</h1>
+  <p class="desc">A type alias gives an existing type a new name, usually to make code shorter or express intent more clearly.<br>
+  It does not create a brand-new runtime structure by itself; it mostly helps the type system and the reader.<br>
+  Java does not have true type aliases, but TypeScript does with the <code>type</code> keyword.</p>
+  <pre><code class="language-typescript">// TypeScript
+type UserId = string;
+type User = {
+  id: UserId;
+  name: string;
+};
+
+const user: User = {
+  id: "u_123",
+  name: "Allan",
+};</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
