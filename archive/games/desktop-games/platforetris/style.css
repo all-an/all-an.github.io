@@ -186,8 +186,10 @@ body {
 
 #tetromino-selector {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   justify-content: center;
+  align-items: center;
   margin-top: 10px;
 }
 
@@ -206,6 +208,26 @@ body {
 .tet-preview.selected {
   border-color: #ffaa44;
   box-shadow: 0 0 8px #ffaa4488;
+}
+
+#back-to-haphazard {
+  min-height: 58px;
+  padding: 0 14px;
+  border: 2px solid #444;
+  border-radius: 4px;
+  background: #151526;
+  color: #ffaa44;
+  font-family: monospace;
+  font-size: 0.78rem;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, box-shadow 0.15s;
+}
+
+#back-to-haphazard:hover {
+  border-color: #ffaa44;
+  color: #fff2cc;
+  box-shadow: 0 0 10px #ffaa4460;
 }
 
 /* Menu button — fixed top-right corner */

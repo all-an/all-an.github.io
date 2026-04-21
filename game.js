@@ -252,6 +252,43 @@ function makeFloorNumberLabel(text, color = '#7de7ff', size = 1.05) {
     return new THREE.Mesh(new THREE.PlaneGeometry(size, size), mat);
 }
 
+function makeTextPanelMaterial(text, {
+    font = 'bold 42px monospace',
+    textColor = '#000000',
+    borderColor = '#7a5b10',
+    fillColor = '#f4c44f',
+    emissive = 0x2a1d00
+} = {}) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1024;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = fillColor;
+    ctx.fillRect(24, 24, canvas.width - 48, canvas.height - 48);
+    ctx.strokeStyle = borderColor;
+    ctx.lineWidth = 10;
+    ctx.strokeRect(24, 24, canvas.width - 48, canvas.height - 48);
+    ctx.font = font;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = textColor;
+    const lines = Array.isArray(text) ? text : [text];
+    const lineHeight = 72;
+    const startY = canvas.height / 2 - ((lines.length - 1) * lineHeight) / 2;
+    lines.forEach((line, idx) => {
+        ctx.fillText(line, canvas.width / 2, startY + idx * lineHeight);
+    });
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.needsUpdate = true;
+    return new THREE.MeshLambertMaterial({
+        color: 0xffffff,
+        emissive,
+        map: tex,
+        side: THREE.DoubleSide
+    });
+}
+
 // Sign on left wall of corridor 1 (center z = 0)
 {
     const s = makeNumberSign(1);
@@ -319,6 +356,14 @@ const btnGlowL = new THREE.PointLight(0x00ff66, 1.0, 2.5);
 btnGlowL.position.set(-CW/2+0.5, BTN_Y, BTN_Z); _cg.add(btnGlowL);
 const btnGlowR = new THREE.PointLight(0x00ff66, 1.0, 2.5);
 btnGlowR.position.set(CW/2-0.5, BTN_Y, BTN_Z); _cg.add(btnGlowR);
+const conceptsBtn = box(
+    1.7, 0.62, 0.18,
+    makeTextPanelMaterial(['Programming', 'Concepts']),
+    0, 1.6, CL / 2 - 0.24
+);
+const conceptsBtnGlow = new THREE.PointLight(0xf4c44f, 1.2, 3.4);
+conceptsBtnGlow.position.set(0, 1.6, CL / 2 - 0.8);
+_cg.add(conceptsBtnGlow);
 
 _cg = corridorGroups[1];
 // ── Corridor 2 ────────────────────────────────────────────────────────────────
@@ -707,6 +752,14 @@ const player = {
     pitch: 0,
 };
 
+function applyRequestedSpawn() {
+    const requestedSpawn = sessionStorage.getItem('haphazardSpawn');
+    if (requestedSpawn !== 'rooftop') return;
+
+    sessionStorage.removeItem('haphazardSpawn');
+    respawnAtRooftop();
+}
+
 // ── Input ─────────────────────────────────────────────────────────────────────
 const keys = {};
 document.addEventListener('keydown', e => { keys[e.code] = true; });
@@ -1036,6 +1089,7 @@ function shoot() {
     targets.push(c6EntranceBtn);
     targets.push(c7Btn);
     targets.push(websiteBtn);
+    targets.push(conceptsBtn);
 
     const hits = shootRay.intersectObjects(targets);
     if (hits.length === 0) return;
@@ -1175,6 +1229,10 @@ function shoot() {
         window.location.href = 'archive/games/desktop-games/platforetris/index.html';
     }
 
+    if (hit === conceptsBtn) {
+        window.location.href = 'concepts/index.html';
+    }
+
     // ── Yellow sign (corridor 4 button) ──
     if (hit === sign4 && !yellowDoorState.shot) {
         yellowDoorState.shot = true;
@@ -1283,14 +1341,28 @@ function respawnAtC7Start() {
     c7BtnGlow.color.set(0xcc66ff);
 }
 
-// Same YOU DIED overlay as corridor 6, but respawns at corridor 7 entrance.
+function respawnAtRooftop() {
+    camera.position.set(0, RTOP_TOP_Y + PLAYER_HEIGHT, WEBSITE_BTN_Z + 1.8);
+    player.velocity.set(0, 0, 0);
+    player.onGround   = true;
+    player.yaw        = Math.PI;
+    player.pitch      = -0.08;
+    playerOutside     = true;
+
+    c7State.up            = false;
+    c7Platform.position.y = 0.1;
+    c7Btn.material        = c7BtnMat;
+    c7BtnGlow.color.set(0xcc66ff);
+}
+
+// Same YOU DIED overlay as corridor 6, but falling deaths return to the rooftop.
 function triggerDeathRooftop() {
     if (playerDead) return;
     playerDead = true;
     deathMsg.classList.add('visible');
     setTimeout(() => {
         deathMsg.classList.remove('visible');
-        respawnAtC7Start();
+        respawnAtRooftop();
         playerDead = false;
     }, 2000);
 }
@@ -1633,4 +1705,5 @@ function loop() {
 })(DEV_CORRIDOR);*/
 
 warmCorridorCulling();
+applyRequestedSpawn();
 loop();
