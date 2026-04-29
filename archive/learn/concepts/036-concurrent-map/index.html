@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Concurrent map</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Concurrent map</h1>
+  <p class="desc">A concurrent map lets many threads read and update a shared key-value structure without wrapping the whole map in one big lock.<br>
+  In Java, <code>ConcurrentHashMap</code> uses internal coordination strategies so common operations scale better than a plain <code>HashMap</code> under contention.<br>
+  It helps for shared registries and caches, but compound workflows across multiple keys may still need extra synchronization.</p>
+  <pre><code class="language-java">// Java
+import java.util.concurrent.ConcurrentHashMap;
+
+ConcurrentHashMap&lt;String, Integer&gt; counts = new ConcurrentHashMap&lt;&gt;();
+
+// Start two tasks that update the same shared map concurrently.
+Thread t1 = Thread.startVirtualThread(() -> {
+  counts.merge("apples", 1, Integer::sum);
+});
+
+Thread t2 = Thread.startVirtualThread(() -> {
+  counts.merge("apples", 1, Integer::sum);
+});
+
+// Wait until both updates finish before reading the final value.
+t1.join();
+t2.join();
+System.out.println(counts.get("apples")); // 2</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

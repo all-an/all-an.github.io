@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Value types / value objects</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Value types / value objects</h1>
+  <p class="desc">A value object is a data value without object identity, so two instances are compared by their contents rather than by "who they are".<br>
+  Project Valhalla adds this idea to Java with <code>value class</code>, aiming for denser layouts and fewer identity-related costs.<br>
+  This syntax is still a Valhalla preview feature, not regular released Java syntax yet.</p>
+  <pre><code class="language-java">// Java (Project Valhalla preview)
+value class Point {
+  int x;
+  int y;
+
+  Point(int x, int y) {
+    this.x = x;
+    this.y = y;
+  }
+
+  Point translate(int dx, int dy) {
+    return new Point(x + dx, y + dy);
+  }
+}
+
+Point a = new Point(10, 20);
+Point b = a.translate(0, 0);
+
+System.out.println(a == b); // true: compared by value, not identity</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

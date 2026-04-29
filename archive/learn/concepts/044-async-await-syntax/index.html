@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Async/await syntax</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Async/await syntax</h1>
+  <p class="desc"><code>async</code> and <code>await</code> let asynchronous code read more like direct sequential code.<br>
+  In TypeScript, an <code>async</code> function returns a promise, and <code>await</code> pauses that function until another promise settles.<br>
+  The main idea is better syntax for chaining asynchronous steps without deeply nested callbacks.</p>
+  <pre><code class="language-typescript">// TypeScript
+function delay&lt;T&gt;(ms: number, value: T): Promise&lt;T&gt; {
+  return new Promise(resolve => setTimeout(() => resolve(value), ms));
+}
+
+async function run() {
+  // Start the first async step and wait here until its Promise resolves.
+  const user = await delay(100, { name: "Ana" as string });
+
+  // Only after the first result arrives does execution continue to this step.
+  const message = await delay(100, `hello ${user.name}`);
+
+  // This line runs last, after both awaited operations have completed.
+  console.log(message);
+}
+
+run();</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

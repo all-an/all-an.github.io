@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Volatile / visibility</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Volatile / visibility</h1>
+  <p class="desc">A <code>volatile</code> field tells Java that reads must see the latest write across threads, so it is mainly a visibility guarantee.<br>
+  It is good for publication and stop flags, but it does not make compound actions like <code>count++</code> atomic.<br>
+  This is not Java's answer to STM: when many writes must change together, Java still uses locks or atomics, while Loom tries to reduce the need for shared mutable state in the first place.</p>
+  <pre><code class="language-java">// Java
+class Demo {
+  static volatile boolean stop = false;
+
+  public static void main(String[] args) throws Exception {
+    // Start a virtual thread that keeps reading the shared stop flag.
+    Thread worker = Thread.startVirtualThread(() -> {
+      while (!stop) {
+        Thread.onSpinWait();
+      }
+      // Once the main thread writes stop = true, this read sees it and exits.
+      System.out.println("stopped");
+    });
+
+    // Let the worker run for a moment, then publish the stop signal.
+    Thread.sleep(100);
+    stop = true;   // visible to the worker thread
+    // Wait until the worker observes the flag and finishes.
+    worker.join();
+  }
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

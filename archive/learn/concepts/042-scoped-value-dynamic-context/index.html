@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scoped value / dynamic context</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Scoped value / dynamic context</h1>
+  <p class="desc">A scoped value binds immutable context to a bounded execution scope so deep code can read it without threading parameters through every method.<br>
+  Loom pairs <code>ScopedValue</code> with structured concurrency so child tasks inherit the same read-only context cleanly, which is usually a better fit than mutable <code>ThreadLocal</code> state for virtual-thread code.<br>
+  This still is not STM: Java is not making shared updates transactional here, it is making context propagation explicit, bounded, and safer so less mutable shared state is needed.</p>
+  <pre><code class="language-java">// Java
+import java.lang.ScopedValue;
+import java.util.concurrent.StructuredTaskScope;
+
+final class Demo {
+  static final ScopedValue&lt;String&gt; REQUEST_ID = ScopedValue.newInstance();
+}
+
+// Bind request context for this whole block and for child tasks created inside it.
+ScopedValue.runWhere(Demo.REQUEST_ID, "req-42", () -> {
+  try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+    // The child task inherits the scoped value and can read it without a method parameter.
+    var task = scope.fork(() -> "handling " + Demo.REQUEST_ID.get());
+    // The parent waits for the child before the scoped binding goes away.
+    scope.join();
+    scope.throwIfFailed(RuntimeException::new);
+    // Control returns here with the child result, still inside the bounded scope.
+    System.out.println(task.get()); // handling req-42
+  } catch (InterruptedException e) {
+    Thread.currentThread().interrupt();
+  }
+});</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

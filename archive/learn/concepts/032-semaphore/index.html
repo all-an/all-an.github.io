@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Semaphore</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Semaphore</h1>
+  <p class="desc">A semaphore controls access to a limited number of permits instead of allowing only a single owner like a mutex.<br>
+  Java's <code>Semaphore</code> is often used to limit how many threads may use a resource at once.<br>
+  Each <code>acquire()</code> takes a permit and each <code>release()</code> gives one back.</p>
+  <pre><code class="language-java">// Java
+import java.util.concurrent.Semaphore;
+
+Semaphore permits = new Semaphore(2);
+
+try {
+  permits.acquire();
+  try {
+    System.out.println("inside limited section");
+  } finally {
+    permits.release();
+  }
+} catch (InterruptedException ignored) {
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

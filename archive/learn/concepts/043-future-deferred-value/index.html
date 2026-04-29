@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Future / deferred value</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Future / deferred value</h1>
+  <p class="desc">A future represents a value that is not ready yet, but will appear later after some asynchronous work finishes.<br>
+  Java commonly uses <code>CompletableFuture</code>, while JavaScript uses <code>Promise</code> for the same basic idea.<br>
+  The caller starts work now, keeps a handle to the eventual result, and then continues once that result becomes available.</p>
+
+  <pre><code class="language-java">// Java
+import java.util.concurrent.CompletableFuture;
+
+// Start asynchronous work and immediately get a handle to its future result.
+CompletableFuture&lt;String&gt; message =
+    CompletableFuture.supplyAsync(() -> "hello from Java");
+
+// The continuation runs later, after the background computation completes.
+CompletableFuture&lt;Void&gt; done = message.thenAccept(value -> {
+  System.out.println(value);
+});
+
+// Wait here so the program does not exit before the async flow finishes.
+done.join();</code></pre>
+
+  <pre><code class="language-javascript">// JavaScript
+// Start asynchronous work and immediately receive a Promise for the future value.
+const message = new Promise(resolve => {
+  setTimeout(() => resolve("hello from JavaScript"), 100);
+});
+
+// This callback runs later, after the Promise is fulfilled.
+message.then(value => {
+  console.log(value);
+});
+
+// Other synchronous code keeps running right away.
+console.log("waiting...");</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

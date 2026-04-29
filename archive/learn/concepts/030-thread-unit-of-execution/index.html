@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thread / unit of execution</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Thread / unit of execution</h1>
+  <p class="desc">A thread is an independent path of execution that can run work concurrently with other threads.<br>
+  Java has supported threads for a long time, and modern Java also adds virtual threads for lighter-weight tasks.<br>
+  The main idea is that multiple flows of control can progress at the same time.</p>
+  <pre><code class="language-java">// Java
+Thread worker = Thread.startVirtualThread(() -> {
+  System.out.println("running on " + Thread.currentThread());
+});
+
+try {
+  worker.join();
+} catch (InterruptedException ignored) {
+}
+System.out.println("done");</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

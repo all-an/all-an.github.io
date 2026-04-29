@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Continuation / callback</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Continuation / callback</h1>
+  <p class="desc">A callback is a function you hand to another function so it can continue the computation later.<br>
+  This is one of the oldest async patterns in TypeScript and JavaScript: start work now, then provide the next step as a continuation to run when the result is ready.<br>
+  Promises and async/await build on this idea, but the callback pattern is the simpler core.</p>
+  <pre><code class="language-typescript">// TypeScript
+type User = { name: string };
+
+function loadUser(callback: (user: User) => void): void {
+  // Start async work now and remember the continuation for later.
+  setTimeout(() => {
+    callback({ name: "Ana" });
+  }, 100);
+}
+
+loadUser(user => {
+  // This continuation runs only after loadUser finishes its delayed work.
+  console.log(`hello ${user.name}`);
+});
+
+// This line runs immediately, before the callback above fires.
+console.log("request started");</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

@@ -1,39 +1,75 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Games - Allan</title>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎮%3C/text%3E%3C/svg%3E">
-    <link rel="stylesheet" href="../main-style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Games — Allan Pereira Abrahão</title>
+  <style>
+    :root {
+      --color-background-primary:   #111113;
+      --color-background-secondary: #1a1a1e;
+      --color-text-primary:         #e8e8ea;
+      --color-text-secondary:       #9898a0;
+      --color-text-tertiary:        #5e5e66;
+      --color-border-tertiary:      #232328;
+      --border-radius-md:           7px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--color-background-primary); color: var(--color-text-primary); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; text-align: justify; }
+    .wrap { max-width: 680px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
+
+    /* nav */
+    .nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3rem; }
+    .nav a { font-size: 18px; color: var(--color-text-secondary); text-decoration: none; }
+    .nav a:hover { color: var(--color-text-primary); }
+
+    /* header */
+    .name { font-size: 38px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.4rem; text-align: left; }
+    .tagline { font-size: 22px; color: var(--color-text-secondary); margin-bottom: 2.5rem; line-height: 1.5; }
+
+    /* section */
+    .section { margin-bottom: 2.25rem; }
+    .section-label { font-size: 16px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-text-tertiary); margin-bottom: 0.75rem; }
+    .section p { font-size: 20px; color: var(--color-text-secondary); line-height: 1.7; }
+
+    /* links */
+    .links { display: flex; gap: 12px; flex-wrap: wrap; }
+    .link { font-size: 18px; color: var(--color-text-secondary); text-decoration: none; padding: 6px 12px; border: 1px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); }
+    .link:hover { color: var(--color-text-primary); border-color: #3a3a44; }
+
+    /* divider */
+    hr { border: none; border-top: 1px solid var(--color-border-tertiary); margin: 2.25rem 0; }
+  </style>
 </head>
 <body>
+<div class="wrap">
 
-    <!-- Matrix rain canvas is appended here by main.js and sits behind .bwin -->
+  <nav class="nav">
+    <a href="../../index.html">← about</a>
+  </nav>
 
-    <!-- Borland-style floating window, centered over the Matrix rain desktop -->
-    <div class="bwin">
+  <h1 class="name">Games</h1>
+  <p class="tagline">Desktop games built from scratch using JavaScript and Three.js.</p>
 
-        <!-- Window title bar: cyan, Borland active-window style -->
-        <div class="bwin-title">══ Games ══</div>
+  <hr />
 
-        <!-- Window body: navigation buttons -->
-        <div class="bwin-body">
-            <div class="bwin-btns">
-                <a href="desktop-games/desktop-games.html">
-                    <button class="bwin-btn">Desktop</button>
-                </a>
-                <a href="mobile-games/mobile-games.html">
-                    <button class="bwin-btn">Mobile</button>
-                </a>
-                <a href="../index.html">
-                    <button class="bwin-btn">← Back</button>
-                </a>
-            </div>
-        </div>
-
+  <div class="section">
+    <div class="section-label">Desktop</div>
+    <div class="links">
+      <a class="link" href="desktop-games/haphazard/index.html">Haphazard</a>
+      <a class="link" href="desktop-games/platforetris/index.html">Platforetris</a>
+      <a class="link" href="desktop-games/realidades-aninhadas/index.html">realidades aninhadas</a>
     </div>
+  </div>
 
-    <script src="../main.js"></script>
+  <div class="section">
+    <div class="section-label">Mobile</div>
+    <div class="links">
+      <a class="link" href="mobile-games/alsotze/index.html">Alsotze</a>
+      <a class="link" href="mobile-games/liansionk/index.html">Liansionk</a>
+    </div>
+  </div>
+
+</div>
 </body>
 </html>

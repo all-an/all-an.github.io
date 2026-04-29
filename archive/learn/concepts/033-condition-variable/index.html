@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Condition variable</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Condition variable</h1>
+  <p class="desc">A condition variable lets one thread wait until some shared-state condition becomes true and another thread signals it.<br>
+  In Java, a <code>Condition</code> is created from a lock and works like a more explicit form of <code>wait</code>/<code>notify</code>.<br>
+  The usual pattern is: lock, check in a loop, await, update state, signal.</p>
+  <pre><code class="language-java">// Java
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
+
+ReentrantLock lock = new ReentrantLock();
+Condition ready = lock.newCondition();
+boolean[] done = {false};
+
+Thread waiter = Thread.startVirtualThread(() -> {
+  lock.lock();
+  try {
+    while (!done[0]) ready.await();
+    System.out.println("ready");
+  } catch (InterruptedException ignored) {
+  } finally {
+    lock.unlock();
+  }
+});
+
+lock.lock();
+try {
+  done[0] = true;
+  ready.signalAll();
+} finally {
+  lock.unlock();
+}
+
+waiter.join();</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

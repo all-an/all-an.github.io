@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Structured concurrency</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Structured concurrency</h1>
+  <p class="desc">Structured concurrency treats a group of child tasks as one bounded unit: start them here, wait here, and cancel them together if needed.<br>
+  In Java, Project Loom exposes this with <code>StructuredTaskScope</code>, usually running subtasks as virtual threads with failure and cancellation rules tied to one lexical block.<br>
+  This is the Loom-style alternative to STM thinking: instead of transactional shared memory, Java encourages isolating work, joining results in one scope, and keeping locks or atomics only for truly shared state.</p>
+  <pre><code class="language-java">// Java
+import java.util.concurrent.StructuredTaskScope;
+
+record User(String name) {}
+
+try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+  // Fork two child tasks that run concurrently inside this scope.
+  var user = scope.fork(() -> new User("Ana"));
+  var orders = scope.fork(() -> java.util.List.of("Book", "Pen"));
+
+  // The parent waits here until both finish, or until one failure shuts the scope down.
+  scope.join();
+  scope.throwIfFailed(RuntimeException::new);
+
+  // After join succeeds, the parent thread reads both results in one place.
+  System.out.println(user.get().name() + " / " + orders.get().size());
+} catch (InterruptedException e) {
+  Thread.currentThread().interrupt();
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Actor</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Actor</h1>
+  <p class="desc">An actor owns its state and changes it only by processing incoming messages one at a time.<br>
+  Java often models this with a mailbox queue plus a dedicated worker thread, and libraries such as Akka build richer actor systems on top.<br>
+  The key idea is message passing instead of direct shared-state mutation.</p>
+  <pre><code class="language-java">// Java
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+
+sealed interface Msg permits Add, Print {}
+record Add(int value) implements Msg {}
+record Print() implements Msg {}
+
+BlockingQueue&lt;Msg&gt; mailbox = new LinkedBlockingQueue&lt;&gt;();
+
+Thread actor = Thread.startVirtualThread(() -> {
+  int total = 0;
+  try {
+    while (true) {
+      Msg msg = mailbox.take();
+      if (msg instanceof Add add) total += add.value();
+      if (msg instanceof Print) System.out.println(total);
+    }
+  } catch (InterruptedException ignored) {
+  }
+});
+
+try {
+  mailbox.put(new Add(2));
+  mailbox.put(new Add(3));
+  mailbox.put(new Print()); // 5
+} catch (InterruptedException ignored) {
+}
+actor.interrupt();</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

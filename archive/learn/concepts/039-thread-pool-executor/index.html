@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thread pool / executor</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Thread pool / executor</h1>
+  <p class="desc">An executor separates <em>submitting work</em> from <em>deciding where that work runs</em>.<br>
+  Traditional executors reuse a pool of worker threads, while modern Java can also create one virtual thread per task through an executor API.<br>
+  The key idea is that callers hand tasks to a runtime component that schedules and runs them.</p>
+  <pre><code class="language-java">// Java
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
+  // Submit two tasks; the executor decides which worker thread runs each one.
+  Future&lt;String&gt; left = executor.submit(() -> "left done");
+  Future&lt;String&gt; right = executor.submit(() -> "right done");
+
+  // The main thread waits here until each background task completes.
+  System.out.println(left.get());
+  System.out.println(right.get());
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

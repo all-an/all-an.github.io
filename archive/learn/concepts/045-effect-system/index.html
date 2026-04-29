@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Effect system</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Effect system</h1>
+  <p class="desc">An effect system represents side effects such as I/O as values that can be composed before they are actually executed.<br>
+  TypeScript does not have this built in, but the idea can be modeled by wrapping work in objects or functions and running them explicitly later.<br>
+  The key distinction is between <em>describing</em> an effectful program and <em>executing</em> it.</p>
+  <pre><code class="language-typescript">// TypeScript
+type Effect&lt;T&gt; = {
+  run: () => T;
+  map: &lt;U&gt;(fn: (value: T) => U) => Effect&lt;U&gt;;
+  flatMap: &lt;U&gt;(fn: (value: T) => Effect&lt;U&gt;) => Effect&lt;U&gt;;
+};
+
+const Effect = &lt;T&gt;(run: () => T): Effect&lt;T&gt; => ({
+  run,
+  map: fn => Effect(() => fn(run())),
+  flatMap: fn => Effect(() => fn(run()).run())
+});
+
+const succeed = &lt;T&gt;(value: T): Effect&lt;T&gt; => Effect(() => value);
+const sync = &lt;T&gt;(thunk: () => T): Effect&lt;T&gt; => Effect(thunk);
+
+// Build the program first; no side effect happens during this composition phase.
+const program: Effect&lt;void&gt; = succeed("Ana")
+  .flatMap(name => sync(() => `hello ${name}`))
+  .flatMap(message => sync(() => console.log(message)));
+
+// The effect runs only here, when the outer program is explicitly executed.
+program.run();</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

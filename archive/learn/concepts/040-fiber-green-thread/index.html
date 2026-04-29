@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fiber / green thread</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Fiber / green thread</h1>
+  <p class="desc">A fiber or green thread is a lightweight unit of execution that is cheaper to create than a traditional operating-system thread.<br>
+  In modern Java, Project Loom provides this idea as <code>virtual threads</code>, so code can keep the direct thread-per-task style without paying the old platform-thread cost for every task.<br>
+  The main benefit is scale and simpler blocking code, not a different shared-memory model by itself.</p>
+  <pre><code class="language-java">// Java
+// Start two lightweight tasks; each gets its own virtual thread.
+Thread first = Thread.startVirtualThread(() -> {
+  System.out.println("first task");
+});
+
+Thread second = Thread.startVirtualThread(() -> {
+  System.out.println("second task");
+});
+
+// The main thread joins both so execution does not continue too early.
+first.join();
+second.join();
+System.out.println("all done");</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

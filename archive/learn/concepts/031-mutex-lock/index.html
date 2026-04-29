@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mutex / lock</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Mutex / lock</h1>
+  <p class="desc">A mutex lets only one thread enter a critical section at a time, preventing conflicting updates to shared state.<br>
+  Java has built-in synchronization and also explicit lock classes such as <code>ReentrantLock</code>.<br>
+  The protected code should always unlock in a <code>finally</code> block.</p>
+  <pre><code class="language-java">// Java
+import java.util.concurrent.locks.ReentrantLock;
+
+ReentrantLock lock = new ReentrantLock();
+int[] counter = {0};
+
+lock.lock();
+try {
+  counter[0]++;
+  System.out.println(counter[0]); // 1
+} finally {
+  lock.unlock();
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

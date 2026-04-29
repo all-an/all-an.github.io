@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Atomic operation</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Atomic operation</h1>
+  <p class="desc">An atomic operation changes one memory location as one indivisible step, so other threads never observe a half-finished update.<br>
+  Java exposes this with classes such as <code>AtomicInteger</code>, often implemented with compare-and-swap instead of a lock.<br>
+  Atomics are great for single-variable coordination, but bigger invariants across multiple fields usually still need locks or other higher-level structure.</p>
+  <pre><code class="language-java">// Java
+import java.util.concurrent.atomic.AtomicInteger;
+
+AtomicInteger counter = new AtomicInteger(0);
+
+// Each task increments the same counter without taking an explicit lock.
+Thread t1 = Thread.startVirtualThread(() -> {
+  counter.incrementAndGet();
+});
+
+Thread t2 = Thread.startVirtualThread(() -> {
+  counter.incrementAndGet();
+});
+
+// After both tasks finish, the main thread reads the final atomic value.
+t1.join();
+t2.join();
+System.out.println(counter.get()); // 2</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

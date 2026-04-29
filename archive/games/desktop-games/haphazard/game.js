@@ -356,14 +356,6 @@ const btnGlowL = new THREE.PointLight(0x00ff66, 1.0, 2.5);
 btnGlowL.position.set(-CW/2+0.5, BTN_Y, BTN_Z); _cg.add(btnGlowL);
 const btnGlowR = new THREE.PointLight(0x00ff66, 1.0, 2.5);
 btnGlowR.position.set(CW/2-0.5, BTN_Y, BTN_Z); _cg.add(btnGlowR);
-const conceptsBtn = box(
-    1.7, 0.62, 0.18,
-    makeTextPanelMaterial(['Programming', 'Concepts']),
-    0, 1.6, CL / 2 - 0.24
-);
-const conceptsBtnGlow = new THREE.PointLight(0xf4c44f, 1.2, 3.4);
-conceptsBtnGlow.position.set(0, 1.6, CL / 2 - 0.8);
-_cg.add(conceptsBtnGlow);
 
 _cg = corridorGroups[1];
 // ── Corridor 2 ────────────────────────────────────────────────────────────────
@@ -1089,7 +1081,6 @@ function shoot() {
     targets.push(c6EntranceBtn);
     targets.push(c7Btn);
     targets.push(websiteBtn);
-    targets.push(conceptsBtn);
 
     const hits = shootRay.intersectObjects(targets);
     if (hits.length === 0) return;
@@ -1226,11 +1217,7 @@ function shoot() {
 
     // ── Rooftop website button ──
     if (hit === websiteBtn) {
-        window.location.href = 'archive/games/desktop-games/platforetris/index.html';
-    }
-
-    if (hit === conceptsBtn) {
-        window.location.href = 'concepts/index.html';
+        window.location.href = '../platforetris/index.html';
     }
 
     // ── Yellow sign (corridor 4 button) ──

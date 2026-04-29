@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Event loop</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Event loop</h1>
+  <p class="desc">An event loop keeps checking for ready work and runs queued callbacks one turn at a time.<br>
+  In TypeScript runtimes such as browsers or Node.js, timers, promise callbacks, and I/O completions are scheduled onto queues that the runtime drains in a defined order.<br>
+  This is why asynchronous tasks can make progress even though your synchronous code appears single-threaded.</p>
+  <pre><code class="language-typescript">// TypeScript
+console.log("script start");
+
+setTimeout(() => {
+  // Timer callbacks are queued for a later turn of the event loop.
+  console.log("timeout callback");
+}, 0);
+
+Promise.resolve().then(() => {
+  // Promise callbacks run after the current stack, before the timer queue.
+  console.log("promise callback");
+});
+
+// This runs first because it is still on the current call stack.
+console.log("script end");</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

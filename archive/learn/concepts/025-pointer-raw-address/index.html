@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pointer / raw address</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Pointer / raw address</h1>
+  <p class="desc">A pointer is a value that refers directly to a memory location instead of storing the data itself.<br>
+  Low-level languages expose raw addresses directly, while Java normally hides them behind references and safety checks.<br>
+  With the Foreign Function &amp; Memory API, Java can still work with native memory and reveal its address when needed.</p>
+  <pre><code class="language-java">// Java
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+
+try (Arena arena = Arena.ofConfined()) {
+  MemorySegment number = arena.allocate(ValueLayout.JAVA_INT);
+  number.set(ValueLayout.JAVA_INT, 0, 42);
+
+  long address = number.address(); // This raw memory address is the pointer value.
+  int value = number.get(ValueLayout.JAVA_INT, 0);
+
+  System.out.println("0x" + Long.toHexString(address));
+  System.out.println(value); // Reads the int stored at that address: 42
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

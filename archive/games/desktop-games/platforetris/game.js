@@ -5,7 +5,6 @@ const ctx = canvas.getContext('2d');
 const tooltip = document.getElementById('cell-tooltip');
 const tooltipNumber = document.getElementById('tooltip-number');
 const tooltipCoords = document.getElementById('tooltip-coords');
-const backToHaphazardBtn = document.getElementById('back-to-haphazard');
 
 const COLS = 40;
 const ROWS = 30;
@@ -1239,11 +1238,6 @@ document.querySelectorAll('.tet-preview').forEach((cvs, i) => {
     pendingTetrominoIndex = i;
     colorModal.classList.add('open');
   });
-});
-
-backToHaphazardBtn.addEventListener('click', () => {
-  sessionStorage.setItem('haphazardSpawn', 'rooftop');
-  window.location.href = '../../../../index.html';
 });
 
 // ── Start screen ───────────────────────────────────────────────────────────────

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RAII / resource guard</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>RAII / resource guard</h1>
+  <p class="desc">RAII means a resource is tied to an object or scope so cleanup happens automatically when that scope ends.<br>
+  In Java this is usually done with <code>try-with-resources</code>, which closes an <code>AutoCloseable</code> even if an exception happens.<br>
+  It is not full C++-style deterministic destruction, but it gives Java a reliable scoped resource guard.</p>
+  <pre><code class="language-java">// Java
+import java.io.BufferedReader;
+import java.io.FileReader;
+
+try (BufferedReader reader = new BufferedReader(new FileReader("data.txt"))) {
+  String line = reader.readLine();
+  System.out.println(line);
+} // `reader` is closed automatically here</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

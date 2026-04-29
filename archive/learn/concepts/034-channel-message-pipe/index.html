@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Channel / message pipe</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Channel / message pipe</h1>
+  <p class="desc">A channel sends messages between concurrent tasks instead of sharing mutable state directly.<br>
+  Java does not have a built-in <code>chan</code> keyword, but a <code>BlockingQueue</code> can play the same role as a message pipe.<br>
+  One thread puts messages in, another thread takes them out.</p>
+  <pre><code class="language-java">// Java
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+
+BlockingQueue&lt;String&gt; channel = new LinkedBlockingQueue&lt;&gt;();
+
+Thread producer = Thread.startVirtualThread(() -> {
+  try {
+    channel.put("hello");
+  } catch (InterruptedException ignored) {
+  }
+});
+
+Thread consumer = Thread.startVirtualThread(() -> {
+  try {
+    System.out.println(channel.take()); // hello
+  } catch (InterruptedException ignored) {
+  }
+});
+
+try {
+  producer.join();
+  consumer.join();
+} catch (InterruptedException ignored) {
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

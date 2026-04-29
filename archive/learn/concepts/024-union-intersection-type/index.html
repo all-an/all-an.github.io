@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Union / intersection type</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Union / intersection type</h1>
+  <p class="desc">A union type says a value may be one of several alternatives, while an intersection type combines multiple type requirements into one.<br>
+  TypeScript uses unions for flexible APIs and control-flow narrowing, and intersections for composing capabilities onto the same value.<br>
+  Together they let you model "either this or that" and "this and that" directly in the type system.</p>
+  <pre><code class="language-typescript">// TypeScript
+type ApiSuccess = {
+  ok: true;
+  data: { id: string; name: string };
+};
+
+type ApiFailure = {
+  ok: false;
+  error: string;
+};
+
+type ApiResponse = ApiSuccess | ApiFailure;
+
+type Timestamped = {
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+type UserRecord = {
+  id: string;
+  name: string;
+} & Timestamped;
+
+function printResponse(response: ApiResponse) {
+  if (response.ok) {
+    console.log(response.data.name);
+  } else {
+    console.error(response.error);
+  }
+}
+
+const user: UserRecord = {
+  id: "u_1",
+  name: "Allan",
+  createdAt: new Date(),
+  updatedAt: new Date(),
+};</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

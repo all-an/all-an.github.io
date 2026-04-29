@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Coroutine / green thread</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Coroutine / green thread</h1>
+  <p class="desc">A coroutine or green thread is a lightweight execution unit that can suspend and resume without the cost of a full platform thread.<br>
+  In modern Java, Project Loom gives this style through <code>virtual threads</code>, which let blocking code scale much more like coroutine-based systems.<br>
+  The idea is still sequential code per task, but the runtime can manage a very large number of those tasks efficiently.</p>
+  <pre><code class="language-java">// Java
+Thread request1 = Thread.startVirtualThread(() -> {
+  // This task can block in a direct style without consuming a dedicated OS thread forever.
+  System.out.println("request 1 started");
+  try {
+    Thread.sleep(100);
+  } catch (InterruptedException ignored) {
+  }
+  System.out.println("request 1 finished");
+});
+
+Thread request2 = Thread.startVirtualThread(() -> {
+  // A second lightweight task runs independently with the same direct coding style.
+  System.out.println("request 2 started");
+  try {
+    Thread.sleep(100);
+  } catch (InterruptedException ignored) {
+  }
+  System.out.println("request 2 finished");
+});
+
+// The main thread waits here so both virtual-thread tasks complete before exit.
+request1.join();
+request2.join();</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

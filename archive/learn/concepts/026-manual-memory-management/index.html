@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manual memory management</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Manual memory management</h1>
+  <p class="desc">Manual memory management means the program explicitly allocates and frees memory instead of leaving all of it to the garbage collector.<br>
+  In GraalVM Native Image, Java can do this with <code>UnmanagedMemory</code>, which works like a low-level <code>malloc</code>/<code>free</code> API for native memory.<br>
+  This is powerful, but you must release the memory yourself or you leak it.</p>
+  <pre><code class="language-java">// Java (GraalVM Native Image)
+import org.graalvm.nativeimage.UnmanagedMemory;
+import org.graalvm.nativeimage.c.type.CIntPointer;
+
+CIntPointer numbers = UnmanagedMemory.malloc(3 * Integer.BYTES);
+// `numbers` is the unmanaged pointer. It points to native memory outside the Java heap.
+
+try {
+  numbers.write(0, 10);
+  numbers.write(1, 20);
+  numbers.write(2, 30);
+
+  int sum = numbers.read(0) + numbers.read(1) + numbers.read(2);
+  System.out.println(sum); // 60
+} finally {
+  UnmanagedMemory.free(numbers); // Manual free is required.
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

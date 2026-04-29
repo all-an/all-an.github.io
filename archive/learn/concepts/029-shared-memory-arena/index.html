@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shared memory / arena</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Shared memory / arena</h1>
+  <p class="desc">An arena groups allocations under one lifetime, so many memory regions can be released together instead of one by one.<br>
+  In Java's Foreign Function &amp; Memory API, an <code>Arena</code> manages off-heap memory segments and can be shared across threads.<br>
+  This gives Java a scoped way to work with native shared memory outside the garbage-collected heap.</p>
+  <pre><code class="language-java">// Java (FFM API)
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+
+try (Arena arena = Arena.ofShared()) {
+  MemorySegment counter = arena.allocate(ValueLayout.JAVA_INT);
+  counter.set(ValueLayout.JAVA_INT, 0, 41);
+
+  Thread worker = Thread.startVirtualThread(() -> {
+    int value = counter.get(ValueLayout.JAVA_INT, 0);
+    counter.set(ValueLayout.JAVA_INT, 0, value + 1);
+  });
+
+  try {
+    worker.join();
+  } catch (InterruptedException ignored) {
+  }
+  System.out.println(counter.get(ValueLayout.JAVA_INT, 0)); // 42
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

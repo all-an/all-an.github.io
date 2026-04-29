@@ -1,43 +1,73 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Haphazard</title>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E💀%3C/text%3E%3C/svg%3E">
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>About — Allan Pereira Abrahão</title>
+  <style>
+    :root {
+      --color-background-primary:   #111113;
+      --color-background-secondary: #1a1a1e;
+      --color-text-primary:         #e8e8ea;
+      --color-text-secondary:       #9898a0;
+      --color-text-tertiary:        #5e5e66;
+      --color-border-tertiary:      #232328;
+      --border-radius-md:           7px;
+      --font-mono:                  'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--color-background-primary); color: var(--color-text-primary); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    .wrap { max-width: 680px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
+
+    /* nav */
+    .nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3rem; }
+    .nav a { font-size: 18px; color: var(--color-text-secondary); text-decoration: none; }
+    .nav a:hover { color: var(--color-text-primary); }
+
+    /* header */
+    .name { font-size: 38px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.4rem; text-align: left; }
+    .tagline { font-size: 22px; color: var(--color-text-secondary); margin-bottom: 2.5rem; line-height: 1.5; text-align: justify; text-align-last: justify; }
+
+    /* section */
+    .section { margin-bottom: 2.25rem; }
+    .section-label { font-size: 16px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-text-tertiary); margin-bottom: 0.75rem; }
+    .section p { font-size: 20px; color: var(--color-text-secondary); line-height: 1.7; text-align: justify; }
+
+    /* links */
+    .links { display: flex; gap: 12px; flex-wrap: wrap; }
+    .link { font-size: 18px; color: var(--color-text-secondary); text-decoration: none; padding: 6px 12px; border: 1px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); }
+    .link:hover { color: var(--color-text-primary); border-color: #3a3a44; }
+
+    /* divider */
+    hr { border: none; border-top: 1px solid var(--color-border-tertiary); margin: 2.25rem 0; }
+  </style>
 </head>
 <body>
-    <div id="mobile-warning">
-        <div class="phone-frame">
-            <h2>Best on Desktop</h2>
-            <p>This game requires a keyboard and mouse — it's not playable on a small screen.</p>
-            <a href="archive/games/desktop-games/desktop-games.html">← Back to games</a>
-        </div>
-    </div>
+<div class="wrap">
 
-    <div id="blocker">
-        <div id="instructions">
-            <h1>HAPHAZARD</h1>
-            <p>Click to play</p>
-            <p>WASD — Move &nbsp;|&nbsp; Mouse — Look &nbsp;|&nbsp; Space — Jump &nbsp;|&nbsp; Click — Activate button (also distant)</p>
-        </div>
-    </div>
-    <div id="crosshair">+</div>
-    <div id="hud">
-        <span id="health"></span>
-    </div>
-    <div id="vertex-tooltip"></div>
-    <div id="hit-marker"></div>
-    <div id="death-msg"><span>YOU DIED</span></div>
 
-    <script type="importmap">
-    {
-        "imports": {
-            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
-        }
-    }
-    </script>
-    <script type="module" src="game.js"></script>
+  <h1 class="name">Allan Pereira Abrahão</h1>
+  <p class="tagline">Software developer. Interested in games, programming languages, full stack development and making learning tools.</p>
+
+  <hr />
+
+  <div class="section">
+    <div class="section-label">About</div>
+    <p>Software developer with a focus on building clean, purposeful products. I care about code quality, platform fundamentals, and creating tools that are genuinely useful, whether that's an interactive learning platform, a reference for engineers, or a technical side project built from scratch.</p>
+  </div>
+
+
+  <div class="section">
+    <div class="section-label">Contact</div>
+    <div class="links">
+      <a class="link" href="mailto:allan8tech@gmail.com">allan8tech@gmail.com</a>
+      <a class="link" href="https://www.linkedin.com/in/allan-pereira-abrahao/" target="_blank">LinkedIn</a>
+      <a class="link" href="https://github.com/all-an" target="_blank">GitHub</a>
+      <a class="link" href="archive/games/games.html">Games</a>
+      <a class="link" href="archive/learn/learn.html">Learn</a>
+    </div>
+  </div>
+
+</div>
 </body>
 </html>
