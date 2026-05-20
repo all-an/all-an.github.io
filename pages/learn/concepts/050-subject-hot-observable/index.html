@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Subject / hot observable</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Subject / hot observable</h1>
+  <p class="desc">A subject is both an observer and an observable: you push values into it, and it multicasts each one to every current subscriber.<br>
+  In RxJava a <code>PublishSubject</code> is hot — it emits as values arrive, so a subscriber only sees what is pushed after it subscribes, while a <code>BehaviorSubject</code> also replays the latest value to newcomers.<br>
+  Unlike a cold observable that re-runs its producer per subscriber, a hot subject shares <em>one</em> sequence among all of them.</p>
+  <pre><code class="language-java">// Java (RxJava 3)
+import io.reactivex.rxjava3.subjects.PublishSubject;
+
+// A PublishSubject is hot: it is both a sink we push into and a stream others observe.
+PublishSubject&lt;String&gt; prices = PublishSubject.create();
+
+// First subscriber attaches; it will only see values emitted from now on.
+prices.subscribe(value -&gt; System.out.println("A: " + value));
+
+// Pushing a value multicasts it to every current subscriber synchronously.
+prices.onNext("AAPL 191.4"); // A: AAPL 191.4
+
+// A late subscriber misses everything emitted before it joined (hot semantics).
+prices.subscribe(value -&gt; System.out.println("B: " + value));
+
+prices.onNext("AAPL 191.7"); // A: AAPL 191.7   B: AAPL 191.7
+
+// Completing the subject ends the shared stream for every subscriber at once.
+prices.onComplete();</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
