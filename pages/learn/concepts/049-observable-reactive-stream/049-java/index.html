@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Observable / reactive stream — Java</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Observable / reactive stream — Java</h1>
+  <p class="desc">An observable, or reactive stream, is a producer that pushes a sequence of values to its subscribers over time, instead of returning a single value once.<br>
+  In Java the de-facto library is RxJava, where an <code>Observable</code> is composed with operators such as <code>filter</code> and <code>map</code> and only begins emitting when something subscribes to it.<br>
+  The stream is <em>lazy</em>: nothing runs until subscription, and each emitted value flows through the operator pipeline down to the subscriber.</p>
+  <pre><code class="language-java">// Java (RxJava 3)
+import io.reactivex.rxjava3.core.Observable;
+
+// Observable.range builds a cold (lazy) stream of 0..9; nothing runs yet.
+Observable&lt;Integer&gt; ticks = Observable.range(0, 10)
+    .filter(n -&gt; n % 2 == 0) // keep only even values
+    .map(n -&gt; n * 10)        // transform each value as it flows through
+    .take(5);                // complete the stream after five emissions
+
+// Subscribing activates the stream; the callback runs for every emitted value.
+ticks.subscribe(value -&gt; System.out.println("tick: " + value));</code></pre>
+  <p class="desc">Run it yourself with the files in this folder — see <code>README.md</code>.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
