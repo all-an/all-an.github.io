@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scheduler / dispatcher</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Scheduler / dispatcher</h1>
+  <p class="desc">A scheduler, or dispatcher, decides which thread or thread pool a piece of reactive work runs on, decoupling the logic of a stream from where it executes.<br>
+  In Project Reactor, <code>Schedulers</code> offers ready-made pools — <code>boundedElastic</code> for blocking I/O, <code>parallel</code> for CPU work — and <code>subscribeOn</code>/<code>publishOn</code> place stages of a pipeline onto them.<br>
+  <code>subscribeOn</code> chooses where the source runs, while <code>publishOn</code> switches the thread for everything downstream of it.</p>
+  <pre><code class="language-java">// Java (Project Reactor)
+import reactor.core.publisher.Flux;
+import reactor.core.scheduler.Schedulers;
+
+Flux.range(1, 3)
+    // subscribeOn picks the thread the source runs on: the blocking-I/O pool.
+    .subscribeOn(Schedulers.boundedElastic())
+    .map(n -> {
+      System.out.println("map  " + n + " on " + Thread.currentThread().getName());
+      return n * n;
+    })
+    // publishOn moves every stage below it onto the CPU-bound parallel pool.
+    .publishOn(Schedulers.parallel())
+    .doOnNext(n -> System.out.println("next " + n + " on " + Thread.currentThread().getName()))
+    // blockLast keeps the main thread alive until the async pipeline finishes.
+    .blockLast();</code></pre>
+  <p class="desc">Run it yourself with the files in this folder — see <code>README.md</code>.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
