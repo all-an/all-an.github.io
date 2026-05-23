@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>C2: Obsolete Comment</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>C2: Obsolete Comment</h1>
+  <p class="desc">A comment is <em>obsolete</em> once it no longer matches the code it describes — it has grown old, irrelevant, or simply wrong.<br>
+  Code changes faster than the comments around it, so stale comments drift away from the truth and become islands of <code>misdirection</code> that mislead the next reader.<br>
+  The fix is to avoid comments that are likely to age, and to update or delete any obsolete comment the moment you notice it.</p>
+
+  <div class="example-label avoid">Avoid — a comment that no longer matches the code</div>
+  <pre><code class="language-java">// Java
+// Retries the request up to 3 times before giving up.
+public Response fetch(Request request) {
+    // The code was later changed to 5 attempts, but the comment was never updated.
+    for (int attempt = 1; attempt &lt;= 5; attempt++) {
+        Response response = send(request);
+        if (response.isOk()) return response;
+    }
+    throw new RetryExhaustedException(request);
+}</code></pre>
+
+  <div class="example-label prefer">Prefer — let a named constant state the fact, so it cannot go stale</div>
+  <pre><code class="language-java">// Java
+private static final int MAX_ATTEMPTS = 5;
+
+public Response fetch(Request request) {
+    for (int attempt = 1; attempt &lt;= MAX_ATTEMPTS; attempt++) {
+        Response response = send(request);
+        if (response.isOk()) return response;
+    }
+    throw new RetryExhaustedException(request);
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>C1: Inappropriate Information</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>C1: Inappropriate Information</h1>
+  <p class="desc">A comment should only carry information that the code itself cannot express — a technical note about design or intent.<br>
+  It is <em>inappropriate</em> to hold information that belongs in another system: change histories, authorship, last-modified dates, ticket numbers, and TODOs are better kept in version control and your issue tracker.<br>
+  Such metadata rots quickly, duplicates the source of truth, and adds <code>noise</code> that hides the few comments that actually matter.</p>
+
+  <div class="example-label avoid">Avoid — metadata that belongs elsewhere</div>
+  <pre><code class="language-java">// Java
+/*
+ * Author:        jdoe
+ * Created:       2026-05-01
+ * Last modified: 2026-05-20 by asmith
+ * Change log:
+ *   2026-05-10  fixed rounding bug (see JIRA-1234)
+ *   2026-05-20  renamed from computeTax
+ * TODO: ask Bob whether VAT applies to gift cards
+ */
+public BigDecimal calculateTax(Order order) {
+    return order.subtotal().multiply(TAX_RATE);
+}</code></pre>
+
+  <div class="example-label prefer">Prefer — a technical note the code cannot state</div>
+  <pre><code class="language-java">// Java
+// Rounded HALF_UP so totals match the accounting ledger, which never rounds down.
+public BigDecimal calculateTax(Order order) {
+    return order.subtotal()
+                .multiply(TAX_RATE)
+                .setScale(2, RoundingMode.HALF_UP);
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Backpressure</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Backpressure</h1>
+  <p class="desc">Backpressure is flow control for streams: when a producer emits faster than a consumer can process, the consumer signals how much it can take so the producer never overwhelms it.<br>
+  In Project Reactor every subscriber requests an explicit amount of demand, and operators such as <code>onBackpressureDrop</code>, <code>onBackpressureBuffer</code>, and <code>onBackpressureLatest</code> decide what happens to values that exceed it.<br>
+  Here a slow subscriber asks for only three items, so the fast source's remaining values are dropped rather than buffered without bound.</p>
+  <pre><code class="language-java">// Java (Project Reactor)
+import org.reactivestreams.Subscription;
+import reactor.core.publisher.BaseSubscriber;
+import reactor.core.publisher.Flux;
+
+// A fast source of 10 values feeding a deliberately slow consumer.
+Flux.range(1, 10)
+    // Backpressure strategy: discard whatever the consumer has not asked for.
+    .onBackpressureDrop(dropped -> System.out.println("dropped  " + dropped))
+    .subscribe(new BaseSubscriber&lt;Integer&gt;() {
+      @Override
+      protected void hookOnSubscribe(Subscription subscription) {
+        // Request only 3 items, never more — this bounded demand is the backpressure signal.
+        request(3);
+      }
+
+      @Override
+      protected void hookOnNext(Integer value) {
+        // Only the 3 requested values reach us; the overflow is dropped upstream.
+        System.out.println("consumed " + value);
+      }
+    });</code></pre>
+  <p class="desc">Run it yourself with the files in this folder — see <code>README.md</code>.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

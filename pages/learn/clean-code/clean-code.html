@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clean Code Principles</title>
+<style>
+:root {
+  --color-background-primary:   #111113;
+  --color-background-secondary: #1a1a1e;
+  --color-text-primary:         #e8e8ea;
+  --color-text-secondary:       #9898a0;
+  --color-text-tertiary:        #5e5e66;
+  --color-border-secondary:     #2e2e33;
+  --color-border-tertiary:      #232328;
+  --border-radius-md:           7px;
+  --font-mono:                  'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+}
+body { background: var(--color-background-primary); color: var(--color-text-primary); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+.wrap { max-width: 1200px; margin: 0 auto; padding: 2.5rem 2rem 3rem; }
+h1 { font-size: 28px; font-weight: 600; color: var(--color-text-primary); margin-bottom: 1.75rem; letter-spacing: -0.01em; }
+.controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 1.25rem; align-items: center; }
+input[type=text] { flex: 1; min-width: 220px; font-size: 18px; padding: 8px 12px; border-radius: var(--border-radius-md); border: 1px solid var(--color-border-secondary); background: var(--color-background-secondary); color: var(--color-text-primary); outline: none; }
+input[type=text]:focus { border-color: #3a3a44; }
+select { font-size: 18px; padding: 8px 12px; border-radius: var(--border-radius-md); border: 1px solid var(--color-border-secondary); background: var(--color-background-secondary); color: var(--color-text-primary); outline: none; cursor: pointer; }
+.count { font-size: 17px; color: var(--color-text-secondary); white-space: nowrap; }
+.tbl-wrap { overflow-x: auto; border-radius: var(--border-radius-md); border: 1px solid var(--color-border-tertiary); }
+table { width: 100%; border-collapse: collapse; font-size: 18px; table-layout: fixed; }
+th { text-align: left; font-weight: 500; font-size: 16px; color: var(--color-text-secondary); padding: 10px 14px; border-bottom: 1px solid var(--color-border-tertiary); background: var(--color-background-secondary); letter-spacing: 0.03em; text-transform: uppercase; }
+td { padding: 11px 14px; border-bottom: 1px solid var(--color-border-tertiary); vertical-align: top; color: var(--color-text-primary); }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #16161a; }
+tr.clickable { cursor: pointer; }
+.idx { font-family: var(--font-mono); font-size: 16px; color: var(--color-text-tertiary); padding-top: 3px; }
+.code { font-family: var(--font-mono); font-size: 16px; color: var(--color-text-secondary); }
+.principle { font-weight: 500; font-size: 18px; }
+.principle a { color: inherit; text-decoration: none; }
+.principle a:hover { text-decoration: underline; }
+.cat { display: inline-block; font-size: 14px; padding: 2px 8px; border-radius: 99px; white-space: nowrap; }
+.no-results { text-align: center; padding: 3rem; color: var(--color-text-secondary); font-size: 20px; }
+th:nth-child(1) { width: 5%; }
+th:nth-child(2) { width: 9%; }
+th:nth-child(3) { width: 66%; }
+th:nth-child(4) { width: 20%; }
+
+/* one color per Clean Code category */
+.cat-comments    { background:#412402; color:#FAC775; }
+.cat-environment { background:#04342C; color:#9FE1CB; }
+.cat-functions   { background:#4B1528; color:#F4C0D1; }
+.cat-general     { background:#26215C; color:#CECBF6; }
+.cat-java        { background:#4A1B0C; color:#F5C4B3; }
+.cat-names       { background:#042C53; color:#B5D4F4; }
+.cat-tests       { background:#2C2C2A; color:#D3D1C7; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:1.75rem;">
+  <div style="display:flex; flex-direction:column; gap:6px;">
+    <div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
+      <h1 style="margin-bottom:0;">Clean Code Principles</h1>
+      <span style="font-size:16px; color:var(--color-text-secondary); font-style:italic;">66 smells &amp; heuristics from <em>Clean Code</em> (Robert C. Martin).</span>
+    </div>
+    <span style="font-size:16px; color:var(--color-text-secondary); font-style:italic;">Click a principle to learn more.</span>
+  </div>
+  <a href="../learn.html" style="font-size:18px; color:var(--color-text-secondary); text-decoration:none; white-space:nowrap;">← learn</a>
+</div>
+<div class="controls">
+  <input type="text" id="search" placeholder="Search principles, codes, categories..." />
+  <select id="catFilter">
+    <option value="">All categories</option>
+    <option value="comments">Comments</option>
+    <option value="environment">Environment</option>
+    <option value="functions">Functions</option>
+    <option value="general">General</option>
+    <option value="java">Java</option>
+    <option value="names">Names</option>
+    <option value="tests">Tests</option>
+  </select>
+  <span class="count" id="count"></span>
+</div>
+<div class="tbl-wrap">
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Code</th>
+      <th>Smell / Heuristic</th>
+      <th>Category</th>
+    </tr>
+  </thead>
+  <tbody id="tbody"></tbody>
+</table>
+</div>
+<div class="no-results" id="noResults" style="display:none;">No principles match.</div>
+</div>
+
+<script>
+// Each entry: code, principle name, category key (matches the filter + chip color).
+const DATA = [
+  // Comments (C)
+  {code:"C1", p:"Inappropriate Information", cat:"comments", cl:"Comments", url:"001-inappropriate-information/"},
+  {code:"C2", p:"Obsolete Comment", cat:"comments", cl:"Comments", url:"002-obsolete-comment/"},
+  {code:"C3", p:"Redundant Comment", cat:"comments", cl:"Comments"},
+  {code:"C4", p:"Poorly Written Comment", cat:"comments", cl:"Comments"},
+  {code:"C5", p:"Commented-Out Code", cat:"comments", cl:"Comments"},
+
+  // Environment (E)
+  {code:"E1", p:"Build Requires More Than One Step", cat:"environment", cl:"Environment"},
+  {code:"E2", p:"Tests Require More Than One Step", cat:"environment", cl:"Environment"},
+
+  // Functions (F)
+  {code:"F1", p:"Too Many Arguments", cat:"functions", cl:"Functions"},
+  {code:"F2", p:"Output Arguments", cat:"functions", cl:"Functions"},
+  {code:"F3", p:"Flag Arguments", cat:"functions", cl:"Functions"},
+  {code:"F4", p:"Dead Function", cat:"functions", cl:"Functions"},
+
+  // General (G)
+  {code:"G1", p:"Multiple Languages in One Source File", cat:"general", cl:"General"},
+  {code:"G2", p:"Obvious Behavior Is Unimplemented", cat:"general", cl:"General"},
+  {code:"G3", p:"Incorrect Behavior at the Boundaries", cat:"general", cl:"General"},
+  {code:"G4", p:"Overridden Safeties", cat:"general", cl:"General"},
+  {code:"G5", p:"Duplication", cat:"general", cl:"General"},
+  {code:"G6", p:"Code at Wrong Level of Abstraction", cat:"general", cl:"General"},
+  {code:"G7", p:"Base Classes Depending on Their Derivatives", cat:"general", cl:"General"},
+  {code:"G8", p:"Too Much Information", cat:"general", cl:"General"},
+  {code:"G9", p:"Dead Code", cat:"general", cl:"General"},
+  {code:"G10", p:"Vertical Separation", cat:"general", cl:"General"},
+  {code:"G11", p:"Inconsistency", cat:"general", cl:"General"},
+  {code:"G12", p:"Clutter", cat:"general", cl:"General"},
+  {code:"G13", p:"Artificial Coupling", cat:"general", cl:"General"},
+  {code:"G14", p:"Feature Envy", cat:"general", cl:"General"},
+  {code:"G15", p:"Selector Arguments", cat:"general", cl:"General"},
+  {code:"G16", p:"Obscured Intent", cat:"general", cl:"General"},
+  {code:"G17", p:"Misplaced Responsibility", cat:"general", cl:"General"},
+  {code:"G18", p:"Inappropriate Static", cat:"general", cl:"General"},
+  {code:"G19", p:"Use Explanatory Variables", cat:"general", cl:"General"},
+  {code:"G20", p:"Function Names Should Say What They Do", cat:"general", cl:"General"},
+  {code:"G21", p:"Understand the Algorithm", cat:"general", cl:"General"},
+  {code:"G22", p:"Make Logical Dependencies Physical", cat:"general", cl:"General"},
+  {code:"G23", p:"Prefer Polymorphism to If/Else or Switch/Case", cat:"general", cl:"General"},
+  {code:"G24", p:"Follow Standard Conventions", cat:"general", cl:"General"},
+  {code:"G25", p:"Replace Magic Numbers with Named Constants", cat:"general", cl:"General"},
+  {code:"G26", p:"Be Precise", cat:"general", cl:"General"},
+  {code:"G27", p:"Structure over Convention", cat:"general", cl:"General"},
+  {code:"G28", p:"Encapsulate Conditionals", cat:"general", cl:"General"},
+  {code:"G29", p:"Avoid Negative Conditionals", cat:"general", cl:"General"},
+  {code:"G30", p:"Functions Should Do One Thing", cat:"general", cl:"General"},
+  {code:"G31", p:"Hidden Temporal Couplings", cat:"general", cl:"General"},
+  {code:"G32", p:"Don't Be Arbitrary", cat:"general", cl:"General"},
+  {code:"G33", p:"Encapsulate Boundary Conditions", cat:"general", cl:"General"},
+  {code:"G34", p:"Functions Should Descend Only One Level of Abstraction", cat:"general", cl:"General"},
+  {code:"G35", p:"Keep Configurable Data at High Levels", cat:"general", cl:"General"},
+  {code:"G36", p:"Avoid Transitive Navigation", cat:"general", cl:"General"},
+
+  // Java (J)
+  {code:"J1", p:"Avoid Long Import Lists by Using Wildcards", cat:"java", cl:"Java"},
+  {code:"J2", p:"Don't Inherit Constants", cat:"java", cl:"Java"},
+  {code:"J3", p:"Constants versus Enums", cat:"java", cl:"Java"},
+
+  // Names (N)
+  {code:"N1", p:"Choose Descriptive Names", cat:"names", cl:"Names"},
+  {code:"N2", p:"Choose Names at the Appropriate Level of Abstraction", cat:"names", cl:"Names"},
+  {code:"N3", p:"Use Standard Nomenclature Where Possible", cat:"names", cl:"Names"},
+  {code:"N4", p:"Unambiguous Names", cat:"names", cl:"Names"},
+  {code:"N5", p:"Use Long Names for Long Scopes", cat:"names", cl:"Names"},
+  {code:"N6", p:"Avoid Encodings", cat:"names", cl:"Names"},
+  {code:"N7", p:"Names Should Describe Side Effects", cat:"names", cl:"Names"},
+
+  // Tests (T)
+  {code:"T1", p:"Insufficient Tests", cat:"tests", cl:"Tests"},
+  {code:"T2", p:"Use a Coverage Tool", cat:"tests", cl:"Tests"},
+  {code:"T3", p:"Don't Skip Trivial Tests", cat:"tests", cl:"Tests"},
+  {code:"T4", p:"An Ignored Test Is a Question about an Ambiguity", cat:"tests", cl:"Tests"},
+  {code:"T5", p:"Test Boundary Conditions", cat:"tests", cl:"Tests"},
+  {code:"T6", p:"Exhaustively Test Near Bugs", cat:"tests", cl:"Tests"},
+  {code:"T7", p:"Patterns of Failure Are Revealing", cat:"tests", cl:"Tests"},
+  {code:"T8", p:"Test Coverage Patterns Can Be Revealing", cat:"tests", cl:"Tests"},
+  {code:"T9", p:"Tests Should Be Fast", cat:"tests", cl:"Tests"},
+];
+
+// Maps a category key to its chip color class.
+const catClass = {comments:"cat-comments", environment:"cat-environment", functions:"cat-functions", general:"cat-general", java:"cat-java", names:"cat-names", tests:"cat-tests"};
+
+// Navigates to a principle's detail page.
+function openPrinciple(url) {
+  location.href = url;
+}
+
+// Filters DATA by the search box and category dropdown, then paints the table.
+function render() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const cat = document.getElementById('catFilter').value;
+  let rows = DATA;
+  if (cat) rows = rows.filter(d => d.cat === cat);
+  if (q) rows = rows.filter(d => (d.code + d.p + d.cl).toLowerCase().includes(q));
+  document.getElementById('count').textContent = rows.length + ' principles';
+  document.getElementById('noResults').style.display = rows.length ? 'none' : 'block';
+  document.getElementById('tbody').innerHTML = rows.map((d, i) => `
+    <tr${d.url ? ` class="clickable" onclick="openPrinciple('${d.url}')"` : ''}>
+      <td><span class="idx">${i + 1}</span></td>
+      <td><span class="code">${d.code}</span></td>
+      <td><div class="principle">${d.url ? `<a href="${d.url}" onclick="event.stopPropagation()">${d.p}</a>` : d.p}</div></td>
+      <td><span class="cat ${catClass[d.cat]}">${d.cl}</span></td>
+    </tr>`).join('');
+}
+
+// Re-render on every search keystroke or category change.
+document.getElementById('search').addEventListener('input', render);
+document.getElementById('catFilter').addEventListener('change', render);
+render();
+</script>
+</body>
+</html>

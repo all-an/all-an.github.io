@@ -74,7 +74,7 @@ td:nth-child(3) { overflow-wrap: anywhere; word-break: break-word; }
     <h1 style="margin-bottom:0;">Programming Concepts</h1>
     <span style="font-size:16px; color:var(--color-text-secondary); font-style:italic;">Click a concept to learn more.</span>
   </div>
-  <a href="../../../index.html" style="font-size:18px; color:var(--color-text-secondary); text-decoration:none; white-space:nowrap;">about me →</a>
+  <a href="../learn.html" style="font-size:18px; color:var(--color-text-secondary); text-decoration:none; white-space:nowrap;">← learn</a>
 </div>
 <div class="controls">
   <input type="text" id="search" placeholder="Search concepts, languages, theory..." />
@@ -174,7 +174,7 @@ const DATA = [
   {c:"Observable / reactive stream",url:"049-observable-reactive-stream/",cat:"reactive",cl:"Reactive",langs:[["Observable","RxJava","RxJS","RxSwift"],["Flow","Kotlin"],["Flux / Mono","Project Reactor (Java)"],["Publisher","Java Reactive Streams"],["Signal","SolidJS","Angular 17+"],["ZStream","ZIO Scala"],["fs2.Stream","Cats Effect Scala"]],t:"Reactive Manifesto · FRP"},
   {c:"Subject / hot observable",url:"050-subject-hot-observable/",cat:"reactive",cl:"Reactive",langs:[["Subject / BehaviorSubject","RxJava","RxJS"],["StateFlow / SharedFlow","Kotlin"],["Hub","ZIO Scala"],["Topic","fs2 Scala"]],t:"Observer pattern · push model"},
   {c:"Scheduler / dispatcher",url:"051-scheduler-dispatcher/",cat:"reactive",cl:"Reactive",langs:[["Scheduler","RxJava","RxJS"],["Dispatcher","Kotlin Coroutines"],["DispatchQueue","Swift"],["Executor","Java"],["ZIO runtime layers","Scala"]],t:"Work scheduling · thread affinity"},
-  {c:"Backpressure",cat:"reactive",cl:"Reactive",langs:[["backpressure","Reactive Streams spec"],["onBackpressureDrop","RxJava"],["buffer / conflate","Kotlin Flow"],["ZStream pull","Scala ZIO"]],t:"Flow control · queuing theory"},
+  {c:"Backpressure",url:"052-backpressure/",cat:"reactive",cl:"Reactive",langs:[["backpressure","Reactive Streams spec"],["onBackpressureDrop","RxJava"],["buffer / conflate","Kotlin Flow"],["ZStream pull","Scala ZIO"]],t:"Flow control · queuing theory"},
 
   {c:"Iterator / lazy sequence",cat:"coll",cl:"Collections",langs:[["Iterator","Java","C#","JavaScript"],["iter()","Rust"],["generator","Python","JavaScript"],["Sequence","Kotlin"],["lazy-seq","Clojure"],["IEnumerable","C#"],["view","Scala"],["series","Common Lisp (lib)"]],t:"Internal vs external iteration"},
   {c:"Persistent / immutable collection",cat:"coll",cl:"Collections",langs:[["PersistentVector / Map","Clojure"],["List / Map / Set","Scala (default immutable)"],["immutablejs","JavaScript"],["ImmutableList","Java Guava"],["frozen","Python (frozenset)"]],t:"Structural sharing (Okasaki)"},
