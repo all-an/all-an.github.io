@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reverse a string — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Reverse a string</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Beginner</span>
+    <span class="badge badge-tech">String</span>
+  </div>
+
+  <p class="desc">Given a string, return a new string with its characters in the opposite order — for example <code>"hello"</code> becomes <code>"olleh"</code>. It is the classic warm-up for string indexing and the two-pointer technique.</p>
+
+  <!-- interactive demo: reverses whatever the visitor types, live (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type a string</label>
+    <input id="demoInput" type="text" value="hello" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Reversed</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>Most languages ship a one-liner, but interviews usually want the manual version: scan the string from left to right and <em>prepend</em> each character onto a growing result — so the first character ends up last and the last ends up first — and reject a <code>null</code> input by throwing an exception.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">import java.util.Objects;
+
+// Approach 1 — built-in: StringBuilder.reverse()
+static String reverse(String s) {
+    return new StringBuilder(s).reverse().toString();
+}
+
+// Approach 2 — manual: scan left to right, prepending each character.
+static String reverseAString(String stringToReverse) {
+    String reversedString = "";
+    if (Objects.nonNull(stringToReverse)) {
+        for (int i = 0; i &lt; stringToReverse.length(); i++) {
+            char tempChar = stringToReverse.charAt(i);
+            reversedString = tempChar + reversedString; // prepend reverses order
+        }
+    } else {
+        throw new IllegalArgumentException("String cannot be null");
+    }
+    return reversedString;
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Approach 1 — built-in: spread by code point, then reverse and join.
+// Using [...s] (not s.split('')) keeps emoji and accented characters intact.
+function reverse(s) {
+  return [...s].reverse().join('');
+}
+
+// Approach 2 — manual: scan left to right, prepending each character
+function reverseAString(stringToReverse) {
+  if (stringToReverse == null) {
+    throw new Error('String cannot be null');
+  }
+  let reversedString = '';
+  for (let i = 0; i &lt; stringToReverse.length; i++) {
+    reversedString = stringToReverse[i] + reversedString; // prepend reverses order
+  }
+  return reversedString;
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(n)</strong> with a StringBuilder — each character handled once</li>
+    <li>Space <strong>O(n)</strong> — a new string of the same length</li>
+  </ul>
+  <p>The prepend version above reads cleanly, but because strings are immutable each <code>tempChar + reversedString</code> copies the whole result built so far, making it <strong>O(n²)</strong>. Reach for <code>StringBuilder</code> in Java or an array <code>join</code> in JavaScript when the input can be large.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

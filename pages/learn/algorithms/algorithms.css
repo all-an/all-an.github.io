@@ -1,0 +1,66 @@
+:root {
+  --color-background-primary:   #111113;
+  --color-background-secondary: #1a1a1e;
+  --color-text-primary:         #e8e8ea;
+  --color-text-secondary:       #9898a0;
+  --color-text-tertiary:        #5e5e66;
+  --color-border-secondary:     #2e2e33;
+  --color-border-tertiary:      #232328;
+  --border-radius-md:           7px;
+  --font-mono:                  'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--color-background-primary); color: var(--color-text-primary); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+.wrap { max-width: 1200px; margin: 0 auto; padding: 2.5rem 2rem 3rem; }
+
+/* header row: title + subtitle on the left, back link on the right */
+.header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 1.75rem; }
+.header-titles { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+h1 { font-size: 28px; font-weight: 600; letter-spacing: -0.01em; }
+.subtitle { font-size: 16px; color: var(--color-text-secondary); font-style: italic; }
+.back { font-size: 18px; color: var(--color-text-secondary); text-decoration: none; white-space: nowrap; }
+.back:hover { color: var(--color-text-primary); }
+
+/* entry buttons to the language-specific solving checklists */
+.solve-links { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 1.25rem; }
+.solve-link { font-size: 18px; color: var(--color-text-primary); text-decoration: none; padding: 9px 18px; border: 1px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-secondary); }
+.solve-link:hover { border-color: #3a3a44; }
+
+/* search box + difficulty filter + result count */
+.controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 1.25rem; align-items: center; }
+input[type=text] { flex: 1; min-width: 220px; font-size: 18px; padding: 8px 12px; border-radius: var(--border-radius-md); border: 1px solid var(--color-border-secondary); background: var(--color-background-secondary); color: var(--color-text-primary); outline: none; }
+input[type=text]:focus { border-color: #3a3a44; }
+select { font-size: 18px; padding: 8px 12px; border-radius: var(--border-radius-md); border: 1px solid var(--color-border-secondary); background: var(--color-background-secondary); color: var(--color-text-primary); outline: none; cursor: pointer; }
+.count { font-size: 17px; color: var(--color-text-secondary); white-space: nowrap; }
+
+/* the algorithms table */
+.tbl-wrap { overflow-x: auto; border-radius: var(--border-radius-md); border: 1px solid var(--color-border-tertiary); }
+table { width: 100%; border-collapse: collapse; font-size: 18px; table-layout: fixed; }
+th { text-align: left; font-weight: 500; font-size: 16px; color: var(--color-text-secondary); padding: 10px 14px; border-bottom: 1px solid var(--color-border-tertiary); background: var(--color-background-secondary); letter-spacing: 0.03em; text-transform: uppercase; }
+td { padding: 11px 14px; border-bottom: 1px solid var(--color-border-tertiary); vertical-align: top; color: var(--color-text-primary); }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #16161a; }
+tr.clickable { cursor: pointer; }
+.idx { font-family: var(--font-mono); font-size: 16px; color: var(--color-text-tertiary); }
+.algo { font-weight: 500; font-size: 18px; }
+.algo a { color: inherit; text-decoration: none; }
+.algo a:hover { text-decoration: underline; }
+.tech { font-size: 16px; color: var(--color-text-tertiary); }
+
+/* difficulty badge, one colour per level from beginner (green) to hard (red) */
+.diff { display: inline-block; font-size: 14px; padding: 2px 8px; border-radius: 99px; white-space: nowrap; }
+.diff-beginner   { background:#173404; color:#C0DD97; }
+.diff-easy       { background:#04342C; color:#9FE1CB; }
+.diff-easymedium { background:#042C53; color:#B5D4F4; }
+.diff-medium     { background:#412402; color:#FAC775; }
+.diff-mediumhard { background:#4A1B0C; color:#F0997B; }
+.diff-hard       { background:#501313; color:#F7C1C1; }
+
+.no-results { text-align: center; padding: 3rem; color: var(--color-text-secondary); font-size: 20px; }
+
+/* column widths */
+th:nth-child(1) { width: 5%; }
+th:nth-child(2) { width: 50%; }
+th:nth-child(3) { width: 16%; }
+th:nth-child(4) { width: 29%; }
+td:nth-child(2) { overflow-wrap: anywhere; word-break: break-word; }

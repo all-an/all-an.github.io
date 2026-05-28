@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Eyesz</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- top-right navigation: back to the main page, or on to the games page -->
+  <nav class="nav">
+    <a href="../../../index.html">back</a>
+    <a href="../unfinished-games.html">unfinished games</a>
+  </nav>
+
+  <!-- HUD showing the number of the grid square under the cursor -->
+  <div class="hud" id="hud">Square —</div>
+
+  <!-- the board holds the numbered grid and the player (the eyes) that moves on it -->
+  <div class="board">
+    <!-- faint numbered grid of eye-sized squares, filled in by script.js -->
+    <div class="grid" aria-hidden="true"></div>
+    <!-- fog of war: a soft dark veil that follows the player, leaving only
+         nearby squares (and the target eye once approached) visible -->
+    <div class="fog" aria-hidden="true"></div>
+    <!-- the player: googly eyes that move to the clicked square; pupils follow the cursor -->
+    <div class="eyes" id="player">
+      <div class="eye"><div class="pupil"></div></div>
+      <div class="eye"><div class="pupil"></div></div>
+    </div>
+  </div>
+
+  <!-- message shown when the player clicks the dark-red eye; opened by script.js.
+       Its message and buttons are filled in by script.js and change depending on
+       how many times the player has clicked the dark-red eye. -->
+  <dialog class="dialog" id="darkRedEyeDialog">
+    <h2 class="dialog-title">Dark Red Eye</h2>
+    <p class="dialog-message" id="dialogMessage"></p>
+    <div class="dialog-actions" id="dialogActions"></div>
+  </dialog>
+
+  <script src="script.js"></script>
+</body>
+</html>

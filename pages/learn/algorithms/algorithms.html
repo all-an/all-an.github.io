@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Algorithms — 100 interview problems</title>
+  <link rel="stylesheet" href="algorithms.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <!-- header: title + subtitle, with a link back to the learn page -->
+  <div class="header">
+    <div class="header-titles">
+      <h1>Algorithms</h1>
+      <span class="subtitle">100 most-asked interview algorithms. Click one to learn more.</span>
+    </div>
+    <a class="back" href="../learn.html">← learn</a>
+  </div>
+
+  <!-- entry points to the language-specific solving checklists -->
+  <div class="solve-links">
+    <a class="solve-link" href="solve-js-algorithms/">Solve JavaScript Algorithms</a>
+    <a class="solve-link" href="solve-java-algorithms/">Solve Java Algorithms</a>
+  </div>
+
+  <!-- search box + difficulty filter + result count -->
+  <div class="controls">
+    <input type="text" id="search" placeholder="Search algorithms, techniques, difficulty..." />
+    <select id="difficultyFilter">
+      <option value="">All difficulties</option>
+      <option value="beginner">Beginner</option>
+      <option value="easy">Easy</option>
+      <option value="easymedium">Easy–Medium</option>
+      <option value="medium">Medium</option>
+      <option value="mediumhard">Medium–Hard</option>
+      <option value="hard">Hard</option>
+    </select>
+    <span class="count" id="count"></span>
+  </div>
+
+  <!-- the list of algorithms, filled in by algorithms.js -->
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Algorithm</th>
+          <th>Difficulty</th>
+          <th>Technique / topic</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+  <div class="no-results" id="noResults" style="display:none;">No algorithms match.</div>
+
+</div>
+
+<script src="algorithms-data.js"></script>
+<script src="algorithms.js"></script>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Solve Java Algorithms</title>
+  <link rel="stylesheet" href="../algorithms.css" />
+  <link rel="stylesheet" href="../solve.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <!-- header: title + subtitle, with a link back to the algorithms list -->
+  <div class="header">
+    <div class="header-titles">
+      <h1>Solve Java Algorithms</h1>
+      <span class="subtitle">Tick the ones to practise, then Start. Your progress is saved on this device.</span>
+    </div>
+    <a class="back" href="../algorithms.html">← algorithms</a>
+  </div>
+
+  <!-- the checklist view: controls + the table of algorithms -->
+  <div id="listView">
+    <div class="solve-bar">
+      <button class="start-btn" id="startBtn">Start</button>
+      <label class="opt"><input type="checkbox" id="randomChk" /> Random</label>
+      <label class="opt">Time <input type="text" id="timeInput" value="05:00" aria-label="time per problem (mm:ss)" /></label>
+      <span class="progress" id="progress"></span>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th><input type="checkbox" id="checkAll" class="solve-check" aria-label="Select all algorithms" /></th>
+            <th>#</th>
+            <th>Algorithm</th>
+            <th>Difficulty</th>
+            <th>Technique / topic</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- the coding session: shown while solving the checked algorithms.
+       Real Java can't run in the browser, so the typed Java is transpiled to
+       JavaScript (java-to-js.js) and then run and graded. -->
+  <div class="session" id="session" hidden>
+    <div class="session-head">
+      <span class="session-title" id="sessionTitle"></span>
+      <span class="timer" id="sessionTimer">00:00</span>
+    </div>
+    <textarea class="editor" id="editor" spellcheck="false" autocomplete="off"></textarea>
+    <div class="session-actions">
+      <button class="btn" id="runBtn">Run</button>
+      <a class="btn" id="solutionBtn" href="#" target="_blank" rel="noopener">Solution</a>
+      <button class="btn" id="nextBtn">Next ›</button>
+      <button class="btn btn-ghost" id="endBtn">End</button>
+    </div>
+    <label class="output-label">Output</label>
+    <pre class="output" id="output"></pre>
+  </div>
+
+</div>
+
+<script src="../algorithms-data.js"></script>
+<script src="../challenges.js"></script>
+<script src="../java-to-js.js"></script>
+<script src="../solve.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

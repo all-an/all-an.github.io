@@ -1,0 +1,62 @@
+:root {
+  --color-eye:            #e8e8ea;  /* white of the eye, matching the main page */
+  --color-pupil:          #111113;  /* dark pupil, matching the main page */
+  --color-pupil-target:   #7a0e0e;  /* dark-red pupil that marks the target eye */
+  --color-border:         #232328;
+  --color-text-secondary: #9898a0;  /* button / HUD text, matching the main page links */
+  --color-text-primary:   #e8e8ea;  /* button text on hover */
+  --border-radius-md:     7px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* full black page with the board centred, whatever the viewport size */
+body { min-height: 100vh; background: #000; display: flex; align-items: center; justify-content: center; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+
+/* top-right navigation buttons */
+.nav { position: fixed; top: 1.25rem; right: 1.5rem; display: flex; gap: 10px; z-index: 2; }
+.nav a { font-size: 16px; color: var(--color-text-secondary); text-decoration: none; padding: 6px 12px; border: 1px solid var(--color-border); border-radius: var(--border-radius-md); }
+.nav a:hover { color: var(--color-text-primary); border-color: #3a3a44; }
+
+/* HUD reporting the square under the cursor, pinned to the upper-left corner */
+.hud { position: fixed; top: 1.25rem; left: 1.5rem; z-index: 2; font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 14px; color: var(--color-text-secondary); }
+
+/* the board: a fixed-size play area, framed and centred on the page.
+   overflow:hidden clips the oversized fog veil neatly to the play area. */
+.board { position: relative; border: 1px solid rgba(232, 232, 234, 0.15); overflow: hidden; }
+
+/* fog of war: a large dark veil with a soft transparent hole at its centre.
+   It is centred on the player (left/top set by script.js) and glides with them
+   using the eyes' timing, so distant squares — and the target eye until the
+   player nears — stay swallowed by fog. The radial gradient itself is set in JS.
+   width/height are oversized so the solid-black edges always blanket the whole
+   board wherever the player stands. */
+.fog { position: absolute; width: 2400px; height: 2400px; transform: translate(-50%, -50%); pointer-events: none; z-index: 2; transition: left 0.4s ease, top 0.4s ease; }
+
+/* faint numbered grid of eye-sized squares filling the board */
+.grid { display: grid; }
+.grid-cell { display: flex; align-items: center; justify-content: center; border: 1px solid rgba(232, 232, 234, 0.04); font-size: 9px; color: rgba(232, 232, 234, 0.07); font-family: 'JetBrains Mono', 'Courier New', monospace; }
+/* the square currently under the cursor: its number lit up with a soft glow */
+.grid-cell.active { color: var(--color-eye); text-shadow: 0 0 8px rgba(232, 232, 234, 0.85); border-color: rgba(232, 232, 234, 0.2); }
+
+/* the player: two eyes that glide to the clicked square, centred on it via translate.
+   left/top are set by script.js; the transition makes the move glide smoothly. */
+.eyes { position: absolute; display: flex; gap: 10px; z-index: 1; transform: translate(-50%, -50%); transition: left 0.4s ease, top 0.4s ease; }
+.eye { position: relative; width: 30px; height: 30px; background: var(--color-eye); border: 1px solid var(--color-border); border-radius: 50%; }
+/* pupil is centred on the eye via the negative margins; JS translates it toward the cursor */
+.pupil { position: absolute; top: 50%; left: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px; background: var(--color-pupil); border-radius: 50%; }
+/* the target eye's pupil: same shape as the player's, but dark red */
+.pupil-target { background: var(--color-pupil-target); }
+/* the dark-red eye's cell: a hand cursor invites the click that opens its dialog */
+.grid-cell.dark-red-eye { cursor: pointer; }
+
+/* the dark-red eye's dialog: a small dark modal matching the page theme,
+   pinned to the exact centre of the viewport */
+.dialog { position: fixed; inset: auto; top: 50%; left: 50%; transform: translate(-50%, -50%); margin: 0; background: #0e0e10; color: var(--color-text-primary); border: 1px solid var(--color-border); border-radius: var(--border-radius-md); padding: 1.5rem 1.75rem; max-width: 320px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+.dialog::backdrop { background: rgba(0, 0, 0, 0.6); }
+/* readable red title echoing the dark-red eye */
+.dialog-title { color: #e05a5a; font-size: 18px; margin-bottom: 0.75rem; }
+.dialog-message { font-size: 14px; line-height: 1.5; color: var(--color-text-secondary); margin-bottom: 1.25rem; }
+/* the dialog's buttons, laid out in a row that wraps if the questions are wide */
+.dialog-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.dialog-close, .dialog-option { background: transparent; color: var(--color-text-secondary); border: 1px solid var(--color-border); border-radius: var(--border-radius-md); padding: 6px 14px; font-size: 14px; cursor: pointer; }
+.dialog-close:hover, .dialog-option:hover { color: var(--color-text-primary); border-color: #3a3a44; }
