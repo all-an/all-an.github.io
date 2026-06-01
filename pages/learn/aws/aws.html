@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AWS Services</title>
+  <link rel="stylesheet" href="aws.css" />
+</head>
+<body>
+
+<div class="wrap">
+<div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:1.75rem;">
+  <div style="display:flex; flex-direction:column; gap:6px;">
+    <div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
+      <h1 style="margin-bottom:0;">AWS Services</h1>
+      <span style="font-size:16px; color:var(--color-text-secondary); font-style:italic;">Major Amazon Web Services, grouped by category.</span>
+    </div>
+    <span style="font-size:16px; color:var(--color-text-secondary); font-style:italic;">Click a service to learn more.</span>
+  </div>
+  <a href="../learn.html" style="font-size:18px; color:var(--color-text-secondary); text-decoration:none; white-space:nowrap;">← learn</a>
+</div>
+<div class="controls">
+  <input type="text" id="search" placeholder="Search services, codes, categories..." />
+  <select id="catFilter">
+    <option value="">All categories</option>
+    <option value="compute">Compute</option>
+    <option value="storage">Storage</option>
+    <option value="database">Database</option>
+    <option value="network">Networking</option>
+    <option value="security">Security</option>
+    <option value="mgmt">Management</option>
+    <option value="devtools">Dev Tools</option>
+    <option value="analytics">Analytics</option>
+    <option value="integration">Integration</option>
+    <option value="containers">Containers</option>
+    <option value="migration">Migration</option>
+    <option value="ml">ML / AI</option>
+    <option value="iot">IoT</option>
+    <option value="media">Media</option>
+    <option value="euc">End User</option>
+    <option value="frontend">Frontend</option>
+    <option value="game">Game Tech</option>
+    <option value="robotics">Robotics</option>
+    <option value="satellite">Satellite</option>
+    <option value="quantum">Quantum</option>
+    <option value="blockchain">Blockchain</option>
+  </select>
+  <span class="count" id="count"></span>
+</div>
+<div class="tbl-wrap">
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Code</th>
+      <th>Service</th>
+      <th>Category</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody id="tbody"></tbody>
+</table>
+</div>
+<div class="no-results" id="noResults" style="display:none;">No services match.</div>
+</div>
+
+<script src="aws.js"></script>
+</body>
+</html>

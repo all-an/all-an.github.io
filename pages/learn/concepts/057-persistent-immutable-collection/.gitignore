@@ -1,0 +1,3 @@
+# Downloaded Vavr jar and compiled output — not part of the website.
+lib/
+*.class

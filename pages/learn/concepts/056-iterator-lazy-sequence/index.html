@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Iterator / lazy sequence</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Iterator / lazy sequence</h1>
+  <p class="desc">An iterator is a pull-based cursor: the consumer asks for the next value and the source computes it on demand, instead of materialising every element up front.<br>
+  A lazy sequence extends that idea to pipelines — operators like <code>map</code> and <code>filter</code> are just recipes layered on top of the source, and nothing actually runs until a terminal operation pulls values through.<br>
+  Because each value is generated only when requested, lazy sequences can model infinite streams in bounded memory — here, an unbounded source of natural numbers is consumed exactly five times by a downstream <code>limit(5)</code>.</p>
+  <pre><code class="language-java">// Java
+import java.util.stream.Stream;
+
+// An infinite lazy sequence of the natural numbers 1, 2, 3, ...
+// Nothing is computed yet — Stream.iterate just records the seed and successor function.
+Stream&lt;Long&gt; naturals = Stream.iterate(1L, n -&gt; n + 1);
+
+// Pipeline of lazy stages: each value is pulled through map only when forEach asks for it.
+naturals
+    .map(n -&gt; {
+      // Visible proof of laziness: this print fires exactly 5 times, not infinitely.
+      System.out.println("computing square of " + n);
+      return n * n;
+    })
+    // limit is the terminator that bounds the otherwise-infinite source to 5 elements.
+    .limit(5)
+    // forEach is the terminal operation that drives the whole pipeline one value at a time.
+    .forEach(square -&gt; System.out.println("got " + square));</code></pre>
+  <p class="desc">Run it yourself with the files in this folder — see <code>README.md</code>.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

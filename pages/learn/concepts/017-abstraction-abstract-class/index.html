@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Abstraction / abstract class</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Abstraction / abstract class</h1>
+  <p class="desc">Abstraction is the OOP pillar that separates <em>what</em> a thing does from <em>how</em> it does it: the abstract type publishes a contract, the concrete subclasses supply the implementations.<br>
+  Java offers two flavours of this idea: an <strong>abstract class</strong> can declare <code>abstract</code> methods alongside concrete methods and instance state, while an <strong>interface</strong> is a pure capability contract that any class can implement on top of whatever it already extends.<br>
+  Below, <code>Shape</code> demands an <code>area()</code> but ships a working <code>describe()</code> for free, and <code>Drawable</code> shows the parallel idea using an interface with a default method.</p>
+
+  <h2 style="font-size:24px; color:var(--color-text-primary); margin-bottom:0.75rem;">1. Abstract class</h2>
+  <pre><code class="language-java">// Java
+// An abstract class defines WHAT a shape must be able to do, not HOW.
+// `abstract` on the class means: this cannot be instantiated directly.
+abstract class Shape {
+  // No body — every concrete subclass MUST provide its own area().
+  abstract double area();
+
+  // A concrete method that builds on the abstract one.
+  // Code written here works for every future Shape we will ever invent.
+  String describe() {
+    return getClass().getSimpleName() + " area=" + String.format("%.2f", area());
+  }
+}
+
+class Circle extends Shape {
+  private final double radius;
+  Circle(double radius) { this.radius = radius; }
+  @Override double area() { return Math.PI * radius * radius; }
+}
+
+class Square extends Shape {
+  private final double side;
+  Square(double side) { this.side = side; }
+  @Override double area() { return side * side; }
+}
+
+// new Shape() would not compile — Shape is abstract, only concrete subclasses are buildable.
+Shape[] shapes = { new Circle(2.0), new Square(3.0) };
+double total = 0;
+for (Shape s : shapes) {
+  System.out.println(s.describe());
+  total += s.area();
+}
+System.out.printf("total area = %.2f%n", total);</code></pre>
+
+  <h2 style="font-size:24px; color:var(--color-text-primary); margin-bottom:0.75rem; margin-top:2rem;">2. Interface</h2>
+  <pre><code class="language-java">// Java
+// An interface is a pure capability contract. A class can implement MANY interfaces,
+// but extend only ONE class — that is the practical reason interfaces exist.
+interface Drawable {
+  // Implicitly public abstract — no body.
+  void draw();
+
+  // Java 8+ default method: shared behavior layered onto the contract,
+  // expressed in terms of the abstract method above.
+  default String label() {
+    return "[" + getClass().getSimpleName() + "]";
+  }
+}
+
+class Triangle implements Drawable {
+  @Override public void draw() { System.out.println(label() + " /\\"); }
+}
+
+class Star implements Drawable {
+  @Override public void draw() { System.out.println(label() + " *"); }
+}
+
+// new Drawable() would not compile either — interfaces cannot be instantiated.
+Drawable[] doodles = { new Triangle(), new Star() };
+for (Drawable d : doodles) {
+  d.draw();
+}</code></pre>
+
+  <h2 style="font-size:24px; color:var(--color-text-primary); margin-bottom:0.75rem; margin-top:2rem;">Abstract class vs interface</h2>
+  <div style="overflow-x:auto; border-radius:7px; border:1px solid var(--color-border-tertiary); margin-bottom:1.75rem;">
+    <table style="width:100%; border-collapse:collapse; font-size:18px;">
+      <thead>
+        <tr>
+          <th style="text-align:left; padding:10px 14px; border-bottom:1px solid var(--color-border-tertiary); background:var(--color-background-secondary); color:var(--color-text-secondary); font-size:15px; text-transform:uppercase; letter-spacing:0.03em;">Aspect</th>
+          <th style="text-align:left; padding:10px 14px; border-bottom:1px solid var(--color-border-tertiary); background:var(--color-background-secondary); color:var(--color-text-secondary); font-size:15px; text-transform:uppercase; letter-spacing:0.03em;">Abstract class</th>
+          <th style="text-align:left; padding:10px 14px; border-bottom:1px solid var(--color-border-tertiary); background:var(--color-background-secondary); color:var(--color-text-secondary); font-size:15px; text-transform:uppercase; letter-spacing:0.03em;">Interface</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td style="padding:11px 14px; border-bottom:1px solid var(--color-border-tertiary);">Inheritance</td><td style="padding:11px 14px; border-bottom:1px solid var(--color-border-tertiary);">Single (one <code>extends</code>)</td><td style="padding:11px 14px; border-bottom:1px solid var(--color-border-tertiary);">Multiple (many <code>implements</code>)</td></tr>
+        <tr><td style="padding:11px 14px; border-bottom:1px solid var(--color-border-tertiary);">Instance state (fields)</td><td style="padding:11px 14px; border-bottom:1px solid var(--color-border-tertiary);">Yes — any kind of field</td><td style="padding:11px 14px; border-bottom:1px solid var(--color-border-tertiary);">No — only <code>public static final</code> constants</td></tr>
+        <tr><td style="padding:11px 14px; border-bottom:1px solid var(--color-border-tertiary);">Constructor</td><td style="padding:11px 14px; border-bottom:1px solid var(--color-border-tertiary);">Yes (called from subclass)</td><td style="padding:11px 14px; border-bottom:1px solid var(--color-border-tertiary);">No</td></tr>
+        <tr><td style="padding:11px 14px; border-bottom:1px solid var(--color-border-tertiary);">Method bodies</td><td style="padding:11px 14px; border-bottom:1px solid var(--color-border-tertiary);">Concrete and <code>abstract</code> freely mixed</td><td style="padding:11px 14px; border-bottom:1px solid var(--color-border-tertiary);">Abstract by default; <code>default</code> &amp; <code>static</code> bodies allowed (Java 8+); <code>private</code> helpers (Java 9+)</td></tr>
+        <tr><td style="padding:11px 14px; border-bottom:1px solid var(--color-border-tertiary);">Default access</td><td style="padding:11px 14px; border-bottom:1px solid var(--color-border-tertiary);">Any modifier (<code>public</code> / <code>protected</code> / package / <code>private</code>)</td><td style="padding:11px 14px; border-bottom:1px solid var(--color-border-tertiary);">Methods implicitly <code>public</code></td></tr>
+        <tr><td style="padding:11px 14px; border-bottom:1px solid var(--color-border-tertiary);">Models</td><td style="padding:11px 14px; border-bottom:1px solid var(--color-border-tertiary);">"Is-a" with shared implementation</td><td style="padding:11px 14px; border-bottom:1px solid var(--color-border-tertiary);">"Can-do" capability shared across unrelated types</td></tr>
+        <tr><td style="padding:11px 14px;">Use when…</td><td style="padding:11px 14px;">Related types share both state and behavior</td><td style="padding:11px 14px;">A capability cuts across an otherwise-unrelated type hierarchy</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="desc">In short: reach for an <strong>abstract class</strong> when you have shared <em>state and code</em> to give to a family of related types. Reach for an <strong>interface</strong> when you only need to publish a <em>contract</em> that many unrelated classes can fulfil — especially if any of them already extend a different class. Modern Java's <code>default</code> methods narrow the gap, but the inheritance rules (single class, many interfaces) and the ability to hold instance state remain the decisive differences.</p>
+
+  <p class="desc">Run it yourself with the files in this folder — see <code>README.md</code>.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

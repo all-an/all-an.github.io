@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Encapsulation / access modifier</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Encapsulation / access modifier</h1>
+  <p class="desc">Encapsulation is the OOP pillar that bundles state and the operations that protect it inside a single unit, then hides the state behind access modifiers so no outsider can corrupt it.<br>
+  In Java that hiding is enforced by the compiler via <code>private</code> / <code>protected</code> / <code>public</code> — a <code>private</code> field is literally unreachable from outside the class, so every change must go through a method that can validate the invariant.<br>
+  Below, <code>BankAccount</code> keeps its <code>balance</code> private and exposes <code>deposit</code> / <code>withdraw</code> that refuse negative amounts and overdrafts — the rules of the type cannot be bypassed.</p>
+  <pre><code class="language-java">// Java
+class BankAccount {
+  // `private` means: only this class can read or write `balance`.
+  // No external code can corrupt the invariant "balance >= 0".
+  private double balance;
+
+  BankAccount(double initial) {
+    if (initial &lt; 0) throw new IllegalArgumentException("initial balance must be non-negative");
+    this.balance = initial;
+  }
+
+  // Public read accessor — callers can observe but cannot mutate directly.
+  double getBalance() { return balance; }
+
+  // Public mutator that enforces the invariant.
+  void deposit(double amount) {
+    if (amount &lt;= 0) throw new IllegalArgumentException("deposit must be positive");
+    balance += amount;
+  }
+
+  void withdraw(double amount) {
+    if (amount &lt;= 0) throw new IllegalArgumentException("withdrawal must be positive");
+    if (amount &gt; balance) throw new IllegalStateException("insufficient funds");
+    balance -= amount;
+  }
+}
+
+BankAccount account = new BankAccount(100);
+account.deposit(50);
+account.withdraw(30);
+System.out.println("balance: " + account.getBalance());
+
+// account.balance = -1_000_000;
+//   ^ would not compile — `balance` is private, so the invariant cannot be bypassed.
+
+// Validation kicks in on bad input:
+try {
+  account.withdraw(9999);
+} catch (IllegalStateException e) {
+  System.out.println("blocked: " + e.getMessage());
+}</code></pre>
+  <p class="desc">Run it yourself with the files in this folder — see <code>README.md</code>.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

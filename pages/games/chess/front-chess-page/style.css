@@ -1,0 +1,63 @@
+/* ============================================================
+   Chess front page styles
+   The grid of ten square match buttons.
+   Pairs with shared.css for the palette and page chrome.
+   ============================================================ */
+
+/* Match-selection grid: ten square buttons, five per row */
+.match-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 80px);
+    gap: 14px;
+    justify-content: center;
+}
+
+/* A single square match button */
+.match-button {
+    width: 80px;
+    height: 80px;
+    font-size: 1.6em;
+    font-weight: bold;
+    color: var(--text-color);
+    background: var(--accent-color);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+    transition: background 0.2s, transform 0.2s;
+}
+
+.match-button:hover {
+    background: #16a085;
+    transform: translateY(-2px);
+}
+
+/* Matches that are not yet available are dimmed and unclickable */
+.match-button:disabled {
+    background: var(--secondary-color);
+    cursor: not-allowed;
+    opacity: 0.5;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Won matches: disabled but proudly marked with a shiny gold border and a
+   checkmark. Overrides the dim disabled look so the win stays visible. */
+.match-button.completed,
+.match-button.completed:disabled {
+    position: relative;
+    opacity: 1;
+    background: var(--secondary-color);
+    border: 2px solid #ffd700;                 /* shiny gold border */
+    box-shadow: 0 0 12px rgba(255, 215, 0, 0.8); /* warm yellow glow */
+}
+
+/* Gold checkmark badge in the corner of a won match */
+.match-button.completed::after {
+    content: "✓";
+    position: absolute;
+    top: 4px;
+    right: 6px;
+    font-size: 0.6em;
+    color: #ffd700;
+}

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Polymorphism / dynamic dispatch</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Polymorphism / dynamic dispatch</h1>
+  <p class="desc">Polymorphism — Greek for "many forms" — is the OOP pillar that lets one call site talk to many concrete types through a shared parent type or interface.<br>
+  In Java that pillar is implemented by <em>dynamic dispatch</em>: when you call <code>a.speak()</code> on a reference of static type <code>Animal</code>, the JVM looks up the actual subclass at runtime and invokes that subclass's override, not the compile-time parent's method.<br>
+  Below, the same loop walks an <code>Animal[]</code> containing mixed subtypes, and each element answers in its own voice — the loop does not know or care which subclass it is holding.</p>
+  <pre><code class="language-java">// Java
+class Animal {
+  String speak() { return "..."; }
+}
+
+// Each subclass overrides speak() to return its own sound.
+// @Override is documentation + a compile-time guard that the parent really has this method.
+class Dog extends Animal {
+  @Override String speak() { return "woof"; }
+}
+class Cat extends Animal {
+  @Override String speak() { return "meow"; }
+}
+class Cow extends Animal {
+  @Override String speak() { return "moo"; }
+}
+
+// The compile-time type of every element is Animal — the JVM has no idea at compile
+// time which subclass will actually be in each slot.
+Animal[] herd = { new Animal(), new Dog(), new Cat(), new Cow() };
+
+// Yet calling a.speak() picks the correct override at RUNTIME for each object.
+// This runtime selection is "dynamic dispatch" — the heart of OOP polymorphism.
+for (Animal a : herd) {
+  System.out.println(a.getClass().getSimpleName() + " says " + a.speak());
+}</code></pre>
+  <p class="desc">Run it yourself with the files in this folder — see <code>README.md</code>.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

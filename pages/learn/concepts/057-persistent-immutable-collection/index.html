@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Persistent / immutable collection</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Persistent / immutable collection</h1>
+  <p class="desc">An immutable collection forbids in-place mutation: every operation that would change it returns a new value, leaving the original untouched.<br>
+  A <em>persistent</em> collection goes further — the new value shares as much structure as possible with the old one, so a "modification" copies only the changed sliver instead of the whole collection (the technique Chris Okasaki calls <em>structural sharing</em>).<br>
+  Here Vavr's persistent <code>List</code> proves it: <code>extended.tail()</code> is literally the same object as <code>original</code>, not a copy — the prepended cons cell just points at the existing list.</p>
+  <pre><code class="language-java">// Java (Vavr)
+import io.vavr.collection.List;
+
+// The original list — fully immutable, no setters, no in-place mutation.
+List&lt;Integer&gt; original = List.of(1, 2, 3);
+
+// "Mutation" returns a NEW list; original is untouched.
+// Internally, extended is just a cons cell pointing at original — no copy is made.
+List&lt;Integer&gt; extended = original.prepend(0);
+
+// Another derived list, again sharing structure with the originals.
+List&lt;Integer&gt; dropped = original.tail();
+
+// All three references coexist independently; the original is unchanged.
+System.out.println("original: " + original);
+System.out.println("extended: " + extended);
+System.out.println("dropped:  " + dropped);
+
+// Proof of structural sharing: extended.tail() IS the original list,
+// not a copy — same object identity. That is what makes the collection
+// "persistent" rather than merely "immutable".
+System.out.println("extended.tail() == original ? " + (extended.tail() == original));</code></pre>
+  <p class="desc">Run it yourself with the files in this folder — see <code>README.md</code>.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
