@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trie / persistent map</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Trie / persistent map</h1>
+  <p class="desc">A trie (prefix tree) stores each key as a path of characters from the root, so keys that share a prefix automatically share the nodes along it.<br>
+  Built immutably, it becomes a <em>persistent map</em>: every update returns a new version that shares all untouched subtrees with the old one — structural sharing — so a "modification" copies only the sliver of structure along one key's path, never the whole map. This is the idea behind Bagwell's <code>hash array mapped trie</code> (HAMT) used by Clojure, Scala, and Haskell.<br>
+  Here three keys go into an immutable trie; adding <code>"dog"</code> to <code>v1</code> yields <code>v2</code> while <code>v1</code> stays intact, and the unchanged <code>"c"</code> subtree is literally the same object in both versions.</p>
+  <pre><code class="language-java">// Java
+// One node of the trie, immutable. `value` holds the value of the key that
+// ends at this node (null if no key ends here); `children` maps the next
+// character of a key to the subtree below it.
+record Node(Integer value, Map&lt;Character, Node&gt; children) {}
+
+// Persistent insert: returns a NEW trie holding key-&gt;value while leaving
+// `root` untouched. It rebuilds only the nodes along this one key's path and
+// shares every sibling subtree by reference — that is the structural sharing.
+static Node put(Node root, String key, int value, int depth) {
+    // Carry over the value already stored here, plus a private copy of its
+    // child map so the original node is never mutated.
+    Integer existingValue = (root == null) ? null : root.value();
+    Map&lt;Character, Node&gt; children =
+        new HashMap&lt;&gt;((root == null) ? Map.of() : root.children());
+
+    // End of the key: store the value here, keeping the existing children.
+    if (depth == key.length()) {
+        return new Node(value, children);
+    }
+
+    // Otherwise recurse into (and rebuild only) the child for this character.
+    char c = key.charAt(depth);
+    Node oldChild = (root == null) ? null : root.children().get(c);
+    children.put(c, put(oldChild, key, value, depth + 1));
+    return new Node(existingValue, children);
+}
+
+// Version 1: a trie with two keys sharing the prefix "ca".
+Node v1 = put(null, "car", 1, 0);
+v1 = put(v1, "cat", 2, 0);
+
+// Version 2: derived from v1 by adding "dog". v1 is NOT modified.
+Node v2 = put(v1, "dog", 3, 0);
+
+System.out.println("v1 dog = " + get(v1, "dog")); // null — v1 never saw "dog"
+System.out.println("v2 dog = " + get(v2, "dog")); // 3
+
+// Structural sharing proof: adding "dog" only rebuilt the root and the new
+// 'd' path, so the entire 'c' subtree is the SAME object in both versions.
+Node v1c = v1.children().get('c');
+Node v2c = v2.children().get('c');
+System.out.println("shared 'c' subtree: " + (v1c == v2c)); // true</code></pre>
+  <p class="desc">Run it yourself with the files in this folder — see <code>README.md</code>.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

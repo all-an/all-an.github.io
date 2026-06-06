@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>C4: Poorly Written Comment</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>C4: Poorly Written Comment</h1>
+  <p class="desc">A comment worth writing is worth writing well — if you are going to spend the reader's time, make it count.<br>
+  A <em>poorly written</em> comment rambles, states the obvious, misuses grammar, or buries the one useful fact under <code>noise</code>, so the reader gives up and the comment earns its keep no longer.<br>
+  The fix is to write few comments, but make each one brief, correct, and clear — say only what the code cannot.</p>
+
+  <div class="example-label avoid">Avoid — rambling, obvious, and imprecise</div>
+  <pre><code class="language-java">// Java
+// This method here is used for the purpose of getting the value of the
+// rate. it returns the rate. note: the rate is a number. dont forget!!!
+// (i think this was added a while ago, not totally sure why tbh)
+public double getRate() {
+    return rate;
+}</code></pre>
+
+  <div class="example-label prefer">Prefer — one precise note that the code cannot state, or none at all</div>
+  <pre><code class="language-java">// Java
+// Annual rate as a fraction (0.05 == 5%); the billing engine expects fractions, not percents.
+public double getRate() {
+    return rate;
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

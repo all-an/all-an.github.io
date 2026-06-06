@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ring buffer / circular queue</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Ring buffer / circular queue</h1>
+  <p class="desc">A ring buffer is a fixed-capacity FIFO queue stored in a single array whose two ends are treated as joined into a circle.<br>
+  Two indices walk around that circle: <em>head</em> marks the oldest element and <em>tail</em> the next free slot. Each advances with <code>modulo</code> the array length, so when it passes the last slot it wraps back to index 0 — elements are never shifted and the array is never resized, giving O(1) enqueue and dequeue with zero allocation after construction.<br>
+  Here a 3-slot ring fills up (rejecting a 4th value), then two removals let later enqueues reuse the freed front slots as <code>tail</code> wraps around — yet FIFO order survives the wrap intact.</p>
+  <pre><code class="language-java">// Java
+// A fixed-capacity FIFO queue backed by a single array whose ends are joined
+// into a ring. `head` is the index of the oldest element; `tail` is the next
+// free slot. Both advance with modulo, so they wrap past the end of the array
+// instead of shifting elements or reallocating.
+static final class RingBuffer {
+    private final int[] slots; // backing storage; its length is the capacity
+    private int head = 0;      // index of the next element to remove
+    private int tail = 0;      // index of the next free slot to fill
+    private int size = 0;      // current number of elements (0..capacity)
+
+    RingBuffer(int capacity) {
+        slots = new int[capacity];
+    }
+
+    // Adds value to the back. Returns false (without overwriting) when full.
+    boolean enqueue(int value) {
+        if (size == slots.length) return false;
+        slots[tail] = value;
+        tail = (tail + 1) % slots.length; // wrap to 0 after the last slot
+        size++;
+        return true;
+    }
+
+    // Removes and returns the oldest value. Throws when empty.
+    int dequeue() {
+        if (size == 0) throw new IllegalStateException("empty");
+        int value = slots[head];
+        head = (head + 1) % slots.length; // wrap to 0 after the last slot
+        size--;
+        return value;
+    }
+}
+
+// A ring with room for three elements.
+RingBuffer ring = new RingBuffer(3);
+ring.enqueue(1);
+ring.enqueue(2);
+ring.enqueue(3);
+System.out.println("full? rejects 4th: " + ring.enqueue(4)); // false
+
+// Free two slots from the front...
+ring.dequeue(); // 1
+ring.dequeue(); // 2
+
+// ...then add two more. tail has now wrapped to the start of the array,
+// reusing slots 0 and 1 — no shifting, no reallocation.
+ring.enqueue(4);
+ring.enqueue(5);
+
+// FIFO order is preserved across the wrap: 3, then 4, then 5.
+System.out.println("dequeue: " + ring.dequeue()); // 3
+System.out.println("dequeue: " + ring.dequeue()); // 4
+System.out.println("dequeue: " + ring.dequeue()); // 5</code></pre>
+  <p class="desc">Run it yourself with the files in this folder — see <code>README.md</code>.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
