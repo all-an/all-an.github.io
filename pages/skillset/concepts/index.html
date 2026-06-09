@@ -77,7 +77,7 @@ td:nth-child(3) { overflow-wrap: anywhere; word-break: break-word; }
     <h1 style="margin-bottom:0;">Programming Concepts</h1>
     <span style="font-size:16px; color:var(--color-text-secondary); font-style:italic;">Click a concept to learn more.</span>
   </div>
-  <a href="../learn.html" style="font-size:18px; color:var(--color-text-secondary); text-decoration:none; white-space:nowrap;">← learn</a>
+  <a href="../skillset.html" style="font-size:18px; color:var(--color-text-secondary); text-decoration:none; white-space:nowrap;">← skillset</a>
 </div>
 <div class="controls">
   <input type="text" id="search" placeholder="Search concepts, languages, theory..." />
@@ -191,7 +191,7 @@ const DATA = [
   {c:"Trie / persistent map",url:"059-trie-persistent-map/",cat:"coll",cl:"Collections",langs:[["HAMT","Clojure","Haskell","Scala"],["HashMap (structural)","Rust","Java"],["PersistentHashMap","Clojure"],["Radix tree","general"]],t:"Hash array mapped trie (Bagwell)"},
   {c:"Ring buffer / circular queue",url:"060-ring-buffer-circular-queue/",cat:"coll",cl:"Collections",langs:[["ArrayDeque","Java","Python"],["VecDeque","Rust"],["ring buffer","C","Disruptor (Java)"],["channel buffer","Go","Kotlin"],["Disruptor","LMAX Java"]],t:"Circular buffer · lock-free queues"},
   {c:"Priority queue / heap",url:"061-priority-queue-heap/",cat:"coll",cl:"Collections",langs:[["PriorityQueue","Java","Python","Scala"],["BinaryHeap","Rust"],["priority_queue","C++"],["heapq","Python"]],t:"Heap data structure (Williams 1964)"},
-  {c:"Parallel collection",cat:"coll",cl:"Collections",langs:[["ParArray / par","Scala"],["Rayon par_iter","Rust"],["parallel streams","Java"],["pmap","Clojure"]],t:"Data parallelism · fork-join"},
+  {c:"Parallel collection",url:"062-parallel-collection/",cat:"coll",cl:"Collections",langs:[["ParArray / par","Scala"],["Rayon par_iter","Rust"],["parallel streams","Java"],["pmap","Clojure"]],t:"Data parallelism · fork-join"},
 
   {c:"First-class function / closure",cat:"func",cl:"Functions",langs:[["lambda","Python","Java 8+","C++","Scala"],["closure","Rust","Go","JavaScript","Ruby","Clojure"],["block","Ruby","Swift"],["fn / Fn trait","Rust"],["delegate","C#"],["#() / fn []","Clojure"],["lambda","Common Lisp"]],t:"λ-calculus (Church 1936)"},
   {c:"Currying / partial application",cat:"func",cl:"Functions",langs:[["curry","Haskell (auto)","Scala","JavaScript"],["partial","Python (functools)"],["bind","JavaScript"],["partial application","Clojure","F#"],["std::bind","C++"]],t:"Schönfinkel / Curry combinators"},

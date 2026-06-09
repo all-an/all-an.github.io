@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EC2 — Elastic Compute Cloud</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../aws.html">← aws services</a>
+  <h1>EC2</h1>
+  <div class="full-name">Elastic Compute Cloud</div>
+  <div class="field-tag">Compute</div>
+
+  <section>
+    <h2>What it is</h2>
+    <p><strong>Amazon EC2</strong> gives you resizable virtual machines — called <strong>instances</strong> — that you rent by the second. It is the original AWS compute service and the foundation many others are built on. You pick how much CPU, memory, storage, and networking you want, launch in minutes, and turn it off when you are done.</p>
+    <p>You choose four things when you launch: an <strong>AMI</strong> (the disk image / operating system), an <strong>instance type</strong> (the hardware size, e.g. <code>t3.micro</code>), a <strong>key pair</strong> (for SSH login), and a <strong>security group</strong> (a virtual firewall). Everything else has sensible defaults.</p>
+  </section>
+
+  <section>
+    <h2>Core concepts to know</h2>
+    <ul>
+      <li><strong>AMI</strong> — Amazon Machine Image: the template (OS + pre-installed software) an instance boots from.</li>
+      <li><strong>Instance type</strong> — the size and family: <code>t</code> (burstable), <code>m</code> (general), <code>c</code> (compute), <code>r</code> (memory), etc.</li>
+      <li><strong>Key pair</strong> — a public/private key used to SSH in. AWS keeps the public half; you download the private <code>.pem</code> once.</li>
+      <li><strong>Security group</strong> — stateful firewall rules controlling inbound/outbound traffic (e.g. allow port 22 from your IP).</li>
+      <li><strong>EBS volume</strong> — the persistent disk attached to the instance; survives stop/start, deleted on terminate unless told otherwise.</li>
+      <li><strong>Elastic IP</strong> — a static public IPv4 address you can keep across restarts.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Useful AWS CLI commands</h2>
+    <p>Copy, then swap the placeholder IDs (<code>ami-…</code>, <code>i-…</code>, <code>sg-…</code>) for your own.</p>
+
+    <div class="cmd">
+      <div class="cmd-label">List your instances (id, state, type, public IP) as a clean table</div>
+      <div class="cmd-box">
+        <button class="copy-btn">Copy</button>
+        <pre>aws ec2 describe-instances \
+  --query "Reservations[].Instances[].{ID:InstanceId,State:State.Name,Type:InstanceType,IP:PublicIpAddress}" \
+  --output table</pre>
+      </div>
+    </div>
+
+    <div class="cmd">
+      <div class="cmd-label">Launch a single t3.micro instance</div>
+      <div class="cmd-box">
+        <button class="copy-btn">Copy</button>
+        <pre>aws ec2 run-instances \
+  --image-id ami-0abcdef1234567890 \
+  --instance-type t3.micro \
+  --key-name my-key \
+  --security-group-ids sg-0123456789abcdef0 \
+  --count 1</pre>
+      </div>
+    </div>
+
+    <div class="cmd">
+      <div class="cmd-label">Find the latest Amazon Linux 2023 AMI id for your region</div>
+      <div class="cmd-box">
+        <button class="copy-btn">Copy</button>
+        <pre>aws ssm get-parameters \
+  --names /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64 \
+  --query "Parameters[0].Value" --output text</pre>
+      </div>
+    </div>
+
+    <div class="cmd">
+      <div class="cmd-label">Stop, start, and terminate an instance</div>
+      <div class="cmd-box">
+        <button class="copy-btn">Copy</button>
+        <pre>aws ec2 stop-instances      --instance-ids i-0123456789abcdef0
+aws ec2 start-instances     --instance-ids i-0123456789abcdef0
+aws ec2 terminate-instances --instance-ids i-0123456789abcdef0</pre>
+      </div>
+    </div>
+
+    <div class="cmd">
+      <div class="cmd-label">Open SSH (port 22) to your current IP only</div>
+      <div class="cmd-box">
+        <button class="copy-btn">Copy</button>
+        <pre>aws ec2 authorize-security-group-ingress \
+  --group-id sg-0123456789abcdef0 \
+  --protocol tcp --port 22 --cidr $(curl -s https://checkip.amazonaws.com)/32</pre>
+      </div>
+    </div>
+
+    <div class="cmd">
+      <div class="cmd-label">SSH into the instance (uses your downloaded key)</div>
+      <div class="cmd-box">
+        <button class="copy-btn">Copy</button>
+        <pre>ssh -i my-key.pem ec2-user@&lt;public-ip&gt;</pre>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Console: where to click</h2>
+    <p>In the AWS Management Console, the buttons and menu items to follow:</p>
+
+    <div class="path">
+      <span class="crumb">Search bar</span><span class="arrow">→</span>
+      <span class="crumb">EC2</span><span class="arrow">→</span>
+      <span class="crumb">Instances</span><span class="arrow">→</span>
+      <span class="crumb">Launch instances</span>
+      <span style="font-size:15px; color:var(--color-text-tertiary);">— create a new VM</span>
+    </div>
+
+    <div class="path">
+      <span class="crumb">EC2</span><span class="arrow">→</span>
+      <span class="crumb">Instances</span><span class="arrow">→</span>
+      <span class="crumb">(select instance)</span><span class="arrow">→</span>
+      <span class="crumb">Connect</span><span class="arrow">→</span>
+      <span class="crumb">EC2 Instance Connect</span>
+      <span style="font-size:15px; color:var(--color-text-tertiary);">— browser SSH, no key file needed</span>
+    </div>
+
+    <div class="path">
+      <span class="crumb">(select instance)</span><span class="arrow">→</span>
+      <span class="crumb">Instance state</span><span class="arrow">→</span>
+      <span class="crumb">Stop / Start / Terminate</span>
+    </div>
+
+    <div class="path">
+      <span class="crumb">EC2</span><span class="arrow">→</span>
+      <span class="crumb">Network &amp; Security</span><span class="arrow">→</span>
+      <span class="crumb">Security Groups</span><span class="arrow">→</span>
+      <span class="crumb">Edit inbound rules</span>
+      <span style="font-size:15px; color:var(--color-text-tertiary);">— open/close ports</span>
+    </div>
+
+    <div class="path">
+      <span class="crumb">EC2</span><span class="arrow">→</span>
+      <span class="crumb">Network &amp; Security</span><span class="arrow">→</span>
+      <span class="crumb">Key Pairs</span><span class="arrow">→</span>
+      <span class="crumb">Create key pair</span>
+    </div>
+  </section>
+
+  <section>
+    <h2>Hints &amp; tips</h2>
+
+    <div class="tip">
+      <span class="icon">⚡</span>
+      <span><strong>Stop ≠ Terminate.</strong> <em>Stop</em> shuts the VM down but keeps the EBS disk (and your data) — you still pay a little for storage. <em>Terminate</em> deletes the instance and, by default, its root disk. There is no undo.</span>
+    </div>
+
+    <div class="tip">
+      <span class="icon">⚡</span>
+      <span><strong>Check the Region first.</strong> Instances are per-Region. If your list looks empty, look at the Region menu in the top-right corner of the console — you are probably in the wrong one.</span>
+    </div>
+
+    <div class="tip">
+      <span class="icon">⚡</span>
+      <span><strong>Prefer EC2 Instance Connect or SSM Session Manager</strong> over opening port 22 to the world. They give you a shell without a public SSH port — far safer. Never set an inbound rule to <code>0.0.0.0/0</code> on port 22.</span>
+    </div>
+
+    <div class="tip">
+      <span class="icon">⚡</span>
+      <span><strong>Free tier:</strong> <code>t2.micro</code> / <code>t3.micro</code> get 750 hours/month for the first 12 months. Pick those while learning to avoid surprise bills.</span>
+    </div>
+
+    <div class="tip">
+      <span class="icon">⚡</span>
+      <span><strong>Watch for the stopped-but-billing trap:</strong> a stopped instance is free for compute, but its attached EBS volume and any Elastic IP <em>not</em> associated with a running instance still cost money. Release unused Elastic IPs.</span>
+    </div>
+
+    <div class="tip">
+      <span class="icon">⚡</span>
+      <span><strong>Tag everything.</strong> Add a <code>Name</code> tag at launch so the console list is readable, and use tags for cost tracking later.</span>
+    </div>
+  </section>
+
+</div>
+<script src="script.js"></script>
+</body>
+</html>

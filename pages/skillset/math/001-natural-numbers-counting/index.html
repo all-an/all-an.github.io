@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Natural numbers & counting</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../math.html">← mathematics</a>
+  <h1>Natural numbers &amp; counting</h1>
+  <div class="field-tag">Arithmetic</div>
+
+  <section>
+    <h2>The idea</h2>
+    <p>The <strong>natural numbers</strong> are the counting numbers: <code>1, 2, 3, 4, …</code> (many texts start at <code>0</code>). They are the first numbers humans ever used — one tally mark per sheep — and every other kind of number is built on top of them.</p>
+    <p>Counting works because of one simple rule: every natural number has a <strong>successor</strong>, the number that comes right after it. Start at <code>1</code>, take the successor to get <code>2</code>, again to get <code>3</code>, and you never run out. That single "and one more" step is the whole engine of counting.</p>
+  </section>
+
+  <section>
+    <h2>Peano's axioms — counting, made precise</h2>
+    <p>In 1889 Giuseppe Peano captured the natural numbers with a tiny set of rules. Informally:</p>
+    <ul>
+      <li><code>0</code> is a natural number (the starting point).</li>
+      <li>Every natural number <code>n</code> has a successor <code>S(n)</code>, which is also a natural number.</li>
+      <li><code>0</code> is not the successor of any number — nothing comes before the start.</li>
+      <li>If two numbers have the same successor, they are the same number.</li>
+      <li><strong>Induction:</strong> if a property holds for <code>0</code> and survives the successor step, it holds for every natural number.</li>
+    </ul>
+    <div class="formula">S(n) = n + 1&nbsp;&nbsp;&nbsp;→&nbsp;&nbsp;&nbsp;1, S(1)=2, S(2)=3, S(3)=4, …</div>
+  </section>
+
+  <section>
+    <h2>Place value — writing big numbers with few symbols</h2>
+    <p>We only have ten digits (<code>0–9</code>), yet we can write any natural number. The trick is <strong>place value</strong>: a digit's worth depends on its position, each place being ten times the one to its right.</p>
+    <div class="formula">3 7 4  =  3×100  +  7×10  +  4×1  =  300 + 70 + 4</div>
+    <p>This is the base-10 (decimal) system. The same idea with a different base powers computers (base-2, binary).</p>
+  </section>
+
+  <section>
+    <h2>Try it — the successor machine</h2>
+    <p>Click <em>successor</em> to take one step up. Each step adds one dot, so you can <em>see</em> the number you are counting to.</p>
+    <div class="demo">
+      <div class="demo-controls">
+        <span class="demo-label">current number</span>
+        <span class="demo-value" id="counterValue">0</span>
+        <button class="primary" id="successorBtn">successor (+1)</button>
+        <button id="resetBtn">reset</button>
+      </div>
+      <div class="dots" id="dots"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Exercises — solve them in JavaScript</h2>
+    <p>Write your answer in the editor, then press <strong>Run</strong>. Your function is checked against several test cases — green means it passed. Stuck? Each exercise has a worked solution you can reveal.</p>
+    <div id="exercises"></div>
+  </section>
+
+</div>
+<script src="script.js"></script>
+</body>
+</html>

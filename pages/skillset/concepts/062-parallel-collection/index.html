@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Parallel collection</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Parallel collection</h1>
+  <p class="desc">A parallel collection runs the same operation over its elements on several CPU cores at once, so a <code>map</code> or <code>filter</code> that is pure (no shared mutable state) finishes in a fraction of the wall-clock time. This is <em>data parallelism</em>: same code, different slices of data.<br>
+  The engine underneath is <em>fork-join</em>. The collection is recursively split into chunks (<em>fork</em>), each chunk is processed on its own worker thread from a shared pool, and the partial results are merged back together (<em>join</em>). It only stays correct because the combining step is associative — addition, counting, concatenation — so the order in which chunks finish does not matter.<br>
+  Here a range of 100,000 integers is filtered for primes across every core, and the count matches the single-threaded run exactly — same answer, less time.</p>
+  <pre><code class="language-java">// Java
+import java.util.stream.IntStream;
+
+// Tests primality by trial division up to sqrt(n). This is the per-element
+// work that the parallel stream spreads across CPU cores — pure (no shared
+// state), so it is safe to run on many elements at once.
+static boolean isPrime(int n) {
+    if (n < 2) return false;
+    for (int divisor = 2; (long) divisor * divisor <= n; divisor++) {
+        if (n % divisor == 0) return false;
+    }
+    return true;
+}
+
+int limit = 100_000; // count primes in the range [2, limit)
+
+// Data parallelism via the fork-join model: the range is recursively split
+// into chunks (fork), each chunk is filtered on its own worker thread from
+// the common ForkJoinPool, and the partial counts are summed back together
+// (join). count() is associative, so the total is order-independent.
+long parallel = IntStream.range(2, limit)
+        .parallel()              // split the range across CPU cores
+        .filter(Main::isPrime)   // each core tests its own chunk
+        .count();                // partial counts are joined into one total
+System.out.println("primes below " + limit + ": " + parallel);
+
+// The same pipeline run on a single thread. Because the operation is pure
+// and associative, splitting the work changes nothing but the wall clock —
+// the parallel and sequential results are identical.
+long sequential = IntStream.range(2, limit)
+        .filter(Main::isPrime)
+        .count();
+System.out.println("matches sequential? " + (parallel == sequential));</code></pre>
+  <p class="desc">Run it yourself with the files in this folder — see <code>README.md</code>.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

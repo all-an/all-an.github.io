@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mathematics</title>
+  <link rel="stylesheet" href="math.css" />
+</head>
+<body>
+
+<div class="wrap">
+  <div class="head">
+    <div class="head-left">
+      <h1>Mathematics</h1>
+      <span class="subtitle">Concepts by field, from the basics to the frontier.</span>
+    </div>
+    <a class="back" href="../skillset.html">← skillset</a>
+  </div>
+
+  <div class="controls">
+    <input type="text" id="search" placeholder="Search concepts, ideas, mathematicians..." />
+    <select id="fieldFilter">
+      <option value="">All fields</option>
+      <option value="arith">Arithmetic</option>
+      <option value="alg">Algebra</option>
+      <option value="geom">Geometry</option>
+      <option value="trig">Trigonometry</option>
+      <option value="nt">Number Theory</option>
+      <option value="linalg">Linear Algebra</option>
+      <option value="calc">Calculus &amp; Analysis</option>
+      <option value="prob">Probability</option>
+      <option value="stat">Statistics</option>
+      <option value="disc">Discrete Math</option>
+      <option value="comb">Combinatorics</option>
+      <option value="logic">Logic &amp; Set Theory</option>
+      <option value="abalg">Abstract Algebra</option>
+      <option value="topo">Topology</option>
+      <option value="diffeq">Differential Equations</option>
+      <option value="complex">Complex Analysis</option>
+      <option value="numer">Numerical Analysis</option>
+      <option value="opt">Optimization</option>
+      <option value="cat">Category Theory</option>
+      <option value="found">Foundations</option>
+    </select>
+    <span class="count" id="count"></span>
+  </div>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Concept</th>
+          <th>Key ideas</th>
+          <th>Theory / origin</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+  <div class="no-results" id="noResults" style="display:none;">No concepts match.</div>
+</div>
+
+<script src="math.js"></script>
+</body>
+</html>
