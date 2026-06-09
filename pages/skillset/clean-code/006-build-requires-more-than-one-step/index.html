@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>E1: Build Requires More Than One Step</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>E1: Build Requires More Than One Step</h1>
+  <p class="desc">Building a project should be a single, trivial operation — one command that takes a clean checkout all the way to a finished artifact.<br>
+  When the build instead demands a sequence of manual steps — sync the submodules, copy a config file, regenerate sources, all in exactly the right order — every step is a chance to get it wrong, and a newcomer burns an afternoon of <code>tribal knowledge</code> before the first successful compile.<br>
+  The fix is to fold the whole sequence into one checked-in script or build target, so anyone can go from clone to build with a single command.</p>
+
+  <div class="example-label avoid">Avoid — a checklist of manual steps in the project wiki</div>
+  <pre><code class="language-bash"># Shell — "How to build", copied from the team wiki
+git submodule update --init                              # 1. pull vendored deps by hand
+cp config/local.example.properties config/local.properties  # 2. or it won't start
+./scripts/gen-version.sh > src/main/resources/version.txt   # 3. forget this and the build fails
+(cd vendor/protobuf && make)                             # 4. compile the proto toolchain
+mvn -o package                                           # 5. ...and finally build</code></pre>
+
+  <div class="example-label prefer">Prefer — one checked-in command that does it all</div>
+  <pre><code class="language-bash"># Shell
+./build.sh   # syncs deps, generates sources, compiles, and tests — one step, clean checkout to artifact</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

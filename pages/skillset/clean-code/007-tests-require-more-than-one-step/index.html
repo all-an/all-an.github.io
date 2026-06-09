@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>E2: Tests Require More Than One Step</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>E2: Tests Require More Than One Step</h1>
+  <p class="desc">Running the tests should be a single, obvious command — one that works straight from a clean checkout with nothing set up by hand.<br>
+  When the suite instead needs a database started, a schema loaded, environment variables exported, and a fixture script run first, the tests become a chore people skip: a suite that is hard to run is a suite that <code>rarely runs</code>, and untested code rots quietly.<br>
+  The fix is to make the command spin up everything it needs and tear it down again, so a teammate — or CI — can verify the whole project with one button.</p>
+
+  <div class="example-label avoid">Avoid — a setup ritual before the tests will even start</div>
+  <pre><code class="language-bash"># Shell — "How to run the tests", from the README
+docker run -d -p 5432:5432 postgres:16        # 1. start a database by hand
+export DATABASE_URL=postgres://localhost/test  # 2. point the app at it
+psql "$DATABASE_URL" -f db/schema.sql           # 3. load the schema
+./scripts/seed-fixtures.sh                       # 4. insert the fixtures
+mvn -o test                                      # 5. ...now run the tests</code></pre>
+
+  <div class="example-label prefer">Prefer — one command that provisions, tests, and cleans up</div>
+  <pre><code class="language-bash"># Shell
+./test.sh   # starts an ephemeral DB, migrates, seeds, runs the suite, then tears it all down</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

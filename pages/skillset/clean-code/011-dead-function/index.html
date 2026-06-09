@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>F4: Dead Function</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>F4: Dead Function</h1>
+  <p class="desc">A <em>dead function</em> is a method that is never called — nothing in the codebase reaches it any more.<br>
+  It still costs the reader: they have to study it, keep it compiling, and wonder whether it matters, all for code that does nothing because no caller is left to invoke it. Worse, it quietly drifts out of date, so when someone finally does call it they inherit a <code>bug</code>.<br>
+  The fix is to delete it. Version control keeps the history, so if the need ever returns the code can be recovered — meanwhile the living code is smaller and clearer.</p>
+
+  <div class="example-label avoid">Avoid — keeping a method no one calls</div>
+  <pre><code class="language-java">// Java
+public class InvoiceService {
+
+    public Money total(Invoice invoice) {
+        return invoice.lineItems().stream()
+            .map(LineItem::amount)
+            .reduce(Money.ZERO, Money::plus);
+    }
+
+    // Last caller was removed three refactors ago — now unreachable, but
+    // still here being maintained, compiled, and read by everyone.
+    private Money totalWithLegacyTax(Invoice invoice) {
+        return total(invoice).times(LEGACY_TAX_MULTIPLIER);
+    }
+}</code></pre>
+
+  <div class="example-label prefer">Prefer — delete it; git remembers if it is ever needed again</div>
+  <pre><code class="language-java">// Java
+public class InvoiceService {
+
+    public Money total(Invoice invoice) {
+        return invoice.lineItems().stream()
+            .map(LineItem::amount)
+            .reduce(Money.ZERO, Money::plus);
+    }
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

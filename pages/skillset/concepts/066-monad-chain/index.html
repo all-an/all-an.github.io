@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Monad / chain</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Monad / chain</h1>
+  <p class="desc">A <em>monad</em> is a type that wraps a value and knows how to chain steps together with <code>flatMap</code> (also called <em>bind</em> or <code>&gt;&gt;=</code>). Each step produces a new wrapped value, and the monad decides what threading them together means.<br>
+  For <code>Either</code> it means short-circuiting: the moment a step returns a <code>Left</code> (a failure), the rest of the chain is skipped and that failure becomes the result — no manual <code>if error then return</code> at every step.<br>
+  Scala's real gift here is the <em>for-comprehension</em>: write the steps linearly and the compiler desugars them straight back into the <code>flatMap</code> chain. The two blocks below are the <em>same</em> program.</p>
+  <pre><code class="language-scala">// Scala
+// Either[L, R] is a monad: it has flatMap (a.k.a. bind / >>=) and map, so a
+// failure (Left) short-circuits the rest of the chain.
+def parse(text: String): Either[String, Int] =
+  text.toIntOption.toRight(s"not a number: '$text'")
+
+def divide(a: Int, b: Int): Either[String, Int] =
+  if b == 0 then Left("divide by zero") else Right(a / b)
+
+// Nested flatMap: bind each step to the next. A Left anywhere stops the chain.
+val chained: Either[String, Int] =
+  parse("84").flatMap(x => parse("2").flatMap(y => divide(x, y)))
+
+// The SAME computation as a for-comprehension — the compiler desugars this
+// straight back into the flatMap chain above. Identical result, linear to read.
+val sugared: Either[String, Int] =
+  for
+    x <- parse("84")
+    y <- parse("2")
+    z <- divide(x, y)
+  yield z
+
+println(chained) // Right(42)
+println(sugared) // Right(42)</code></pre>
+  <p class="desc">Run it yourself with the files in this folder — see <code>README.md</code>.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<!-- Scala is not in highlight.js's default bundle, so load its grammar before highlighting -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/scala.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

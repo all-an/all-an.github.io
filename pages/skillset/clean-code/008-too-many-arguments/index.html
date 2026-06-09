@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>F1: Too Many Arguments</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>F1: Too Many Arguments</h1>
+  <p class="desc">Functions should have a small number of arguments — none is best, then one, then two; three is already a smell, and more than three needs a very special justification.<br>
+  A long parameter list is hard to read and easy to misuse: callers must remember the exact order, and two adjacent values of the same type can be <code>swapped</code> without the compiler ever noticing.<br>
+  The fix is usually to notice that several arguments travel together and belong to a concept of their own — wrap them in an object whose fields are named, so the call site reads clearly and the order no longer matters.</p>
+
+  <div class="example-label avoid">Avoid — a wall of positional parameters</div>
+  <pre><code class="language-java">// Java
+public void createUser(String firstName, String lastName, String email,
+                       String street, String city, String zip, String country,
+                       boolean newsletter, boolean admin) {
+    // ...
+}
+
+// Call site: which boolean is which? is it city then zip, or zip then city?
+createUser("Ada", "Lovelace", "ada@x.io",
+           "5 Analytical Ave", "London", "EC1", "UK", true, false);</code></pre>
+
+  <div class="example-label prefer">Prefer — group related arguments into named objects</div>
+  <pre><code class="language-java">// Java
+public void createUser(Name name, Address address, UserOptions options) {
+    // ...
+}
+
+// Call site: every value is labelled by the field it fills.
+createUser(
+    new Name("Ada", "Lovelace"),
+    new Address("5 Analytical Ave", "London", "EC1", "UK"),
+    new UserOptions(/* newsletter */ true, /* admin */ false));</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

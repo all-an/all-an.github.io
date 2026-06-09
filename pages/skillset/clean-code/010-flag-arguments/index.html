@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>F3: Flag Arguments</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>F3: Flag Arguments</h1>
+  <p class="desc">A <em>flag argument</em> is a boolean passed into a function to switch its behaviour — a loud admission that the function does more than one thing.<br>
+  At the call site the flag is meaningless on its own: <code>render(true)</code> tells the reader nothing, who must open the function to learn what <code>true</code> selects, and the body splits into two tangled paths.<br>
+  The fix is to split the function into two well-named functions, one per branch, so each does a single thing and the call says what it means.</p>
+
+  <div class="example-label avoid">Avoid — a boolean that picks which behaviour runs</div>
+  <pre><code class="language-java">// Java
+// Two behaviours wearing one name; the body forks on the flag.
+public String render(boolean isSummary) {
+    if (isSummary) {
+        return renderSummaryView();
+    }
+    return renderFullView();
+}
+
+// Call site: what does `true` mean here? You have to go read render().
+String html = render(true);</code></pre>
+
+  <div class="example-label prefer">Prefer — one function per behaviour, each named for what it does</div>
+  <pre><code class="language-java">// Java
+public String renderSummary() {
+    return renderSummaryView();
+}
+
+public String renderFull() {
+    return renderFullView();
+}
+
+// Call site reads as plain intent — no flag to decode.
+String html = renderSummary();</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

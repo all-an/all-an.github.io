@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>F2: Output Arguments</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>F2: Output Arguments</h1>
+  <p class="desc">We expect arguments to be <em>inputs</em> to a function and the return value to be its <em>output</em> — that is how we read code without a second thought.<br>
+  An <em>output argument</em> breaks that expectation: the function reaches into a parameter and mutates it to hand a result back, so the reader has to check the signature and the body to discover that <code>appendFooter(report)</code> actually changes <code>report</code>.<br>
+  The fix is to return the result instead, or — if the function is really acting on an object — to make it a method on that object so the change of state is expected.</p>
+
+  <div class="example-label avoid">Avoid — a parameter that is secretly an output</div>
+  <pre><code class="language-java">// Java
+// Does this read the report, or modify it? You can't tell from the call.
+public void appendFooter(StringBuilder report) {
+    report.append("\n-- generated ").append(LocalDate.now());
+}
+
+StringBuilder report = buildReport();
+appendFooter(report);   // surprise: `report` was mutated</code></pre>
+
+  <div class="example-label prefer">Prefer — make state changes belong to the object</div>
+  <pre><code class="language-java">// Java
+// `this` is the obvious thing being changed; no hidden output parameter.
+public class Report {
+    private final StringBuilder body = new StringBuilder();
+
+    public void appendFooter() {
+        body.append("\n-- generated ").append(LocalDate.now());
+    }
+}
+
+Report report = buildReport();
+report.appendFooter();   // clearly acts on `report`</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

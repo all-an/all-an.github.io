@@ -1,0 +1,20 @@
+{
+  "name": "scala-cli",
+  "argv": [
+    "/Users/allanabrahao/Library/Application Support/Coursier/bin/.scala-cli.aux",
+    "bsp",
+    "--json-options",
+    "/Users/allanabrahao/Public/code/all-an.github.io/pages/skillset/concepts/066-monad-chain/.scala-build/ide-options-v2.json",
+    "--json-launcher-options",
+    "/Users/allanabrahao/Public/code/all-an.github.io/pages/skillset/concepts/066-monad-chain/.scala-build/ide-launcher-options.json",
+    "--envs-file",
+    "/Users/allanabrahao/Public/code/all-an.github.io/pages/skillset/concepts/066-monad-chain/.scala-build/ide-envs.json",
+    "/Users/allanabrahao/Public/code/all-an.github.io/pages/skillset/concepts/066-monad-chain/Main.scala"
+  ],
+  "version": "1.14.0",
+  "bspVersion": "2.1.1",
+  "languages": [
+    "scala",
+    "java"
+  ]
+}

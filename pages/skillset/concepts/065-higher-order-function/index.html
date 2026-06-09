@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Higher-order function</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Higher-order function</h1>
+  <p class="desc">A <em>higher-order function</em> is one that takes another function as an argument, returns a function, or both. It treats behavior as data: the loop or the algorithm stays fixed, while the caller plugs in the piece that varies.<br>
+  This is the engine behind <code>map</code>, <code>filter</code>, and <code>reduce</code> — one traversal written once, parameterized by the function you hand it, so the same code squares numbers, formats them, or scales them on demand.<br>
+  Here <code>mapEach</code> takes a function and applies it across a list (function in), while <code>scaler</code> builds and returns a brand-new function (function out).</p>
+  <pre><code class="language-java">// Java
+import java.util.List;
+import java.util.function.Function;
+
+// Higher-order function: takes another function `transform` as a parameter and
+// applies it to every element, building a new list. Behavior is passed in as
+// data, so the same map-each traversal works for any transform.
+static &lt;T, R&gt; List&lt;R&gt; mapEach(List&lt;T&gt; items, Function&lt;T, R&gt; transform) {
+    return items.stream().map(transform).toList();
+}
+
+// Higher-order function that *returns* a function: given a factor, it hands
+// back a new function that multiplies its input by that factor.
+static Function&lt;Integer, Integer&gt; scaler(int factor) {
+    return n -&gt; n * factor;
+}
+
+List&lt;Integer&gt; nums = List.of(1, 2, 3, 4);
+
+// Pass a function in: square every element.
+List&lt;Integer&gt; squares = mapEach(nums, n -&gt; n * n);
+System.out.println("squares: " + squares);   // [1, 4, 9, 16]
+
+// Pass a method reference in — functions are just values.
+List&lt;String&gt; labels = mapEach(nums, String::valueOf);
+System.out.println("labels: " + labels);     // [1, 2, 3, 4]
+
+// Get a function back from scaler, then feed it to mapEach.
+Function&lt;Integer, Integer&gt; triple = scaler(3);
+List&lt;Integer&gt; tripled = mapEach(nums, triple);
+System.out.println("tripled: " + tripled);   // [3, 6, 9, 12]</code></pre>
+  <p class="desc">Run it yourself with the files in this folder — see <code>README.md</code>.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

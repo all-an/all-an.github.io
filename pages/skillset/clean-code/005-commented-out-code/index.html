@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>C5: Commented-Out Code</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>C5: Commented-Out Code</h1>
+  <p class="desc"><em>Commented-out code</em> is source that has been disabled with comment markers instead of deleted — left behind "just in case" someone needs it again.<br>
+  Because no one who finds it dares remove it, it gathers like <code>dregs</code>: it drifts out of date, clutters the file, and makes every reader stop to wonder whether it still matters.<br>
+  The fix is to delete it outright. Version control already remembers every line you ever wrote, so the code is never truly lost — you can always bring it back from history.</p>
+
+  <div class="example-label avoid">Avoid — dead lines kept alive as comments</div>
+  <pre><code class="language-java">// Java
+public BigDecimal price(Order order) {
+    BigDecimal total = order.subtotal();
+    // total = total.multiply(LEGACY_TAX_RATE);
+    // if (order.isExpedited()) {
+    //     total = total.add(RUSH_FEE);
+    // }
+    total = total.add(order.tax());
+    return total;
+}</code></pre>
+
+  <div class="example-label prefer">Prefer — delete it; git remembers if you ever need it back</div>
+  <pre><code class="language-java">// Java
+public BigDecimal price(Order order) {
+    BigDecimal total = order.subtotal();
+    total = total.add(order.tax());
+    return total;
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

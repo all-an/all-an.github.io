@@ -14,20 +14,19 @@
   <p class="desc">Operator overloading lets user-defined types give meaning to built-in operators like <code>+</code>, <code>-</code>, or <code>==</code>.<br>
   Instead of writing a named method call, code can use familiar symbols while the language redirects the operation to custom logic.<br>
   It can make abstractions feel natural, but if used carelessly it also hides behavior behind syntax that looks simple.</p>
-  <pre><code class="language-cpp">// C++
-struct Vector {
-  int x, y;
+  <pre><code class="language-scala">// Scala
+case class Vector(x: Int, y: Int) {
+  // `+` is just a method name, so it can be defined like any other
+  def +(other: Vector): Vector = Vector(x + other.x, y + other.y)
+}
 
-  Vector operator+(const Vector& other) const {
-    return {x + other.x, y + other.y};
-  }
-};
-
-Vector a{2, 3};
-Vector b{4, 1};
-Vector sum = a + b;   // {6, 4}</code></pre>
+val a = Vector(2, 3)
+val b = Vector(4, 1)
+val sum = a + b   // Vector(6, 4)</code></pre>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<!-- Scala is not in highlight.js's default bundle, so load its grammar before highlighting -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/scala.min.js"></script>
 <script>hljs.highlightAll();</script>
 </body>
 </html>

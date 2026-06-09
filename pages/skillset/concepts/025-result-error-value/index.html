@@ -13,24 +13,24 @@
   <h1>Result / error value</h1>
   <p class="desc">A result type represents either a successful value or an error value in the type system, instead of signaling failure with exceptions or nulls.<br>
   It forces the caller to handle both cases explicitly, which makes control flow around failure more visible.<br>
-  Java does not have a standard built-in <code>Result</code> type, but C++23 does with <code>std::expected</code>.</p>
-  <pre><code class="language-cpp">// C++
-#include &lt;expected&gt;
-#include &lt;string&gt;
+  Java does not have a standard built-in <code>Result</code> type, but Scala does with <code>Either</code> (and <code>Try</code>).</p>
+  <pre><code class="language-scala">// Scala
+// Either[L, R] holds an error on the Left or a value on the Right
+def parseAge(text: String): Either[String, Int] =
+  if (text == "42") Right(42)
+  else Left("invalid age")
 
-std::expected&lt;int, std::string&gt; parseAge(const std::string&amp; text) {
-  if (text == "42") return 42;
-  return std::unexpected("invalid age");
-}
+val age = parseAge("42")
 
-auto age = parseAge("42");
-
-if (age) {
-  // success
-  int value = *age;
+// Pattern matching forces both cases to be handled
+age match {
+  case Right(value) => // success: use `value`
+  case Left(error)  => // failure: use `error`
 }</code></pre>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<!-- Scala is not in highlight.js's default bundle, so load its grammar before highlighting -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/scala.min.js"></script>
 <script>hljs.highlightAll();</script>
 </body>
 </html>

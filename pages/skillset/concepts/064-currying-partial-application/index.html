@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Currying / partial application</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Currying / partial application</h1>
+  <p class="desc"><em>Currying</em> turns a function of several arguments into a chain of one-argument functions: instead of <code>f(a, b)</code> you call <code>f(a)(b)</code>, and <code>f(a)</code> on its own is already a perfectly good function.<br>
+  <em>Partial application</em> is the payoff: fix some arguments now and leave the rest for later, producing a specialized function you can name, pass around, and reuse.<br>
+  Scala makes this first-class — a function can be declared with several parameter lists, and any ordinary multi-argument function can be curried on demand with <code>.curried</code>. Here <code>add(a)(b)</code> is curried so that <code>add(10)</code> becomes a reusable "add ten".</p>
+  <pre><code class="language-scala">// Scala
+// A curried function is written as several parameter lists. Supplying only the
+// first list returns a function that is still waiting for the rest.
+def add(a: Int)(b: Int): Int = a + b
+
+// Partial application: fix the first argument and get back a new function.
+// `add(10)(_)` leaves the second parameter open, yielding an Int => Int.
+val add10: Int => Int = add(10)(_)
+
+println(add10(5))   // 15
+println(add10(1))   // 11
+println(add(3)(4))  // 7  — or supply both lists at once
+
+// Any uncurried function can be curried on demand with `.curried`.
+val multiply: (Int, Int) => Int = (x, y) => x * y
+val triple: Int => Int = multiply.curried(3)
+println(triple(5))  // 15</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<!-- Scala is not in highlight.js's default bundle, so load its grammar before highlighting -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/scala.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

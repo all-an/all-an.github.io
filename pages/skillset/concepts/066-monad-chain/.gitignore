@@ -1,0 +1,3 @@
+# Compiled output and scala-cli build cache — not part of the website.
+*.class
+.scala-build/

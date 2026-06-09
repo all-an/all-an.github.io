@@ -24,6 +24,10 @@ Thumbs.db
 *.swo
 *~
 
+# Scala build/IDE metadata
+.metals/
+.scala-build/
+
 # Temporary files
 *.tmp
 *.temp
