@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Currying / partial application</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Currying / partial application</h1>
+  <p class="desc"><em>Currying</em> turns a function of several arguments into a chain of one-argument functions: instead of <code>f(a, b)</code> you call <code>f(a)(b)</code>, and <code>f(a)</code> on its own is already a perfectly good function.<br>
+  <em>Partial application</em> is the payoff: fix some arguments now and leave the rest for later, producing a specialized function you can name, pass around, and reuse.<br>
+  JavaScript makes this natural — first-class functions and closures mean <code>a =&gt; b =&gt; a + b</code> just works. Here <code>add(a)(b)</code> is curried so that <code>add(10)</code> becomes a reusable "add ten".</p>
+  <pre><code class="language-javascript">// JavaScript
+// A curried function takes its arguments one at a time. Calling add(a) returns a
+// function that is still waiting for b — the closure captures a until b arrives.
+const add = (a) => (b) => a + b;
+
+// Partial application: fix the first argument now and reuse the result later.
+// add(10) is already a complete one-argument function — "add ten".
+const add10 = add(10);
+
+console.log(add10(5));   // 15
+console.log(add10(1));   // 11
+console.log(add(3)(4));  // 7  — or supply both arguments in one chain
+
+// Curry any ordinary two-argument function on demand: wrap it so it takes its
+// arguments one at a time instead of all at once.
+const curry2 = (f) => (x) => (y) => f(x, y);
+
+const multiply = (x, y) => x * y;
+const triple = curry2(multiply)(3);  // fix x = 3, leave y open
+console.log(triple(5));  // 15</code></pre>
+
+  <p class="desc">Run it yourself with the files in this folder — see <code>README.md</code>.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

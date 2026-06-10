@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Monad / chain</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Monad / chain</h1>
+  <p class="desc">A <em>monad</em> is a type that wraps a value and knows how to chain steps together with <code>flatMap</code> (also called <em>bind</em> or <code>&gt;&gt;=</code>). Each step produces a new wrapped value, and the monad decides what threading them together means.<br>
+  Java ships several monads in its standard library — <code>Optional</code>, <code>Stream</code>, and <code>CompletableFuture</code> all chain with <code>flatMap</code>. This uses <code>Optional</code>: the moment a step returns <code>empty</code> (a failure), the rest of the chain is skipped and <code>empty</code> becomes the result — no manual <code>if (failed) return</code> at every step.<br>
+  Each <code>flatMap</code> binds the unwrapped value of one step into the next; an empty anywhere short-circuits the remaining steps. That threading rule <em>is</em> the monad doing the work.</p>
+  <pre><code class="language-java">// Java
+// Optional is a monad: it has flatMap (a.k.a. bind / >>=) and map, so an
+// empty short-circuits the rest of the chain.
+static Optional&lt;Integer&gt; parse(String text) {
+  try {
+    return Optional.of(Integer.parseInt(text));
+  } catch (NumberFormatException e) {
+    return Optional.empty();
+  }
+}
+
+static Optional&lt;Integer&gt; divide(int a, int b) {
+  return b == 0 ? Optional.empty() : Optional.of(a / b);
+}
+
+// Nested flatMap: bind each step to the next. An empty anywhere stops the chain.
+static Optional&lt;Integer&gt; chained(String a, String b) {
+  return parse(a).flatMap(x -&gt; parse(b).flatMap(y -&gt; divide(x, y)));
+}
+
+System.out.println(chained("84", "2")); // Optional[42]
+System.out.println(chained("84", "0")); // Optional.empty</code></pre>
+  <p class="desc">Run it yourself with the files in this folder — see <code>README.md</code>.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Result / error value</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Result / error value</h1>
+  <p class="desc">A result type represents either a successful value or an error value in the type system, instead of signaling failure with exceptions or nulls.<br>
+  It forces the caller to handle both cases explicitly, which makes control flow around failure more visible.<br>
+  Java has no standard built-in <code>Result</code> type, but TypeScript expresses it cleanly as a <em>discriminated union</em> — testing the tag <em>narrows</em> the type, so each branch can only touch its own field.</p>
+  <pre><code class="language-typescript">// TypeScript
+// A Result is a discriminated union: a success carrying a value, OR a failure
+// carrying an error. The literal `ok` field is the tag the compiler narrows on.
+type Result&lt;T, E&gt; = { ok: true; value: T } | { ok: false; error: E };
+
+// parseAge returns a value on success or an error message on failure — the
+// failure is an ordinary return value, not a thrown exception or a null.
+function parseAge(text: string): Result&lt;number, string&gt; {
+  const n = Number(text);
+  if (!Number.isInteger(n) || n &lt; 0) return { ok: false, error: `invalid age: '${text}'` };
+  return { ok: true, value: n };
+}
+
+const r = parseAge("42");
+
+// Checking `.ok` narrows the union: `.value` is reachable only here, and
+// `.error` only in the else branch — both cases must be handled.
+if (r.ok) {
+  console.log(`age is ${r.value}`);
+} else {
+  console.log(`error: ${r.error}`);
+}</code></pre>
+
+  <p class="desc">Run the TypeScript version yourself with the files in this folder — see <code>README.md</code>.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
