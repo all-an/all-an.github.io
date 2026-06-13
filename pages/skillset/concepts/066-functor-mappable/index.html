@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Functor / mappable</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Functor / mappable</h1>
+  <p class="desc">A <em>functor</em> is any type that has <code>map</code>: it applies a plain function <code>A&nbsp;-&gt;&nbsp;B</code> to the value(s) inside a container without unwrapping them, and keeps the container's shape. You hand <code>map</code> an ordinary function and it does the reaching-in for you.<br>
+  Java ships several functors in its standard library — <code>Optional</code> and <code>Stream</code> both expose <code>map</code> — so the <em>same</em> function maps over either one. Over an <code>Optional</code>, <code>map</code> runs the function if a value is present and leaves <code>empty</code> untouched; over a <code>Stream</code> it runs the function on each element and returns a stream of the same length.<br>
+  How does this differ from a monad? A functor's <code>map</code> takes a <em>plain</em> function (<code>A&nbsp;-&gt;&nbsp;B</code>); a monad's <code>flatMap</code> takes a <em>wrapping</em> function (<code>A&nbsp;-&gt;&nbsp;F&lt;B&gt;</code>). <code>map</code> is the simpler of the two, and every monad is also a functor.</p>
+  <pre><code class="language-java">// Java
+// One plain function, A -> B. It knows nothing about Optional or Stream — that
+// is the point: a functor lets you reuse plain functions over wrapped values.
+Function&lt;Integer, Integer&gt; square = n -&gt; n * n;
+
+// Optional is a functor: map runs square inside the box if a value is present,
+// and preserves "empty" untouched if it is not.
+Optional&lt;Integer&gt; present = Optional.of(6).map(square);            // Optional[36]
+Optional&lt;Integer&gt; absent  = Optional.&lt;Integer&gt;empty().map(square); // empty
+
+// Stream is the same functor idea over many values: map applies square to each
+// element and preserves the structure (a stream of the same length).
+List&lt;Integer&gt; squared = Stream.of(1, 2, 3, 4)
+    .map(square)
+    .collect(Collectors.toList());                                // [1, 4, 9, 16]
+
+// Functor composition law: mapping f then g equals mapping (g after f) once.
+Optional&lt;Integer&gt; twoMaps = Optional.of(6).map(square).map(plusOne);   // Optional[37]
+Optional&lt;Integer&gt; oneMap  = Optional.of(6).map(square.andThen(plusOne)); // Optional[37]</code></pre>
+  <p class="desc">Run it yourself with the files in this folder — see <code>README.md</code>.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Memoization</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Memoization</h1>
+  <p class="desc"><em>Memoization</em> caches a function's result by its arguments, so a repeated call returns the stored answer instead of recomputing it. It only works for <em>pure</em> functions — same input must always mean same output — and trades memory for speed.<br>
+  This builds a generic <code>memoize</code> wrapper with the standard library: <code>ConcurrentHashMap.computeIfAbsent</code> runs the real function only on a cache <em>miss</em>; on a <em>hit</em> it returns the stored value and the wrapped function never runs. Because <code>memoize</code> takes and returns a <code>Function</code>, it wraps any pure function without changing its callers.<br>
+  A counter proves the saving: six calls over three distinct inputs run the real computation just three times — the other three are served from the cache. The same idea is what Python's <code>@lru_cache</code>, Guava/Caffeine caches, and dynamic-programming tabling all do.</p>
+  <pre><code class="language-java">// Java
+// The expensive function we want to avoid repeating: a pure computation that
+// bumps a counter every time it actually runs.
+static int slowSquare(int n) {
+  realCalls.incrementAndGet();
+  return n * n;
+}
+
+// memoize wraps any function in a cache. computeIfAbsent runs fn only when the
+// key is missing; on a hit it returns the stored value and fn never runs.
+static &lt;A, B&gt; Function&lt;A, B&gt; memoize(Function&lt;A, B&gt; fn) {
+  Map&lt;A, B&gt; cache = new ConcurrentHashMap&lt;&gt;();
+  return arg -&gt; cache.computeIfAbsent(arg, fn);
+}
+
+Function&lt;Integer, Integer&gt; fastSquare = memoize(Main::slowSquare);
+
+// Six calls but only three distinct inputs (4, 4, 7, 4, 7, 9). The repeats are
+// served from the cache, so the real function runs just three times.
+int[] inputs = {4, 4, 7, 4, 7, 9};
+for (int n : inputs) {
+  System.out.println("square(" + n + ") = " + fastSquare.apply(n));
+}
+System.out.println("real computations: " + realCalls.get()); // 3, not 6</code></pre>
+  <p class="desc">Run it yourself with the files in this folder — see <code>README.md</code>.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

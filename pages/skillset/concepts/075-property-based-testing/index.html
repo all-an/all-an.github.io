@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Property-based testing</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Property-based testing</h1>
+  <p class="desc">Example-based tests check a few hand-picked inputs. <em>Property-based testing</em> instead states a rule that must hold for <strong>every</strong> input, and the framework generates hundreds of random cases trying to break it. When it finds a failure, it <em>shrinks</em> the counterexample down to the smallest input that still fails — so you get <code>[0]</code> rather than some 200-element mess.<br>
+  Here, jqwik (the Java library, alongside QuickCheck, Hypothesis, ScalaCheck, fast-check) runs each <code>@Property</code> against <strong>1000</strong> generated lists. A property method just returns <code>true</code> when the rule holds. The four below are common shapes: an <em>involution</em> (reverse twice = original), an <em>invariant</em> (size is preserved), a <em>relational</em> property (first becomes last), and an <em>oracle</em> property (agree with a trusted reference). This is a runnable Maven project; see <code>README.md</code>.</p>
+  <pre><code class="language-java">// Java + jqwik
+// Each @Property is checked against ~1000 randomly generated inputs. If one
+// fails, jqwik SHRINKS it to the smallest counterexample before reporting.
+class ListsProperties {
+
+  // Involution: reversing twice restores the original list.
+  @Property
+  boolean reversingTwiceRestoresTheOriginal(@ForAll List&lt;Integer&gt; xs) {
+    return Lists.reverse(Lists.reverse(xs)).equals(xs);
+  }
+
+  // Invariant: reverse never changes the number of elements.
+  @Property
+  boolean reversePreservesSize(@ForAll List&lt;Integer&gt; xs) {
+    return Lists.reverse(xs).size() == xs.size();
+  }
+
+  // Relational, on non-empty lists: the first element ends up last.
+  @Property
+  boolean firstElementBecomesLast(@ForAll @Size(min = 1) List&lt;Integer&gt; xs) {
+    List&lt;Integer&gt; reversed = Lists.reverse(xs);
+    return reversed.get(reversed.size() - 1).equals(xs.get(0));
+  }
+
+  // Oracle: our reverse agrees with the JDK reference for every input.
+  @Property
+  boolean matchesReferenceImplementation(@ForAll List&lt;Integer&gt; xs) {
+    List&lt;Integer&gt; expected = new ArrayList&lt;&gt;(xs);
+    Collections.reverse(expected);
+    return Lists.reverse(xs).equals(expected);
+  }
+}</code></pre>
+  <p class="desc">Want proof it really generates 1000 inputs? <code>DemoProperties</code> in the project uses <code>@Report(Reporting.GENERATED)</code> and a counter to print each generated list and the invocation total — run <code>mvn test -Dtest=DemoProperties</code>. The default count is set per property with <code>@Property(tries = N)</code>.</p>
+  <p class="desc">Run the properties yourself with the Maven project in this folder — see <code>README.md</code>.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

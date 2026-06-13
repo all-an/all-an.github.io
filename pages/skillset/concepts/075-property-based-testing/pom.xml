@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.example.concepts</groupId>
+  <artifactId>property-based-testing</artifactId>
+  <version>1.0.0</version>
+  <packaging>jar</packaging>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <!-- Compile to a widely-supported bytecode level; the JDK can be newer. -->
+    <maven.compiler.release>21</maven.compiler.release>
+    <jqwik.version>1.9.1</jqwik.version>
+    <junit.platform.version>1.11.1</junit.platform.version>
+  </properties>
+
+  <dependencies>
+    <!-- jqwik is the property-based testing framework: generators + shrinking. -->
+    <dependency>
+      <groupId>net.jqwik</groupId>
+      <artifactId>jqwik</artifactId>
+      <version>${jqwik.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <!-- Surefire needs the JUnit Platform launcher on the classpath to discover
+         and run the jqwik engine; without it, zero tests run silently. -->
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-launcher</artifactId>
+      <version>${junit.platform.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.5.2</version>
+        <configuration>
+          <!-- By default surefire only runs *Test/*Tests classes. jqwik property
+               classes are named *Properties, so include that pattern too. -->
+          <includes>
+            <include>**/*Properties.java</include>
+            <include>**/*Test.java</include>
+          </includes>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

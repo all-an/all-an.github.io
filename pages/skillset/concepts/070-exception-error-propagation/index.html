@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Exception / error propagation</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Exception / error propagation</h1>
+  <p class="desc">A thrown exception <em>propagates</em> up the call stack: it unwinds each frame that does not handle it, until a matching <code>catch</code> clause is found. Java is the canonical home of this model — <code>try</code>/<code>catch</code>/<code>finally</code> with a typed exception hierarchy.<br>
+  Here <code>parsePositive</code> (the deepest frame) throws, <code>total</code> (the middle frame) does <strong>not</strong> catch, so the exception passes straight through it to the <code>try</code> in <code>main</code>. The matching <code>catch</code> is chosen by type, most specific first: <code>NumberFormatException</code> is a subclass of <code>IllegalArgumentException</code>, so it must be listed before the broader type or Java rejects it as unreachable.<br>
+  The <code>finally</code> block runs on every exit — after a normal return <em>and</em> after a caught exception — which is why it is the place for cleanup like closing files or releasing locks.</p>
+  <pre><code class="language-java">// Java
+// The deepest frame. Throws two different exception types.
+static int parsePositive(String text) {
+  int n = Integer.parseInt(text);      // throws NumberFormatException on non-numbers
+  if (n &lt;= 0) {
+    throw new IllegalArgumentException("not positive: " + n);
+  }
+  return n;
+}
+
+// An intermediate frame that does NOT catch. A throw here unwinds straight
+// through total() and propagates to its caller — that pass-through is propagation.
+static int total(String[] texts) {
+  int sum = 0;
+  for (String text : texts) {
+    sum += parsePositive(text);
+  }
+  return sum;
+}
+
+try {
+  // If total() throws, this line is skipped and control jumps to a matching catch.
+  int sum = total(batch);
+  System.out.println("ok: sum = " + sum);
+} catch (NumberFormatException e) {
+  // Most specific first: a subclass must precede its superclass below.
+  System.out.println("caught NumberFormatException: " + e.getMessage());
+} catch (IllegalArgumentException e) {
+  System.out.println("caught IllegalArgumentException: " + e.getMessage());
+} finally {
+  // finally ALWAYS runs — after success or after a catch — so cleanup goes here.
+  System.out.println("  (finally: batch done)");
+}</code></pre>
+  <p class="desc">Run it yourself with the files in this folder — see <code>README.md</code>.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

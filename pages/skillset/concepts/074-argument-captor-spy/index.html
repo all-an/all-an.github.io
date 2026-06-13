@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Argument captor / spy</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Argument captor / spy</h1>
+  <p class="desc">Two Mockito tools for <em>behavior verification</em> — checking <em>how</em> a collaborator was used.<br>
+  An <strong>ArgumentCaptor</strong> grabs the actual argument passed to a mock so you can assert on its fields. It earns its keep when the code under test <em>builds the argument internally</em>: here <code>AccountService.withdraw</code> constructs an <code>AuditEntry</code> the test never sees, so capturing it is the only way to inspect what was recorded.<br>
+  A <strong>spy</strong> wraps a <em>real</em> object: its real methods run by default (the entry is actually stored), while Mockito still records every call so <code>verify</code> and capture work. That is the difference from a mock — a mock is hollow, a spy is a real object with recording bolted on. This is a real Maven project that runs JUnit 5 + Mockito; see <code>README.md</code>.</p>
+  <pre><code class="language-java">// Java + Mockito + JUnit 5
+// ArgumentCaptor: grab the AuditEntry the service built internally, then assert
+// on its fields — impossible with a plain verify(eq(...)) when the test never
+// constructs the object being passed.
+@Test
+void capturesTheAuditEntryArgument() {
+  AuditLog auditLog = mock(AuditLog.class);
+  AccountService service = new AccountService(auditLog);
+
+  service.withdraw("acc-1", 2500);
+
+  ArgumentCaptor&lt;AuditEntry&gt; captor = ArgumentCaptor.forClass(AuditEntry.class);
+  verify(auditLog).record(captor.capture());
+
+  AuditEntry captured = captor.getValue();
+  assertEquals("acc-1", captured.account());
+  assertEquals(2500, captured.amountCents());
+  assertEquals("WITHDRAW", captured.action());
+}
+
+// Spy: wrap a REAL InMemoryAuditLog. The real record() runs (the entry is truly
+// stored), AND the call is recorded so verify + capture still work.
+@Test
+void spyRunsRealCodeAndStillRecordsInteractions() {
+  InMemoryAuditLog real = new InMemoryAuditLog();
+  AuditLog spy = spy(real);
+  new AccountService(spy).withdraw("acc-2", 99);
+
+  // Real method actually ran: the entry is in the real backing list.
+  assertEquals(1, real.entries().size());
+
+  // And the interaction was still recorded.
+  ArgumentCaptor&lt;AuditEntry&gt; captor = ArgumentCaptor.forClass(AuditEntry.class);
+  verify(spy).record(captor.capture());
+  assertEquals(99, captor.getValue().amountCents());
+}</code></pre>
+  <p class="desc">Run the tests yourself with the Maven project in this folder — see <code>README.md</code>.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

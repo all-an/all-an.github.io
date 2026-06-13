@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>For comprehension / do notation</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>For comprehension / do notation</h1>
+  <p class="desc">JavaScript's <code>async/await</code> is syntactic sugar over monadic <code>flatMap</code>/<em>bind</em>: it lets a chain of dependent steps read top-to-bottom instead of nesting. <code>await</code> <em>is</em> the <code>Promise</code>'s <code>flatMap</code>, the code after it is the continuation, and a rejected step short-circuits the rest.<br>
+  This shows both forms side by side: the <code>async/await</code> sugar and the nested <code>.then</code> chain it compiles to. They produce the same answer, and the unknown id <code>#9</code> short-circuits both — proving <code>async/await</code> is the do-notation for Promises.<br>
+  Scala's <code>for</code> comprehension and Haskell's <code>do</code> notation are the same sugar generalized: they work over <em>any</em> monad (<code>Option</code>, <code>List</code>, <code>Either</code>, <code>IO</code>), not just the async one. Java has no equivalent syntax: you either chain <code>flatMap</code> by hand (see <a href="../065-monad-chain/">Monad / chain</a>) or use virtual threads, which solve the async case by a different mechanism rather than by desugaring binds.</p>
+  <pre><code class="language-typescript">// TypeScript
+// Each lookup returns a Promise — the monad we are sequencing over.
+function findUser(id: number): Promise&lt;string&gt; {
+  const name = users[id];
+  return name ? Promise.resolve(name) : Promise.reject(new Error(`no user #${id}`));
+}
+function findOrders(name: string): Promise&lt;string[]&gt; {
+  return Promise.resolve(orders[name] ?? []);
+}
+
+// DO-NOTATION form: each `await` is a monadic bind. The steps read as plain
+// sequential statements, yet `items` depends on `name` from the previous bind.
+async function summarySugar(id: number): Promise&lt;string&gt; {
+  const name = await findUser(id);        // bind 1
+  const items = await findOrders(name);   // bind 2, depends on bind 1
+  return `${name} ordered ${items.join(", ")}`;
+}
+
+// DESUGARED form: exactly what async/await compiles to — nested Promise.then,
+// which is the Promise monad's flatMap. This is the bind chain the sugar hides.
+function summaryDesugared(id: number): Promise&lt;string&gt; {
+  return findUser(id).then((name) =&gt;
+    findOrders(name).then((items) =&gt;
+      `${name} ordered ${items.join(", ")}`));
+}</code></pre>
+  <p class="desc">Run the TypeScript version yourself with the files in this folder — see <code>README.md</code>.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mock / stub / double</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Mock / stub / double</h1>
+  <p class="desc">A <em>test double</em> replaces a real collaborator so a test runs fast and in isolation — no network, database, or payment API. The class under test takes its collaborator through the constructor, so a test can hand it a double instead of the real thing.<br>
+  Two kinds, from Meszaros' taxonomy. A <strong>stub</strong> returns canned answers and the test checks the <em>result</em> (state verification). A <strong>mock</strong> also <em>records</em> how it was called, so the test checks the <em>interaction</em> — was the collaborator used correctly? Below, the stub drives <code>checkout</code> to "confirmed", while the mock asserts the gateway was charged exactly once with the right account and amount.<br>
+  This is hand-built with no framework so the distinction is explicit; production Java uses <code>Mockito</code> (and <code>jest.fn()</code>, <code>unittest.mock</code>, ScalaMock elsewhere) to generate doubles automatically.</p>
+  <pre><code class="language-java">// Java
+// The real collaborator we do NOT want to call in a test — a live payment API.
+interface PaymentGateway {
+  boolean charge(String account, int cents);
+}
+
+// A STUB: returns a canned answer with no logic, to drive the code under test
+// down a chosen path. The test then checks the RESULT (state verification).
+static final class ApprovingStub implements PaymentGateway {
+  public boolean charge(String account, int cents) {
+    return true; // canned response — always approves
+  }
+}
+
+// A MOCK: like a stub, but it also RECORDS how it was called, so the test can
+// verify the INTERACTION (behavior verification), not just the result.
+static final class RecordingMock implements PaymentGateway {
+  int callCount = 0;
+  String lastAccount;
+  int lastCents;
+
+  public boolean charge(String account, int cents) {
+    callCount++;
+    lastAccount = account;
+    lastCents = cents;
+    return true;
+  }
+}
+
+// Mock assertion: verify the gateway was charged exactly once, with the right
+// account and amount — catching bugs a stub cannot, like charging twice or $0.
+RecordingMock mock = new RecordingMock();
+new OrderService(mock).checkout("acc-2", 1299);
+check("mock: charged exactly once", mock.callCount == 1);
+check("mock: charged the right amount", mock.lastCents == 1299);</code></pre>
+  <p class="desc">In real Java you would not hand-write those doubles — <a href="https://site.mockito.org/">Mockito</a> generates them. The same two tests with Mockito: <code>when(...).thenReturn(...)</code> <em>stubs</em> a canned answer, and <code>verify(...)</code> checks the <em>interaction</em>.</p>
+  <pre><code class="language-java">// Java + Mockito
+import static org.mockito.Mockito.*;
+
+// One generated double stands in for the real gateway — no class to write.
+PaymentGateway gateway = mock(PaymentGateway.class);
+
+// STUB (state verification): declare the canned answer, then assert the result.
+when(gateway.charge("acc-1", 500)).thenReturn(true);
+assertEquals("confirmed", new OrderService(gateway).checkout("acc-1", 500));
+
+// MOCK (behavior verification): run the code, then verify HOW the gateway was
+// used — charged exactly once, with the right account and amount.
+new OrderService(gateway).checkout("acc-2", 1299);
+verify(gateway, times(1)).charge("acc-2", 1299);</code></pre>
+  <p class="desc">Run the hand-built version yourself with the files in this folder — see <code>README.md</code>.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

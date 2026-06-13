@@ -1,0 +1,5 @@
+# Maven build output — not part of the website.
+target/
+
+# jqwik's failure-seed cache — runtime artifact, not source.
+.jqwik-database

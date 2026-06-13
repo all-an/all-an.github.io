@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Typed error channel</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Typed error channel</h1>
+  <p class="desc">A <em>typed error channel</em> makes failure an ordinary <strong>typed return value</strong> — <code>Result&lt;T, E&gt;</code> is either an <code>Ok</code> carrying a success or an <code>Err</code> carrying an error — instead of an out-of-band thrown exception (see <a href="../070-exception-error-propagation/">Exception / error propagation</a> for that model).<br>
+  <code>flatMap</code> chains fallible steps on the success track, and the first <code>Err</code> <em>short-circuits</em> the rest: railway-oriented programming. Below, <code>parseAge</code> then <code>checkAdult</code> are threaded together; for <code>"abc"</code> the parse fails, so <code>checkAdult</code> never runs and the error is carried straight to the end.<br>
+  Scala (<code>Either</code>, <code>ZIO[R,E,A]</code>), Haskell (<code>Either</code>), and Rust (<code>Result&lt;T,E&gt;</code>) ship this built in. Java has no built-in <code>Result</code>, but a <code>sealed interface</code> + <code>record</code>s + a pattern-matching <code>switch</code> model it cleanly — and because the two cases are sealed, the compiler forces <em>both</em> channels to be handled.</p>
+  <pre><code class="language-java">// Java
+// Two-channel value. sealed + records means these are the ONLY two cases, so a
+// switch over them is exhaustive and the error type E rides in the type.
+sealed interface Result&lt;T, E&gt; permits Result.Ok, Result.Err {
+  record Ok&lt;T, E&gt;(T value) implements Result&lt;T, E&gt; {}
+  record Err&lt;T, E&gt;(E error) implements Result&lt;T, E&gt; {}
+
+  // map transforms the SUCCESS channel; an Err passes through untouched.
+  default &lt;U&gt; Result&lt;U, E&gt; map(Function&lt;? super T, ? extends U&gt; f) {
+    return switch (this) {
+      case Ok&lt;T, E&gt; ok -&gt; new Ok&lt;&gt;(f.apply(ok.value()));
+      case Err&lt;T, E&gt; err -&gt; new Err&lt;&gt;(err.error());
+    };
+  }
+
+  // flatMap chains another fallible step. On Ok it runs the next step; on Err it
+  // short-circuits, skipping the rest of the chain — the railway switch.
+  default &lt;U&gt; Result&lt;U, E&gt; flatMap(Function&lt;? super T, Result&lt;U, E&gt;&gt; f) {
+    return switch (this) {
+      case Ok&lt;T, E&gt; ok -&gt; f.apply(ok.value());
+      case Err&lt;T, E&gt; err -&gt; new Err&lt;&gt;(err.error());
+    };
+  }
+}
+
+// The railway: each step stays on the success track until an Err derails it.
+Result&lt;String, String&gt; result =
+    parseAge(input)
+        .flatMap(Main::checkAdult)
+        .map(age -&gt; "access granted, age " + age);
+
+// Pattern-matching switch handles BOTH channels — the compiler rejects
+// forgetting either case, which is how the type forces failure handling.
+String shown = switch (result) {
+  case Result.Ok&lt;String, String&gt; ok -&gt; ok.value();
+  case Result.Err&lt;String, String&gt; err -&gt; "denied: " + err.error();
+};</code></pre>
+  <p class="desc">Run it yourself with the files in this folder — see <code>README.md</code>.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

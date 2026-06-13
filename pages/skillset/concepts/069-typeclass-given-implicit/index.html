@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Typeclass / given / implicit</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Typeclass / given / implicit</h1>
+  <p class="desc">A <em>typeclass</em> is a dictionary of operations for a type, resolved by the type itself rather than carried by the value. <code>Semigroup&lt;T&gt;</code> below bundles one operation — how to combine two <code>T</code> values — and <code>combineAll</code> is <em>ad-hoc polymorphic</em>: it works for any <code>T</code>, but only because the caller supplies the matching dictionary.<br>
+  In Java you pass that dictionary <strong>by hand</strong>: <code>INT_ADDITION</code> and <code>STRING_CONCAT</code> are ordinary values handed to <code>combineAll</code>. <code>Comparator&lt;T&gt;</code> is the same idea built in — an <code>Ord&nbsp;T</code> dictionary you already pass to <code>sort</code>.<br>
+  Haskell (<code>typeclass</code>), Scala (<code>given</code> / <code>implicit</code>), and Rust (<code>trait impl</code>) add the missing half: the compiler <em>finds and passes</em> the right instance automatically, and enforces <em>coherence</em> — one canonical instance per type. Java has the dictionary but not the implicit, coherent resolution; this shows the mechanism those implicits automate.</p>
+  <pre><code class="language-java">// Java
+// The typeclass: a dictionary of operations for some type T. In Scala this would
+// be a `trait Semigroup[T]` with `given` instances the compiler injects.
+interface Semigroup&lt;T&gt; {
+  T combine(T a, T b);
+}
+
+// Two instances, one per type — the dictionaries a `given` / `implicit` would
+// supply automatically; in Java they are ordinary named values.
+static final Semigroup&lt;Integer&gt; INT_ADDITION = (a, b) -&gt; a + b;
+static final Semigroup&lt;String&gt; STRING_CONCAT = (a, b) -&gt; a + b;
+
+// Ad-hoc polymorphic: works for ANY T, but only because the caller supplies the
+// Semigroup<T> dictionary. The behavior comes from the passed instance.
+static &lt;T&gt; T combineAll(List&lt;T&gt; items, Semigroup&lt;T&gt; semigroup) {
+  T result = items.get(0);
+  for (int i = 1; i &lt; items.size(); i++) {
+    result = semigroup.combine(result, items.get(i));
+  }
+  return result;
+}
+
+int sum = combineAll(List.of(1, 2, 3, 4), INT_ADDITION);    // 10
+String joined = combineAll(List.of("a", "b", "c"), STRING_CONCAT); // abc
+
+// Comparator<T> is a typeclass instance you already use: an `Ord T` dictionary,
+// passed to sort explicitly — exactly the same pattern as combineAll above.
+words.sort(Comparator.comparingInt(String::length));        // [fig, pear, apple]</code></pre>
+  <p class="desc">Run it yourself with the files in this folder — see <code>README.md</code>.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

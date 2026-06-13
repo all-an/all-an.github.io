@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Circuit breaker</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Circuit breaker</h1>
+  <p class="desc">A <em>circuit breaker</em> wraps calls to a flaky dependency and stops hammering it once it looks broken — fault tolerance, named after the electrical breaker. It has three states: <strong>CLOSED</strong> (calls flow through, consecutive failures are counted), <strong>OPEN</strong> (too many failures, so calls are rejected <em>instantly</em> without touching the dependency — fail fast), and <strong>HALF_OPEN</strong> (after a cooldown, one trial call probes for recovery).<br>
+  Below, three failures trip the breaker OPEN; the next call is rejected without reaching the service (the call counter proves it). After the cooldown a trial call is allowed — it fails while the outage continues, then succeeds once the service recovers, closing the breaker again.<br>
+  This is a zero-dependency, hand-built breaker with an injected clock so the run is deterministic. Production code reaches for <code>Resilience4j</code> (Java), <code>Polly</code> (C#), or <code>ZIO</code> retry schedules (Scala), but the state machine is exactly this.</p>
+  <pre><code class="language-java">// Java
+// call runs the action through the breaker, applying the fault-tolerance rules.
+&lt;T&gt; T call(Supplier&lt;T&gt; action) {
+  if (state == State.OPEN) {
+    // Still cooling down? Reject immediately — the dependency is never touched.
+    if (clock.millis() - openedAtMillis &lt; openDurationMillis) {
+      throw new CircuitOpenException();
+    }
+    // Cooldown elapsed: allow a single trial call to probe for recovery.
+    state = State.HALF_OPEN;
+  }
+  try {
+    T result = action.get();
+    onSuccess();   // any success closes the breaker and clears the failure tally
+    return result;
+  } catch (RuntimeException e) {
+    onFailure();   // count the failure; trip OPEN on threshold or a failed trial
+    throw e;
+  }
+}
+
+// A failed trial in HALF_OPEN, or hitting the threshold in CLOSED, trips OPEN.
+private void onFailure() {
+  consecutiveFailures++;
+  if (state == State.HALF_OPEN || consecutiveFailures &gt;= failureThreshold) {
+    state = State.OPEN;
+    openedAtMillis = clock.millis();
+  }
+}</code></pre>
+  <p class="desc">Run it yourself with the files in this folder — see <code>README.md</code>.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
