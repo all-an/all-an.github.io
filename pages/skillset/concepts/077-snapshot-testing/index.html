@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Snapshot testing</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Snapshot testing</h1>
+  <p class="desc">Writing assertions for large, structured output — a rendered receipt, an HTML fragment, a serialized object — is tedious and brittle. <em>Snapshot testing</em> flips it: you assert <code>toMatchSnapshot()</code>, and the framework <strong>serializes the value to a file the first time</strong>, then on every later run re-renders and compares against that stored "golden" file. Any difference fails the test. It is regression testing by serialization — the snapshot is committed to git, so a reviewer sees exactly how the output changed in the diff.<br>
+  Here, Jest (the JavaScript library, alongside <code>insta</code> in Rust, <code>expect-test</code> in OCaml, and ApprovalTests in C#/Java) snapshots a rendered invoice. The catch: the value must be <strong>deterministic</strong> — no dates, random ids, or unordered maps — or the snapshot churns. This is a runnable Jest project; see <code>README.md</code>.</p>
+  <pre><code class="language-javascript">// JavaScript + Jest
+const { formatInvoice } = require("../src/formatInvoice");
+
+const invoice = {
+  id: "INV-1001",
+  customer: "Ada Lovelace",
+  items: [
+    { name: "Keyboard",    qty: 1, priceCents: 7999 },
+    { name: "USB-C cable", qty: 3, priceCents: 1250 },
+  ],
+};
+
+// toMatchSnapshot: first run WRITES the rendered receipt to a .snap file; every
+// later run COMPARES against it. The committed .snap is the golden reference.
+test("renders the receipt the same as the stored snapshot", () => {
+  expect(formatInvoice(invoice)).toMatchSnapshot();
+});
+
+// toMatchInlineSnapshot keeps the expected value in the test file itself —
+// Jest fills the backticks in on first run. Best for small outputs.
+test("formats a tiny invoice inline", () => {
+  const tiny = { id: "INV-2", customer: "Grace Hopper",
+                 items: [{ name: "Pen", qty: 2, priceCents: 150 }] };
+  expect(formatInvoice(tiny)).toMatchInlineSnapshot(`
+"INVOICE INV-2
+Customer: Grace Hopper
+--------------------------------
+  2 x Pen @ $1.50 = $3.00
+--------------------------------
+TOTAL: $3.00"
+`);
+});</code></pre>
+  <p class="desc">The stored snapshot (in <code>__snapshots__/formatInvoice.test.js.snap</code>) is the test's source of truth — it is committed to git and read on every run:</p>
+  <pre><code class="language-text">exports[`formatInvoice renders the receipt the same as the stored snapshot 1`] = `
+"INVOICE INV-1001
+Customer: Ada Lovelace
+--------------------------------
+  1 x Keyboard @ $79.99 = $79.99
+  3 x USB-C cable @ $12.50 = $37.50
+--------------------------------
+TOTAL: $117.49"
+`;</code></pre>
+  <p class="desc">Change <code>formatInvoice</code> and the test fails with a diff. If the change was intended, you re-bless the snapshot with <code>jest -u</code> (update); if not, you just caught a regression. Run it yourself with the Jest project in this folder — see <code>README.md</code>.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "name": "snapshot-testing",
+  "version": "1.0.0",
+  "description": "Snapshot testing concept — runnable Jest example.",
+  "scripts": {
+    "test": "jest"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}

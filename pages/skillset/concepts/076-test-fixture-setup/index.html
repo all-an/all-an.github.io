@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Test fixture / setup</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Test fixture / setup</h1>
+  <p class="desc">A <em>test fixture</em> is the fixed, known starting state a test runs against. Tests must be <strong>isolated</strong> — the result of one cannot depend on another having run first — so the fixture is rebuilt fresh for each test rather than shared. In JUnit 5 that rebuild lives in a <code>@BeforeEach</code> method, which the runner calls before <strong>every</strong> <code>@Test</code>; <code>@AfterEach</code> tears it back down. The once-per-class pair <code>@BeforeAll</code> / <code>@AfterAll</code> handle expensive shared setup.<br>
+  The same idea appears everywhere: <code>setUp</code> (Python unittest), <code>beforeEach</code> (Jest), <code>before(:each)</code> (RSpec), <code>TestInitialize</code> (C#), ScalaTest fixtures. It is one of Kent Beck's original xUnit patterns. This is a runnable Maven project; see <code>README.md</code>.</p>
+  <pre><code class="language-java">// Java + JUnit 5
+// The fixture is a fresh ShoppingCart, rebuilt before EVERY test by @BeforeEach,
+// so the two tests below cannot leak state into each other.
+class ShoppingCartTest {
+
+  // The fixture: the object under test, recreated for each test method.
+  private ShoppingCart cart;
+
+  // Fixture setup — runs before every @Test, handing each a brand-new cart.
+  @BeforeEach
+  void setUp() {
+    cart = new ShoppingCart();
+  }
+
+  @Test
+  void addingOneItemCountsAsOne() {
+    cart.add("Coffee", 450);
+    assertEquals(1, cart.itemCount());
+    assertEquals(450, cart.totalCents());
+  }
+
+  // Were the fixture NOT reset, this could see "Coffee" from the test above and
+  // fail. The fresh cart from @BeforeEach keeps it isolated, so it passes.
+  @Test
+  void totalSumsAllItems() {
+    cart.add("Tea", 300);
+    cart.add("Muffin", 275);
+    assertEquals(2, cart.itemCount());
+    assertEquals(575, cart.totalCents());
+  }
+}</code></pre>
+  <p class="desc">Want proof <code>@BeforeEach</code> runs before <em>each</em> test and not just once? <code>LifecycleDemoTest</code> prints each hook as it fires, so you see <code>@BeforeEach</code> / <code>@AfterEach</code> bracketing <em>both</em> tests while <code>@BeforeAll</code> / <code>@AfterAll</code> fire once:</p>
+  <pre><code class="language-text">@BeforeAll   — once, before all tests
+  @BeforeEach  — fresh fixture for the next test
+    &gt;&gt;&gt; firstTest body
+  @AfterEach   — tear the fixture down
+  @BeforeEach  — fresh fixture for the next test
+    &gt;&gt;&gt; secondTest body
+  @AfterEach   — tear the fixture down
+@AfterAll    — once, after all tests</code></pre>
+  <p class="desc">Run the tests yourself with the Maven project in this folder — see <code>README.md</code>.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

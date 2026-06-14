@@ -1,0 +1,11 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`formatInvoice renders the receipt the same as the stored snapshot 1`] = `
+"INVOICE INV-1001
+Customer: Ada Lovelace
+--------------------------------
+  1 x Keyboard @ $79.99 = $79.99
+  3 x USB-C cable @ $12.50 = $37.50
+--------------------------------
+TOTAL: $117.49"
+`;
