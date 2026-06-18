@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dependency injection</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Dependency injection</h1>
+  <p class="desc"><em>Dependency injection</em> (DI) means a class receives the things it depends on from the outside instead of creating them itself. This is a form of <strong>Inversion of Control</strong>: the decision of <em>which</em> concrete dependency to use is taken away from the class and given to whoever assembles the program. A class that depends on an <em>interface</em> and accepts an implementation through its constructor is decoupled from any concrete type — and, crucially, becomes testable, because a test can inject a fake.<br>
+  Frameworks automate the wiring — Spring IoC and CDI (Java), Dagger / Hilt (Android), ASP.NET Core DI (C#), Angular DI (TypeScript), ZLayer (Scala ZIO), the Reader monad (Haskell/Scala) — but the principle needs no framework at all, just a few constructor calls in one place. It was named by Martin Fowler / Robert C. Martin. This is a runnable Maven project; see <code>README.md</code>.</p>
+
+  <p class="desc">First, the <strong>anti-pattern</strong>: the class builds its own dependency, hard-wiring itself to one concrete type. There is no seam, so it cannot be tested without sending real email:</p>
+  <pre><code class="language-java">// ANTI-PATTERN — do NOT do this. The dependency is created inside the class.
+class OrderService {
+  private final MessageSender sender = new EmailSender();  // hard-wired!
+
+  void placeOrder(String customer, String item) {
+    sender.send(customer, "Your order for " + item + " is confirmed.");
+  }
+}
+// A test of placeOrder() would now fire a REAL EmailSender. There is no way to
+// substitute a fake — the dependency is welded in.</code></pre>
+
+  <p class="desc">Now with <strong>constructor injection</strong>: the dependency is an interface, passed in. The class no longer knows or cares which implementation it got:</p>
+  <pre><code class="language-java">// The dependency abstraction — the "seam" we can substitute.
+interface MessageSender {
+  void send(String recipient, String message);
+}
+
+class OrderService {
+  // The injected dependency — chosen by the caller, not by this class.
+  private final MessageSender sender;
+
+  // Constructor injection: the dependency arrives as a parameter.
+  OrderService(MessageSender sender) {
+    this.sender = sender;
+  }
+
+  void placeOrder(String customer, String item) {
+    sender.send(customer, "Your order for " + item + " is confirmed.");
+  }
+}</code></pre>
+
+  <p class="desc">The concrete wiring happens once, at the <strong>composition root</strong> — the entry point where the object graph is assembled. A DI framework automates exactly this step:</p>
+  <pre><code class="language-java">public class Main {
+  public static void main(String[] args) {
+    MessageSender sender = new EmailSender();        // choose the real one...
+    OrderService orders = new OrderService(sender);  // ...and inject it.
+    orders.placeOrder("ada@example.com", "Analytical Engine");
+  }
+}</code></pre>
+
+  <p class="desc">The payoff is <strong>testability</strong>. Because the dependency comes from outside, a test injects a fake that records calls instead of sending email, then asserts on it — no network, no real mail server:</p>
+  <pre><code class="language-java">// A test double implementing the same interface — it records instead of sends.
+static class RecordingSender implements MessageSender {
+  final List&lt;String&gt; sent = new ArrayList&lt;&gt;();
+  public void send(String recipient, String message) {
+    sent.add(recipient + " | " + message);
+  }
+}
+
+@Test
+void placingAnOrderNotifiesTheCustomer() {
+  RecordingSender fake = new RecordingSender();
+  OrderService orders = new OrderService(fake);   // inject the fake, not email
+
+  orders.placeOrder("ada@example.com", "Analytical Engine");
+
+  assertEquals(1, fake.sent.size());
+  assertEquals(
+      "ada@example.com | Your order for Analytical Engine is confirmed.",
+      fake.sent.get(0));
+}</code></pre>
+
+  <p class="desc">Run both tests yourself with the Maven project in this folder — the fake-injection test and the real composition root from <code>Main</code> — see <code>README.md</code>.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

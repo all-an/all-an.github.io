@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Observer / event listener</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Observer / event listener</h1>
+  <p class="desc">The <em>Observer</em> pattern lets one object — the <strong>subject</strong> (or <em>observable</em>) — notify many others — the <strong>observers</strong> (or <em>event listeners</em>) — whenever its state changes, without knowing anything about them beyond a shared interface. Observers <strong>subscribe</strong> to the subject; when something happens, the subject <strong>pushes</strong> the new value to each one. This is a <em>push</em> model and it keeps the two sides loosely coupled: new listeners can be added without touching the subject.<br>
+  It is one of the original Gang of Four patterns (1994) and underlies UI event listeners (Java Swing, the DOM), Spring's <code>@EventHandler</code>, C# <code>event</code>/<code>delegate</code>, Qt's signal/slot, and — taken to its asynchronous, stream-based extreme — the reactive <code>Observable</code> (RxJava/RxJS) and ZIO's <code>ZStream</code>. This is a runnable Maven project; see <code>README.md</code>.</p>
+
+  <p class="desc">The <strong>observer</strong> is just an interface with a callback. Anything implementing it can listen:</p>
+  <pre><code class="language-java">// The observer / event listener — the subject knows listeners only through this.
+interface TemperatureObserver {
+  void onTemperatureChanged(double celsius);   // pushed the new value
+}</code></pre>
+
+  <p class="desc">The <strong>subject</strong> keeps a list of observers, exposes <code>subscribe</code> / <code>unsubscribe</code>, and broadcasts every change. It depends only on the interface, never on concrete listeners:</p>
+  <pre><code class="language-java">class WeatherStation {
+  private final List&lt;TemperatureObserver&gt; observers = new ArrayList&lt;&gt;();
+  private double celsius;
+
+  void subscribe(TemperatureObserver o)   { observers.add(o); }
+  void unsubscribe(TemperatureObserver o) { observers.remove(o); }
+
+  // Update state and push it to everyone in one operation.
+  void setTemperature(double celsius) {
+    this.celsius = celsius;
+    // Iterate a copy so an observer may unsubscribe from inside its callback.
+    for (TemperatureObserver o : new ArrayList&lt;&gt;(observers)) {
+      o.onTemperatureChanged(celsius);
+    }
+  }
+}</code></pre>
+
+  <p class="desc">Observers subscribe and react independently. Because the interface has a single method, a <strong>lambda</strong> works as a listener too — and unsubscribing stops the notifications:</p>
+  <pre><code class="language-java">WeatherStation station = new WeatherStation();
+station.subscribe(new Display("Phone"));
+station.subscribe(new Display("Window unit"));
+
+// A lambda is a perfectly good observer.
+station.subscribe(c -&gt; { if (c &gt; 30) System.out.println("Heat warning! " + c + "°C"); });
+
+station.setTemperature(22.5);     // every subscriber reacts
+station.unsubscribe(phone);       // phone opts out...
+station.setTemperature(31.0);     // ...and is silent; the rest still react</code></pre>
+
+  <p class="desc">The test injects a recording observer to prove the three guarantees — everyone is notified, the new value is delivered, and unsubscribing stops events:</p>
+  <pre><code class="language-java">@Test
+void unsubscribedObserverStopsReceivingEvents() {
+  WeatherStation station = new WeatherStation();
+  RecordingObserver staying = new RecordingObserver();
+  RecordingObserver leaving = new RecordingObserver();
+  station.subscribe(staying);
+  station.subscribe(leaving);
+
+  station.setTemperature(10.0);          // both hear this
+  station.unsubscribe(leaving);
+  station.setTemperature(20.0);          // only `staying` hears this
+
+  assertEquals(List.of(10.0, 20.0), staying.received);
+  assertEquals(List.of(10.0), leaving.received);   // stopped after unsubscribe
+}</code></pre>
+
+  <p class="desc">Run the tests and the demo yourself with the Maven project in this folder — see <code>README.md</code>.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

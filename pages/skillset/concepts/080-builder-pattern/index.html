@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Builder pattern</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Builder pattern</h1>
+  <p class="desc">The <em>Builder</em> pattern constructs a complex object step by step through a fluent, readable API, then produces it in one final <code>build()</code> call. It shines when an object has many fields — some required, many optional — where a constructor would force callers to pass a long, positional argument list (the "telescoping constructor" problem) and remember what each value means. A builder names every choice, lets callers set only what they care about, defaults the rest, and validates the whole object in <code>build()</code> so an invalid instance can never exist.<br>
+  It is a Gang of Four creational pattern. Equivalents: Java (often via Lombok's <code>@Builder</code>), C#, Kotlin/Scala <code>copy()</code> on data/case classes, Rust's struct-update <code>..base</code>, and named/default parameters in Python and Swift, which cover much of the same ground. This is a runnable Maven project; see <code>README.md</code>.</p>
+
+  <p class="desc">The <strong>problem</strong> a builder solves — a telescoping constructor, where call sites are an unreadable wall of positional arguments:</p>
+  <pre><code class="language-java">// ANTI-PATTERN — what do these arguments even mean at the call site?
+new HttpRequest("https://x.com", "POST", 60, "{}", headers);
+
+// And every optional combination needs another overload:
+new HttpRequest("https://x.com");
+new HttpRequest("https://x.com", "POST");
+new HttpRequest("https://x.com", "POST", 60);   // ...and so on</code></pre>
+
+  <p class="desc">The <strong>builder</strong>: a mutable helper whose setters each return <code>this</code> so calls chain. Optional fields hold their defaults; the object itself is immutable with a private constructor:</p>
+  <pre><code class="language-java">public final class HttpRequest {
+  private final String url;
+  private final String method;
+  private final int timeoutSeconds;
+  // ...
+
+  // Private — the ONLY way to build one is through the Builder.
+  private HttpRequest(Builder b) {
+    this.url = b.url;
+    this.method = b.method;
+    this.timeoutSeconds = b.timeoutSeconds;
+    // ...
+  }
+
+  public static final class Builder {
+    private String url;                  // required — no default
+    private String method = "GET";       // optional — sensible default
+    private int timeoutSeconds = 30;     // optional — sensible default
+
+    public Builder url(String url)  { this.url = url; return this; }      // chain
+    public Builder method(String m) { this.method = m; return this; }    // chain
+    public Builder timeoutSeconds(int t) { this.timeoutSeconds = t; return this; }
+
+    // The single validation gate — an invalid request can never be built.
+    public HttpRequest build() {
+      if (url == null || url.isBlank())
+        throw new IllegalStateException("url is required");
+      return new HttpRequest(this);
+    }
+  }
+}</code></pre>
+
+  <p class="desc">At the call site the fluent chain reads like a description of the object, and each caller sets only the fields it cares about:</p>
+  <pre><code class="language-java">// Minimal — only the required url; method/timeout/headers take defaults.
+HttpRequest simple = new HttpRequest.Builder()
+    .url("https://example.com/status")
+    .build();
+
+// Customized — every choice is named, order does not matter.
+HttpRequest detailed = new HttpRequest.Builder()
+    .url("https://example.com/orders")
+    .method("POST")
+    .header("Content-Type", "application/json")
+    .body("{\"item\":\"Analytical Engine\"}")
+    .timeoutSeconds(60)
+    .build();</code></pre>
+
+  <p class="desc">Because <code>build()</code> is the one validation gate, the test can prove an invalid object is impossible to create:</p>
+  <pre><code class="language-java">@Test
+void buildRejectsAMissingRequiredField() {
+  HttpRequest.Builder builder = new HttpRequest.Builder().method("POST"); // no url
+
+  IllegalStateException error =
+      assertThrows(IllegalStateException.class, builder::build);
+  assertEquals("url is required", error.getMessage());
+}</code></pre>
+
+  <p class="desc">Run the tests and the demo yourself with the Maven project in this folder — see <code>README.md</code>.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

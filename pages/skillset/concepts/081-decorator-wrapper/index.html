@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Decorator / wrapper</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Decorator / wrapper</h1>
+  <p class="desc">The <em>Decorator</em> pattern adds behavior to an object by <strong>wrapping</strong> it in another object that implements the <em>same interface</em>. Because the wrapper is the same type as what it wraps, callers cannot tell the two apart — and wrappers can wrap other wrappers, so behavior <strong>composes</strong> in layers chosen at runtime. It is the flexible alternative to subclassing: instead of an explosion of <code>SugaryMilkyEspresso</code> classes for every combination, you stack small, single-purpose decorators.<br>
+  It is a Gang of Four <em>structural</em> pattern. The same idea appears as Python/TypeScript <code>@decorator</code>s, Spring AOP <code>Proxy</code> objects, Rust newtype wrapper structs, HTTP <strong>middleware</strong> (Go, Express), and AOP <em>aspects</em>. Java's own I/O streams are decorators — <code>new BufferedReader(new InputStreamReader(in))</code>. This is a runnable Maven project; see <code>README.md</code>.</p>
+
+  <p class="desc">All participants share <strong>one interface</strong> — base component and decorators alike. That is what lets a wrapper stand in for what it wraps:</p>
+  <pre><code class="language-java">interface Coffee {
+  int costCents();
+  String description();
+}
+
+// The base component — what sits at the center of the wrapping.
+class Espresso implements Coffee {
+  public int costCents()      { return 200; }
+  public String description() { return "Espresso"; }
+}</code></pre>
+
+  <p class="desc">The abstract decorator both <strong>implements</strong> <code>Coffee</code> and <strong>holds</strong> a <code>Coffee</code>. By default it forwards every call to the wrapped object; subclasses add to that result:</p>
+  <pre><code class="language-java">abstract class CoffeeDecorator implements Coffee {
+  protected final Coffee inner;            // the next layer inward
+  protected CoffeeDecorator(Coffee inner) { this.inner = inner; }
+
+  // Default: delegate straight through. Subclasses override to add on top.
+  public int costCents()      { return inner.costCents(); }
+  public String description() { return inner.description(); }
+}
+
+class Milk extends CoffeeDecorator {
+  Milk(Coffee inner) { super(inner); }
+  // Take the inner result and ADD to it — never replace it.
+  public int costCents()      { return inner.costCents() + 50; }
+  public String description() { return inner.description() + " + Milk"; }
+}</code></pre>
+
+  <p class="desc">At the call site, wrapping reads from the inside out, and because each layer is itself a <code>Coffee</code>, the layers <strong>stack</strong>:</p>
+  <pre><code class="language-java">Coffee plain  = new Espresso();                          // Espresso = 200
+Coffee latte  = new Milk(new Espresso());                // Espresso + Milk = 250
+Coffee deluxe = new Sugar(new Milk(new Espresso()));     // + Milk + Sugar = 275</code></pre>
+
+  <p class="desc">The test confirms the composition: each layer adds its contribution, the layers stack to any depth, and a decorated coffee is still a <code>Coffee</code> (so it can be wrapped again):</p>
+  <pre><code class="language-java">@Test
+void decoratorsStackToAnyDepth() {
+  Coffee coffee = new Sugar(new Milk(new Espresso()));
+
+  assertEquals(275, coffee.costCents());                 // 200 + 50 + 25
+  assertEquals("Espresso + Milk + Sugar", coffee.description());
+}</code></pre>
+
+  <p class="desc">Run the tests and the demo yourself with the Maven project in this folder — see <code>README.md</code>.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
