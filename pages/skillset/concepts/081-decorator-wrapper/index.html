@@ -12,7 +12,7 @@
   <a class="back" href="../index.html">← back</a>
   <h1>Decorator / wrapper</h1>
   <p class="desc">The <em>Decorator</em> pattern adds behavior to an object by <strong>wrapping</strong> it in another object that implements the <em>same interface</em>. Because the wrapper is the same type as what it wraps, callers cannot tell the two apart — and wrappers can wrap other wrappers, so behavior <strong>composes</strong> in layers chosen at runtime. It is the flexible alternative to subclassing: instead of an explosion of <code>SugaryMilkyEspresso</code> classes for every combination, you stack small, single-purpose decorators.<br>
-  It is a Gang of Four <em>structural</em> pattern. The same idea appears as Python/TypeScript <code>@decorator</code>s, Spring AOP <code>Proxy</code> objects, Rust newtype wrapper structs, HTTP <strong>middleware</strong> (Go, Express), and AOP <em>aspects</em>. Java's own I/O streams are decorators — <code>new BufferedReader(new InputStreamReader(in))</code>. This is a runnable Maven project; see <code>README.md</code>.</p>
+  It is a Gang of Four <em>structural</em> pattern. The same idea appears as Python/TypeScript <code>@decorator</code>s, Spring AOP <code>Proxy</code> objects, Rust newtype wrapper structs, HTTP <strong>middleware</strong> (Go, Express), and AOP <em>aspects</em>. Java's own I/O streams are decorators — <code>new BufferedReader(new InputStreamReader(in))</code>. This is a runnable Maven project; see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
 
   <p class="desc">All participants share <strong>one interface</strong> — base component and decorators alike. That is what lets a wrapper stand in for what it wraps:</p>
   <pre><code class="language-java">interface Coffee {
@@ -57,7 +57,7 @@ void decoratorsStackToAnyDepth() {
   assertEquals("Espresso + Milk + Sugar", coffee.description());
 }</code></pre>
 
-  <p class="desc">Run the tests and the demo yourself with the Maven project in this folder — see <code>README.md</code>.</p>
+  <p class="desc">Run the tests and the demo yourself with the Maven project — see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <script>hljs.highlightAll();</script>

@@ -12,7 +12,7 @@
   <a class="back" href="../index.html">← back</a>
   <h1>Builder pattern</h1>
   <p class="desc">The <em>Builder</em> pattern constructs a complex object step by step through a fluent, readable API, then produces it in one final <code>build()</code> call. It shines when an object has many fields — some required, many optional — where a constructor would force callers to pass a long, positional argument list (the "telescoping constructor" problem) and remember what each value means. A builder names every choice, lets callers set only what they care about, defaults the rest, and validates the whole object in <code>build()</code> so an invalid instance can never exist.<br>
-  It is a Gang of Four creational pattern. Equivalents: Java (often via Lombok's <code>@Builder</code>), C#, Kotlin/Scala <code>copy()</code> on data/case classes, Rust's struct-update <code>..base</code>, and named/default parameters in Python and Swift, which cover much of the same ground. This is a runnable Maven project; see <code>README.md</code>.</p>
+  It is a Gang of Four creational pattern. Equivalents: Java (often via Lombok's <code>@Builder</code>), C#, Kotlin/Scala <code>copy()</code> on data/case classes, Rust's struct-update <code>..base</code>, and named/default parameters in Python and Swift, which cover much of the same ground. This is a runnable Maven project; see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
 
   <p class="desc">The <strong>problem</strong> a builder solves — a telescoping constructor, where call sites are an unreadable wall of positional arguments:</p>
   <pre><code class="language-java">// ANTI-PATTERN — what do these arguments even mean at the call site?
@@ -81,7 +81,7 @@ void buildRejectsAMissingRequiredField() {
   assertEquals("url is required", error.getMessage());
 }</code></pre>
 
-  <p class="desc">Run the tests and the demo yourself with the Maven project in this folder — see <code>README.md</code>.</p>
+  <p class="desc">Run the tests and the demo yourself with the Maven project — see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <script>hljs.highlightAll();</script>

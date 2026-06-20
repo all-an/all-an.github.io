@@ -12,7 +12,7 @@
   <a class="back" href="../index.html">← back</a>
   <h1>Dependency injection</h1>
   <p class="desc"><em>Dependency injection</em> (DI) means a class receives the things it depends on from the outside instead of creating them itself. This is a form of <strong>Inversion of Control</strong>: the decision of <em>which</em> concrete dependency to use is taken away from the class and given to whoever assembles the program. A class that depends on an <em>interface</em> and accepts an implementation through its constructor is decoupled from any concrete type — and, crucially, becomes testable, because a test can inject a fake.<br>
-  Frameworks automate the wiring — Spring IoC and CDI (Java), Dagger / Hilt (Android), ASP.NET Core DI (C#), Angular DI (TypeScript), ZLayer (Scala ZIO), the Reader monad (Haskell/Scala) — but the principle needs no framework at all, just a few constructor calls in one place. It was named by Martin Fowler / Robert C. Martin. This is a runnable Maven project; see <code>README.md</code>.</p>
+  Frameworks automate the wiring — Spring IoC and CDI (Java), Dagger / Hilt (Android), ASP.NET Core DI (C#), Angular DI (TypeScript), ZLayer (Scala ZIO), the Reader monad (Haskell/Scala) — but the principle needs no framework at all, just a few constructor calls in one place. It was named by Martin Fowler / Robert C. Martin. This is a runnable Maven project; see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
 
   <p class="desc">First, the <strong>anti-pattern</strong>: the class builds its own dependency, hard-wiring itself to one concrete type. There is no seam, so it cannot be tested without sending real email:</p>
   <pre><code class="language-java">// ANTI-PATTERN — do NOT do this. The dependency is created inside the class.
@@ -77,7 +77,7 @@ void placingAnOrderNotifiesTheCustomer() {
       fake.sent.get(0));
 }</code></pre>
 
-  <p class="desc">Run both tests yourself with the Maven project in this folder — the fake-injection test and the real composition root from <code>Main</code> — see <code>README.md</code>.</p>
+  <p class="desc">Run both tests yourself with the Maven project — the fake-injection test and the real composition root from <code>Main</code> — see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <script>hljs.highlightAll();</script>

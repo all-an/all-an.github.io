@@ -33,7 +33,7 @@ List&lt;Integer&gt; squared = Stream.of(1, 2, 3, 4)
 // Functor composition law: mapping f then g equals mapping (g after f) once.
 Optional&lt;Integer&gt; twoMaps = Optional.of(6).map(square).map(plusOne);   // Optional[37]
 Optional&lt;Integer&gt; oneMap  = Optional.of(6).map(square.andThen(plusOne)); // Optional[37]</code></pre>
-  <p class="desc">Run it yourself with the files in this folder — see <code>README.md</code>.</p>
+  <p class="desc">Run it yourself with the files — see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <script>hljs.highlightAll();</script>

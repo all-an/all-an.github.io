@@ -13,7 +13,7 @@
   <h1>Argument captor / spy</h1>
   <p class="desc">Two Mockito tools for <em>behavior verification</em> — checking <em>how</em> a collaborator was used.<br>
   An <strong>ArgumentCaptor</strong> grabs the actual argument passed to a mock so you can assert on its fields. It earns its keep when the code under test <em>builds the argument internally</em>: here <code>AccountService.withdraw</code> constructs an <code>AuditEntry</code> the test never sees, so capturing it is the only way to inspect what was recorded.<br>
-  A <strong>spy</strong> wraps a <em>real</em> object: its real methods run by default (the entry is actually stored), while Mockito still records every call so <code>verify</code> and capture work. That is the difference from a mock — a mock is hollow, a spy is a real object with recording bolted on. This is a real Maven project that runs JUnit 5 + Mockito; see <code>README.md</code>.</p>
+  A <strong>spy</strong> wraps a <em>real</em> object: its real methods run by default (the entry is actually stored), while Mockito still records every call so <code>verify</code> and capture work. That is the difference from a mock — a mock is hollow, a spy is a real object with recording bolted on. This is a real Maven project that runs JUnit 5 + Mockito; see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
   <pre><code class="language-java">// Java + Mockito + JUnit 5
 // ArgumentCaptor: grab the AuditEntry the service built internally, then assert
 // on its fields — impossible with a plain verify(eq(...)) when the test never
@@ -50,7 +50,7 @@ void spyRunsRealCodeAndStillRecordsInteractions() {
   verify(spy).record(captor.capture());
   assertEquals(99, captor.getValue().amountCents());
 }</code></pre>
-  <p class="desc">Run the tests yourself with the Maven project in this folder — see <code>README.md</code>.</p>
+  <p class="desc">Run the tests yourself with the Maven project — see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <script>hljs.highlightAll();</script>

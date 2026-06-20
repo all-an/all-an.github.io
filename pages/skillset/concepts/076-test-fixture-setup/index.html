@@ -12,7 +12,7 @@
   <a class="back" href="../index.html">← back</a>
   <h1>Test fixture / setup</h1>
   <p class="desc">A <em>test fixture</em> is the fixed, known starting state a test runs against. Tests must be <strong>isolated</strong> — the result of one cannot depend on another having run first — so the fixture is rebuilt fresh for each test rather than shared. In JUnit 5 that rebuild lives in a <code>@BeforeEach</code> method, which the runner calls before <strong>every</strong> <code>@Test</code>; <code>@AfterEach</code> tears it back down. The once-per-class pair <code>@BeforeAll</code> / <code>@AfterAll</code> handle expensive shared setup.<br>
-  The same idea appears everywhere: <code>setUp</code> (Python unittest), <code>beforeEach</code> (Jest), <code>before(:each)</code> (RSpec), <code>TestInitialize</code> (C#), ScalaTest fixtures. It is one of Kent Beck's original xUnit patterns. This is a runnable Maven project; see <code>README.md</code>.</p>
+  The same idea appears everywhere: <code>setUp</code> (Python unittest), <code>beforeEach</code> (Jest), <code>before(:each)</code> (RSpec), <code>TestInitialize</code> (C#), ScalaTest fixtures. It is one of Kent Beck's original xUnit patterns. This is a runnable Maven project; see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
   <pre><code class="language-java">// Java + JUnit 5
 // The fixture is a fresh ShoppingCart, rebuilt before EVERY test by @BeforeEach,
 // so the two tests below cannot leak state into each other.
@@ -53,7 +53,7 @@ class ShoppingCartTest {
     &gt;&gt;&gt; secondTest body
   @AfterEach   — tear the fixture down
 @AfterAll    — once, after all tests</code></pre>
-  <p class="desc">Run the tests yourself with the Maven project in this folder — see <code>README.md</code>.</p>
+  <p class="desc">Run the tests yourself with the Maven project — see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <script>hljs.highlightAll();</script>

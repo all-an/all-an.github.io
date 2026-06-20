@@ -12,7 +12,7 @@
   <a class="back" href="../index.html">← back</a>
   <h1>Observer / event listener</h1>
   <p class="desc">The <em>Observer</em> pattern lets one object — the <strong>subject</strong> (or <em>observable</em>) — notify many others — the <strong>observers</strong> (or <em>event listeners</em>) — whenever its state changes, without knowing anything about them beyond a shared interface. Observers <strong>subscribe</strong> to the subject; when something happens, the subject <strong>pushes</strong> the new value to each one. This is a <em>push</em> model and it keeps the two sides loosely coupled: new listeners can be added without touching the subject.<br>
-  It is one of the original Gang of Four patterns (1994) and underlies UI event listeners (Java Swing, the DOM), Spring's <code>@EventHandler</code>, C# <code>event</code>/<code>delegate</code>, Qt's signal/slot, and — taken to its asynchronous, stream-based extreme — the reactive <code>Observable</code> (RxJava/RxJS) and ZIO's <code>ZStream</code>. This is a runnable Maven project; see <code>README.md</code>.</p>
+  It is one of the original Gang of Four patterns (1994) and underlies UI event listeners (Java Swing, the DOM), Spring's <code>@EventHandler</code>, C# <code>event</code>/<code>delegate</code>, Qt's signal/slot, and — taken to its asynchronous, stream-based extreme — the reactive <code>Observable</code> (RxJava/RxJS) and ZIO's <code>ZStream</code>. This is a runnable Maven project; see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
 
   <p class="desc">The <strong>observer</strong> is just an interface with a callback. Anything implementing it can listen:</p>
   <pre><code class="language-java">// The observer / event listener — the subject knows listeners only through this.
@@ -67,7 +67,7 @@ void unsubscribedObserverStopsReceivingEvents() {
   assertEquals(List.of(10.0), leaving.received);   // stopped after unsubscribe
 }</code></pre>
 
-  <p class="desc">Run the tests and the demo yourself with the Maven project in this folder — see <code>README.md</code>.</p>
+  <p class="desc">Run the tests and the demo yourself with the Maven project — see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <script>hljs.highlightAll();</script>

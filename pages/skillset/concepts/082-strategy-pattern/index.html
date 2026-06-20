@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Strategy pattern</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Strategy pattern</h1>
+  <p class="desc">The <em>Strategy</em> pattern defines a family of interchangeable algorithms, puts each behind a common interface, and lets the one in use be <strong>selected and swapped from the outside</strong> — even at runtime. The object that needs the behavior (the <em>context</em>) holds a strategy and delegates to it, containing none of the algorithm itself. This is the textbook way to honor the <strong>Open/Closed Principle</strong>: add a new algorithm by writing a new strategy class, never by editing the context with another <code>if</code>/<code>switch</code>.<br>
+  It is a Gang of Four <em>behavioral</em> pattern. In modern languages the strategy is often just a function: a Java functional interface or lambda, a C/Rust function pointer, a Rust trait object, a Go interface, or a Scala/Haskell typeclass instance. This is a runnable Maven project; see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
+
+  <p class="desc">The <strong>strategy</strong> is one interface per family of algorithms. Marking it <code>@FunctionalInterface</code> means a strategy can also be a lambda:</p>
+  <pre><code class="language-java">@FunctionalInterface
+interface DiscountStrategy {
+  int applyCents(int subtotalCents);   // one rule for subtotal -> amount due
+}</code></pre>
+
+  <p class="desc">Each <strong>concrete strategy</strong> encapsulates one algorithm; they share nothing but the interface and may carry their own configuration:</p>
+  <pre><code class="language-java">class NoDiscount implements DiscountStrategy {
+  public int applyCents(int subtotal) { return subtotal; }            // charge full
+}
+
+class PercentageDiscount implements DiscountStrategy {
+  private final int percentOff;                                       // configured
+  PercentageDiscount(int percentOff) { this.percentOff = percentOff; }
+  public int applyCents(int subtotal) { return subtotal * (100 - percentOff) / 100; }
+}
+
+class FlatDiscount implements DiscountStrategy {
+  private final int amountOffCents;
+  FlatDiscount(int amountOffCents) { this.amountOffCents = amountOffCents; }
+  public int applyCents(int subtotal) { return Math.max(0, subtotal - amountOffCents); }
+}</code></pre>
+
+  <p class="desc">The <strong>context</strong> holds a strategy and delegates. It contains no pricing logic, and exposes a setter so the algorithm can be swapped at runtime:</p>
+  <pre><code class="language-java">class Checkout {
+  private int subtotalCents = 0;
+  private DiscountStrategy strategy = new NoDiscount();   // always has one
+
+  void addItem(int priceCents)            { subtotalCents += priceCents; }
+  void setStrategy(DiscountStrategy s)    { this.strategy = s; }   // swap at runtime
+  int total()                             { return strategy.applyCents(subtotalCents); }
+}</code></pre>
+
+  <p class="desc">One checkout, repriced just by swapping the strategy — the last one a lambda:</p>
+  <pre><code class="language-java">Checkout checkout = new Checkout();
+checkout.addItem(1200);
+checkout.addItem(800);                              // subtotal = 2000
+
+checkout.total();                                  // 2000 (NoDiscount default)
+checkout.setStrategy(new PercentageDiscount(10));
+checkout.total();                                  // 1800
+checkout.setStrategy(new FlatDiscount(500));
+checkout.total();                                  // 1500
+checkout.setStrategy(subtotal -> 0);               // a lambda strategy
+checkout.total();                                  // 0</code></pre>
+
+  <p class="desc">The test proves swapping the strategy reprices the same checkout, with no change to the checkout itself:</p>
+  <pre><code class="language-java">@Test
+void swappingStrategyRepricesTheSameCheckout() {
+  Checkout checkout = cartOfTwenty();              // subtotal 2000
+
+  checkout.setStrategy(new NoDiscount());
+  assertEquals(2000, checkout.total());
+
+  checkout.setStrategy(new PercentageDiscount(25));
+  assertEquals(1500, checkout.total());           // same cart, new rule
+}</code></pre>
+
+  <p class="desc">Because a strategy is just an object, a whole family can live in a <strong>list</strong> and be iterated over — for example, to try every discount and keep the one that charges the customer least:</p>
+  <pre><code class="language-java">// A list of candidate strategies — add a new rule and it joins the search.
+List&lt;DiscountStrategy&gt; candidates = List.of(
+    new NoDiscount(),
+    new PercentageDiscount(10),
+    new FlatDiscount(500),
+    subtotal -> subtotal / 2          // a lambda strategy, half off
+);
+
+int subtotal = 2000;
+
+// Iterate the strategies and pick the cheapest result for the customer.
+int bestPrice = subtotal;
+DiscountStrategy bestStrategy = new NoDiscount();
+for (DiscountStrategy candidate : candidates) {
+  int price = candidate.applyCents(subtotal);
+  if (price &lt; bestPrice) {
+    bestPrice = price;
+    bestStrategy = candidate;
+  }
+}
+// bestPrice == 1000 (the half-off lambda won)
+
+// The same search expressed functionally with a stream:
+int cheapest = candidates.stream()
+    .mapToInt(s -> s.applyCents(subtotal))
+    .min()
+    .orElse(subtotal);</code></pre>
+
+  <p class="desc">Run the tests and the demo yourself with the Maven project — see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

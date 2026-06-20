@@ -12,7 +12,7 @@
   <a class="back" href="../index.html">← back</a>
   <h1>Snapshot testing</h1>
   <p class="desc">Writing assertions for large, structured output — a rendered receipt, an HTML fragment, a serialized object — is tedious and brittle. <em>Snapshot testing</em> flips it: you assert <code>toMatchSnapshot()</code>, and the framework <strong>serializes the value to a file the first time</strong>, then on every later run re-renders and compares against that stored "golden" file. Any difference fails the test. It is regression testing by serialization — the snapshot is committed to git, so a reviewer sees exactly how the output changed in the diff.<br>
-  Here, Jest (the JavaScript library, alongside <code>insta</code> in Rust, <code>expect-test</code> in OCaml, and ApprovalTests in C#/Java) snapshots a rendered invoice. The catch: the value must be <strong>deterministic</strong> — no dates, random ids, or unordered maps — or the snapshot churns. This is a runnable Jest project; see <code>README.md</code>.</p>
+  Here, Jest (the JavaScript library, alongside <code>insta</code> in Rust, <code>expect-test</code> in OCaml, and ApprovalTests in C#/Java) snapshots a rendered invoice. The catch: the value must be <strong>deterministic</strong> — no dates, random ids, or unordered maps — or the snapshot churns. This is a runnable Jest project; see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
   <pre><code class="language-javascript">// JavaScript + Jest
 const { formatInvoice } = require("../src/formatInvoice");
 
@@ -55,7 +55,7 @@ Customer: Ada Lovelace
 --------------------------------
 TOTAL: $117.49"
 `;</code></pre>
-  <p class="desc">Change <code>formatInvoice</code> and the test fails with a diff. If the change was intended, you re-bless the snapshot with <code>jest -u</code> (update); if not, you just caught a regression. Run it yourself with the Jest project in this folder — see <code>README.md</code>.</p>
+  <p class="desc">Change <code>formatInvoice</code> and the test fails with a diff. If the change was intended, you re-bless the snapshot with <code>jest -u</code> (update); if not, you just caught a regression. Run it yourself with the Jest project — see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <script>hljs.highlightAll();</script>
