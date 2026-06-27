@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Repository / DAO</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Repository / DAO</h1>
+  <p class="desc">A <em>Repository</em> (or <em>DAO</em>, Data Access Object) is a <strong>collection-like interface for accessing domain objects</strong>. It names <em>what</em> the application can do with stored data — save, find, list, delete — while hiding <em>how</em> and <em>where</em> that data lives. The business code talks to the interface; the storage mechanism (a map, a SQL database, an HTTP API) stays behind it. Because callers depend only on the abstraction, the storage can be swapped with no change to the code that uses it — the <strong>Dependency Inversion Principle</strong> applied to persistence.<br>
+  It is a Domain-Driven Design building block; the DAO form comes from the J2EE Core Patterns. In practice it appears as Spring Data's <code>JpaRepository</code>, Entity Framework's <code>Repository&lt;T&gt;</code>, Rails' Active Record, or Scala's Quill / Slick. This is a runnable Maven project; see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
+
+  <p class="desc">The <strong>domain object</strong> is a plain, immutable value — an id plus its data, and no persistence code at all:</p>
+  <pre><code class="language-java">public record User(String id, String name, String email) {}</code></pre>
+
+  <p class="desc">The <strong>repository interface</strong> is the data-access contract. It deals in domain objects, never in rows or SQL. <code>findById</code> returns an <code>Optional</code> so "not found" is an explicit, type-checked outcome:</p>
+  <pre><code class="language-java">public interface UserRepository {
+  User save(User user);                       // insert OR update (by id)
+  Optional&lt;User&gt; findById(String id);         // explicit "maybe absent"
+  List&lt;User&gt; findAll();
+  boolean deleteById(String id);              // true if one was removed
+}</code></pre>
+
+  <p class="desc">One <strong>concrete implementation</strong>, backed by a map. It is interchangeable with any other <code>UserRepository</code> — a JDBC or HTTP version — because callers depend on the interface, not on this class:</p>
+  <pre><code class="language-java">public class InMemoryUserRepository implements UserRepository {
+  // The "table": id -> user. LinkedHashMap keeps insertion order.
+  private final Map&lt;String, User&gt; usersById = new LinkedHashMap&lt;&gt;();
+
+  public User save(User user) {
+    usersById.put(user.id(), user);           // put = insert or replace
+    return user;
+  }
+  public Optional&lt;User&gt; findById(String id) {
+    return Optional.ofNullable(usersById.get(id));
+  }
+  public List&lt;User&gt; findAll() {
+    return new ArrayList&lt;&gt;(usersById.values()); // a copy callers can't mutate
+  }
+  public boolean deleteById(String id) {
+    return usersById.remove(id) != null;       // null means nothing was there
+  }
+}</code></pre>
+
+  <p class="desc">All the consuming code talks only to the <strong>interface</strong>. The concrete class is named exactly once — on the line that creates it. <code>save</code> is modelled on a collection's <code>put</code>: the same call inserts a new user or updates an existing one matched by id:</p>
+  <pre><code class="language-java">// The only mention of the concrete class — swap this one line for a database.
+UserRepository users = new InMemoryUserRepository();
+
+users.save(new User("ada-1", "Alice", "alice@example.com"));   // INSERT
+users.save(new User("bob-2", "Bob",   "bob@example.com"));
+
+users.findAll();                       // [Alice, Bob] in insertion order
+users.findById("ada-1");               // Optional[Alice]
+
+users.save(new User("ada-1", "Alice", "alice@corp.com"));      // UPDATE, same id
+users.deleteById("bob-2");             // true
+users.findById("bob-2");               // Optional.empty()</code></pre>
+
+  <p class="desc">The test field is typed as the <strong>interface</strong>, not the concrete class — so the very same tests would pass against a database-backed implementation:</p>
+  <pre><code class="language-java">private UserRepository users;
+
+@BeforeEach
+void setUp() { users = new InMemoryUserRepository(); }   // fresh, empty each test
+
+@Test
+void saveWithExistingIdUpdatesInPlace() {
+  users.save(new User("ada-1", "Alice", "alice@example.com"));
+  users.save(new User("ada-1", "Alice", "alice@corp.com"));   // same id
+
+  assertEquals(1, users.findAll().size());                    // not duplicated
+  assertEquals("alice@corp.com", users.findById("ada-1").orElseThrow().email());
+}</code></pre>
+
+  <p class="desc">Because the repository owns its storage, <code>findAll</code> hands back a <strong>copy</strong>: tampering with the returned list cannot corrupt the repository's internal state:</p>
+  <pre><code class="language-java">@Test
+void findAllReturnsACopyThatCannotMutateTheRepository() {
+  users.save(new User("ada-1", "Alice", "alice@example.com"));
+
+  users.findAll().clear();                 // tamper with the returned list
+
+  assertEquals(1, users.findAll().size()); // repository is unaffected
+}</code></pre>
+
+  <p class="desc"><strong>Repository vs. DAO:</strong> the terms overlap. A <em>DAO</em> typically maps one-to-one to a table and is framed around CRUD; a <em>Repository</em> is a domain concept that behaves like an in-memory <em>collection</em> of aggregate roots and may sit on top of one or more DAOs. Both share the core move shown here: hide the persistence mechanism behind an interface of domain operations.</p>
+
+  <p class="desc">Run the tests and the demo yourself with the Maven project — see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

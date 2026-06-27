@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Annotation / attribute</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Annotation / attribute</h1>
+  <p class="desc">An <em>annotation</em> (a C# <em>attribute</em>) is <strong>declarative metadata attached to a program element</strong> — a class, field, method, or parameter. It carries <strong>no behaviour of its own</strong>: it is a label a <strong>separate processor</strong> reads and acts on. The element states <em>what should be true</em>; the processor decides <em>what to do about it</em>. Here two custom annotations — <code>@NotBlank</code> and <code>@Min</code> — declare validation rules on a <code>User</code>'s fields, and a tiny <code>Validator</code> reflects over the object at runtime to enforce them. This is precisely how Bean Validation, JPA, and JSON mappers work on your classes.<br>
+  <code>@Annotation</code> (Java); <code>[Attribute]</code> (C#); <code>#[derive]</code> (Rust); <code>@decorator</code> (Python, TypeScript); <code>@inline</code> / <code>@specialized</code> (Scala); and <code>pragma</code> (C, D). This is a runnable Maven project; see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
+
+  <p class="desc">A custom annotation is declared with <code>@interface</code>. Its <strong>members</strong> look like methods and become the parameters callers supply; a member may have a <code>default</code>. The crucial part is <code>RUNTIME</code> retention — annotations default to <code>CLASS</code> retention, which the JVM drops at load time, so without this the processor could never see it:</p>
+  <pre><code class="language-java">@Retention(RetentionPolicy.RUNTIME)   // keep it readable at runtime, not just in source
+@Target(ElementType.FIELD)            // it may only annotate fields
+public @interface NotBlank {
+  String message() default "must not be blank";   // a member with a default value
+}</code></pre>
+
+  <p class="desc">An annotation can carry a <strong>parameter</strong>. <code>@Min(18)</code> configures its rule declaratively; the member named <code>value</code> lets callers omit the key:</p>
+  <pre><code class="language-java">@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.FIELD)
+public @interface Min {
+  int value();   // the inclusive lower bound; `value` allows the shorthand @Min(18)
+}</code></pre>
+
+  <p class="desc">The domain object is <strong>decorated with annotations but contains no checking logic</strong>. It declares what should be true and leaves enforcement to whatever processor reads the metadata:</p>
+  <pre><code class="language-java">public class User {
+
+  // @NotBlank declares the rule; it does not enforce it. The Validator does.
+  @NotBlank(message = "name is required")
+  private final String name;
+
+  // @Min(18) configures the rule with a parameter read straight off the metadata.
+  @Min(18)
+  private final int age;
+
+  public User(String name, int age) { /* ... */ }
+}</code></pre>
+
+  <p class="desc">The <strong>processor</strong> is where the annotations finally mean something. It walks any object's fields, asks each one which rule annotations it carries, reads the field's value, and turns every violated rule into a message:</p>
+  <pre><code class="language-java">public static List&lt;String&gt; validate(Object target) {
+  List&lt;String&gt; violations = new ArrayList&lt;&gt;();
+
+  for (Field field : target.getClass().getDeclaredFields()) {
+    field.setAccessible(true);   // read the value even though the field is private
+    Object value = readValue(field, target);
+
+    // @NotBlank: the String value must be present and non-whitespace.
+    if (field.isAnnotationPresent(NotBlank.class) &amp;&amp; isBlank(value)) {
+      violations.add(field.getName() + ": " + field.getAnnotation(NotBlank.class).message());
+    }
+
+    // @Min: the int value must be at least the annotation's `value` parameter.
+    if (field.isAnnotationPresent(Min.class)) {
+      int minimum = field.getAnnotation(Min.class).value();   // read the parameter
+      if (((int) value) &lt; minimum) {
+        violations.add(field.getName() + ": must be at least " + minimum);
+      }
+    }
+  }
+  return violations;
+}</code></pre>
+
+  <p class="desc">Putting it together: the same <code>Validator</code> validates any annotated object. A well-formed user yields no messages; an invalid one yields exactly one message per broken rule — without <code>User</code> or <code>Validator</code> hard-coding the other's details:</p>
+  <pre><code class="language-java">// Every rule the annotations declare is satisfied → no violations.
+Validator.validate(new User("Ada", 36));     // []
+
+// Blank name violates @NotBlank; under-age value violates @Min.
+Validator.validate(new User("  ", 16));
+// [name: name is required, age: must be at least 18]</code></pre>
+
+  <p class="desc">The tests pin each annotation to its effect — the custom <code>message</code>, the <code>@Min</code> parameter, and that multiple broken rules each contribute one message:</p>
+  <pre><code class="language-java">@Test
+void validUserHasNoViolations() {
+  assertTrue(Validator.validate(new User("Ada", 36)).isEmpty());
+}
+
+@Test
+void blankNameReportsTheAnnotationMessage() {
+  assertEquals(List.of("name: name is required"), Validator.validate(new User("  ", 36)));
+}
+
+@Test
+void ageBelowMinimumReportsTheBound() {
+  assertEquals(List.of("age: must be at least 18"), Validator.validate(new User("Ada", 16)));
+}
+
+@Test
+void everyViolatedRuleContributesOneMessage() {
+  List&lt;String&gt; violations = Validator.validate(new User("", 10));
+  assertEquals(2, violations.size());
+}</code></pre>
+
+  <p class="desc"><strong>Why bother:</strong> annotations let you state intent <em>declaratively</em> and keep the enforcing logic in one reusable place — Bean Validation (<code>@NotNull</code>, <code>@Size</code>), ORMs (<code>@Column</code>, <code>@Id</code>), and frameworks (<code>@Test</code>, <code>@Autowired</code>) all hand metadata to a tool that acts on it. <strong>The trade-off mirrors reflection's:</strong> the rule and its enforcement are decoupled, so a typo'd member or a missing processor fails at runtime, and the indirection stays invisible until you find the code that reads the annotation.</p>
+
+  <p class="desc">Run the tests and the demo yourself with the Maven project — see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

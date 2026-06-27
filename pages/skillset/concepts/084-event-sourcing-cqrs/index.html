@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Event sourcing / CQRS</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Event sourcing / CQRS</h1>
+  <p class="desc"><em>Event sourcing</em> stores the <strong>sequence of events that happened</strong>, not the current state. State is never overwritten; it is <strong>derived by replaying the events</strong>. <em>CQRS</em> (Command Query Responsibility Segregation) splits the model in two: the <strong>command / write side</strong> validates requests and emits events, and the <strong>query / read side</strong> is a separate, query-optimised view folded from those same events. Because the log is the source of truth, you get a full audit history, rebuildable views, and temporal queries for free — and adding a new read model is just a new fold over the same events.<br>
+  A Domain-Driven Design technique popularised by Greg Young (~2010). In practice: Akka/Pekko Persistence (Scala/Java), Marten and EventStoreDB (C#), Axon (Java), and — for the read-side shape on the client — Redux reducers (JavaScript). This is a runnable Maven project; see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
+
+  <p class="desc">The <strong>events</strong> are immutable facts about what happened. A <code>sealed interface</code> of records lists every kind up front, so a <code>switch</code> over them is exhaustive:</p>
+  <pre><code class="language-java">public sealed interface AccountEvent
+    permits AccountEvent.AccountOpened,
+            AccountEvent.MoneyDeposited,
+            AccountEvent.MoneyWithdrawn {
+
+  String accountId();   // every event concerns exactly one account
+
+  record AccountOpened(String accountId, String owner)      implements AccountEvent {}
+  record MoneyDeposited(String accountId, int amountCents)  implements AccountEvent {}
+  record MoneyWithdrawn(String accountId, int amountCents)  implements AccountEvent {}
+}</code></pre>
+
+  <p class="desc">The <strong>event store</strong> is an append-only, ordered log — the single source of truth. Nothing is ever overwritten or deleted; only new facts are appended:</p>
+  <pre><code class="language-java">public class EventStore {
+  private final List&lt;AccountEvent&gt; log = new ArrayList&lt;&gt;();
+
+  public void append(AccountEvent event) { log.add(event); }      // append-only
+
+  public List&lt;AccountEvent&gt; allEvents() { return new ArrayList&lt;&gt;(log); }
+
+  // Just one account's history, oldest first — what an aggregate replays.
+  public List&lt;AccountEvent&gt; eventsFor(String accountId) {
+    return log.stream().filter(e -> e.accountId().equals(accountId)).toList();
+  }
+}</code></pre>
+
+  <p class="desc">The <strong>aggregate</strong> is the <em>write side</em>. It stores no state of its own — its balance is rebuilt by <strong>replaying events</strong>. Applying an event is a pure transition with no validation, because an event is a fact that already happened:</p>
+  <pre><code class="language-java">public static Account replay(String accountId, List&lt;AccountEvent&gt; history) {
+  Account account = new Account(accountId);
+  for (AccountEvent event : history) account.apply(event);   // fold the history
+  return account;
+}
+
+private void apply(AccountEvent event) {
+  switch (event) {                                           // no validation here
+    case AccountEvent.AccountOpened ignored -> opened = true;
+    case AccountEvent.MoneyDeposited e      -> balanceCents += e.amountCents();
+    case AccountEvent.MoneyWithdrawn e      -> balanceCents -= e.amountCents();
+  }
+}</code></pre>
+
+  <p class="desc">A <strong>command</strong>, by contrast, <em>may be refused</em>: it validates against the replayed state, then returns the event to record. The write side is the guardian of invariants — here, no overdrafts:</p>
+  <pre><code class="language-java">public AccountEvent withdraw(int amountCents) {
+  requireOpen();
+  if (amountCents <= 0)            throw new IllegalArgumentException("must be positive");
+  if (amountCents > balanceCents)  throw new IllegalStateException("insufficient funds");
+  AccountEvent event = new AccountEvent.MoneyWithdrawn(accountId, amountCents);
+  apply(event);                    // keep this aggregate current for the next command
+  return event;                    // the caller appends it to the store
+}</code></pre>
+
+  <p class="desc">The <strong>projection</strong> is the <em>read side</em> (CQRS): a denormalised view (id → balance) built by folding the log. It has no authority — it can be thrown away and rebuilt from the events at any time:</p>
+  <pre><code class="language-java">public static BalanceProjection from(List&lt;AccountEvent&gt; events) {
+  BalanceProjection projection = new BalanceProjection();
+  for (AccountEvent event : events) projection.apply(event);
+  return projection;
+}
+
+private void apply(AccountEvent event) {
+  switch (event) {
+    case AccountEvent.AccountOpened e  -> balanceByAccount.put(e.accountId(), 0);
+    case AccountEvent.MoneyDeposited e -> balanceByAccount.merge(e.accountId(),  e.amountCents(), Integer::sum);
+    case AccountEvent.MoneyWithdrawn e -> balanceByAccount.merge(e.accountId(), -e.amountCents(), Integer::sum);
+  }
+}
+
+public int balanceOf(String accountId) { return balanceByAccount.getOrDefault(accountId, 0); }</code></pre>
+
+  <p class="desc">Putting it together: commands become events appended to the log (write side), then a projection answers queries from that same log (read side):</p>
+  <pre><code class="language-java">EventStore store = new EventStore();
+
+// Write side: genesis command, then rebuild-act-append for each change.
+store.append(Account.open("acc-1", "Alice"));
+Account alice = Account.replay("acc-1", store.eventsFor("acc-1"));
+store.append(alice.deposit(10000));    // +$100.00
+store.append(alice.withdraw(3000));    //  -$30.00
+
+// Read side (CQRS): a projection folded from the same log.
+BalanceProjection balances = BalanceProjection.from(store.allEvents());
+balances.balanceOf("acc-1");           // 7000
+
+// Another read model is just another fold — e.g. total ever deposited.
+int totalDeposited = store.allEvents().stream()
+    .filter(e -> e instanceof AccountEvent.MoneyDeposited)
+    .mapToInt(e -> ((AccountEvent.MoneyDeposited) e).amountCents())
+    .sum();                            // 10000</code></pre>
+
+  <p class="desc">The test pins both ideas: replaying a history reconstructs the balance, and the write side refuses an overdraft before any event is recorded:</p>
+  <pre><code class="language-java">@Test
+void replayRebuildsStateFromEventHistory() {
+  Account account = Account.replay("acc-1", List.of(
+      new AccountEvent.AccountOpened("acc-1", "Alice"),
+      new AccountEvent.MoneyDeposited("acc-1", 10000),
+      new AccountEvent.MoneyWithdrawn("acc-1", 3000)
+  ));
+  assertEquals(7000, account.balanceCents());        // 10000 - 3000
+}
+
+@Test
+void withdrawingMoreThanTheBalanceIsRejected() {
+  Account account = Account.replay("acc-1", List.of(
+      new AccountEvent.AccountOpened("acc-1", "Alice"),
+      new AccountEvent.MoneyDeposited("acc-1", 5000)
+  ));
+  assertThrows(IllegalStateException.class, () -> account.withdraw(9000));
+}</code></pre>
+
+  <p class="desc"><strong>Commands vs. events:</strong> a command is a request that may be refused; an event is a fact that already happened and is therefore always applied during replay, never validated again. That is why <code>apply(...)</code> has no checks but <code>withdraw(...)</code> does. <strong>Why bother:</strong> a full audit trail, projections you can rebuild from scratch, and temporal queries by replaying up to a point in time.</p>
+
+  <p class="desc">Run the tests and the demo yourself with the Maven project — see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
