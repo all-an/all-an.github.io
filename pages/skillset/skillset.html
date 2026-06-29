@@ -39,6 +39,9 @@
 
     /* divider */
     hr { border: none; border-top: 1px solid var(--color-border-tertiary); margin: 2.25rem 0; }
+
+    /* small italic running total of items across the four programming lists */
+    .section p.list-total { font-size: 14px; font-style: italic; color: #6b6b73; margin-top: 1.5rem; }
   </style>
 </head>
 <body>
@@ -61,6 +64,8 @@
       <a class="link" href="algorithms/algorithms.html">Algorithms</a>
       <a class="link" href="aws/aws.html">AWS</a>
     </div>
+    <!-- Running total of all entries across the four programming lists, filled in by script. -->
+    <p class="list-total" id="listTotal" style="display: none;"></p>
   </div>
 
   <hr />
@@ -73,5 +78,38 @@
   </div>
 
 </div>
+
+<script>
+  // Count items across the four programming lists by fetching each list's data
+  // source and counting its per-entry marker, so the total stays correct as the
+  // lists grow without hand-editing this number. Each source uses a distinct
+  // object-literal marker that appears exactly once per entry.
+  const LIST_SOURCES = [
+    { url: 'concepts/index.html',            marker: /\{c:"/g },      // Programming Concepts
+    { url: 'clean-code/clean-code.html',     marker: /\{code:"/g },   // Clean Code Principles
+    { url: 'algorithms/algorithms-data.js',  marker: /\{n:"/g },      // Algorithms
+    { url: 'aws/aws.js',                     marker: /\{n:"/g },      // AWS
+  ];
+
+  // Fetch one source and return how many entries its marker matches.
+  async function countEntries(source) {
+    const text = await (await fetch(source.url)).text();
+    return (text.match(source.marker) || []).length;
+  }
+
+  // Sum the four counts and reveal the italic line. If any fetch fails (e.g. the
+  // page is opened from file:// rather than a server), leave the line hidden.
+  (async () => {
+    try {
+      const counts = await Promise.all(LIST_SOURCES.map(countEntries));
+      const total = counts.reduce((sum, n) => sum + n, 0);
+      const el = document.getElementById('listTotal');
+      el.textContent = total + ' items across the four lists';
+      el.style.display = 'block';
+    } catch {
+      // Counting is a nice-to-have; silently skip it if the data can't be read.
+    }
+  })();
+</script>
 </body>
 </html>

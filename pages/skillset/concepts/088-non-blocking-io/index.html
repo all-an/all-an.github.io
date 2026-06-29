@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Non-blocking I/O</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Non-blocking I/O</h1>
+  <p class="desc"><strong>Blocking I/O</strong> parks a thread inside <code>read()</code> until data arrives, so each connection needs its own thread. <strong>Non-blocking I/O</strong> never waits: a call with no data ready returns immediately, and the thread instead asks the OS <em>which</em> channels are ready and services only those — so <strong>one thread multiplexes many connections</strong>. The multiplexer is a <code>Selector</code> (backed by <code>epoll</code> on Linux, <code>kqueue</code> on macOS/BSD, <code>io_uring</code> on newer Linux). Here a single-threaded <code>NonBlockingEchoServer</code> serves several clients through one select loop — the Reactor pattern.<br>
+  <code>NIO</code> / <code>Selector</code> (Java); <code>epoll</code> (Linux), <code>kqueue</code> (BSD/macOS), <code>io_uring</code> (Linux 5.1+); <code>asyncio</code> (Python); <code>tokio::io</code> (Rust); <code>http4s</code> / <code>blaze</code> (Scala). This is a runnable Maven project; see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
+
+  <p class="desc">The listening channel is set <strong>non-blocking</strong> and registered with the selector for ACCEPT readiness. The loop then blocks <em>once</em> on the whole set of channels — not on any single one — and is handed back exactly the channels that can make progress without waiting:</p>
+  <pre><code class="language-java">serverChannel.configureBlocking(false);                   // never block on this channel
+serverChannel.register(selector, SelectionKey.OP_ACCEPT); // wake me when a client connects
+
+while (running) {
+  selector.select(100);   // wait up to 100 ms for ANY channel to be ready
+  for (SelectionKey key : selector.selectedKeys()) {
+    if (key.isAcceptable())     acceptClient();   // a connection is waiting
+    else if (key.isReadable())  echo(key);        // a client has bytes ready
+  }
+}</code></pre>
+
+  <p class="desc">When the listening channel is <em>acceptable</em>, <code>accept()</code> returns immediately. The new client channel is itself set non-blocking and registered for reads, so its future data wakes the same loop — no thread is dedicated to it:</p>
+  <pre><code class="language-java">SocketChannel client = serverChannel.accept();   // ready, so this returns at once
+client.configureBlocking(false);
+client.register(selector, SelectionKey.OP_READ); // wake me when this client sends data</code></pre>
+
+  <p class="desc">Reading is the same story: the channel is only serviced once the selector says it is readable, so <code>read()</code> returns now rather than blocking. A return of <code>-1</code> means the peer closed, so the key is cancelled and the loop carries on serving everyone else:</p>
+  <pre><code class="language-java">int read = client.read(buffer);   // ready, so this returns now — never blocks
+if (read == -1) {                 // -1 means the peer closed the connection
+  key.cancel();
+  client.close();
+  return;
+}
+buffer.flip();
+client.write(buffer);             // echo the bytes straight back</code></pre>
+
+  <p class="desc">Putting it together: <strong>one server thread</strong> handles every client. The clients themselves are ordinary blocking sockets — the multiplexing all happens on the server side:</p>
+  <pre><code class="language-java">NonBlockingEchoServer server = new NonBlockingEchoServer();
+new Thread(server).start();   // a single thread runs the whole select loop
+
+// Two clients, one server thread — both served by the same loop.
+EchoClient.roundTrip(server.port(), "hello");        // → "hello"
+EchoClient.roundTrip(server.port(), "non-blocking"); // → "non-blocking"</code></pre>
+
+  <p class="desc">The tests pin the defining property — that a single loop echoes a client, multiplexes several clients with no thread each, and keeps serving after one disconnects:</p>
+  <pre><code class="language-java">@Test
+void servesManyClientsOnTheSameThread() throws IOException {
+  assertEquals("one",   EchoClient.roundTrip(server.port(), "one"));
+  assertEquals("two",   EchoClient.roundTrip(server.port(), "two"));
+  assertEquals("three", EchoClient.roundTrip(server.port(), "three"));
+}
+
+@Test
+void keepsServingAfterAClientDisconnects() throws IOException {
+  EchoClient.roundTrip(server.port(), "first");   // connects and disconnects
+  assertEquals("second", EchoClient.roundTrip(server.port(), "second"));
+}</code></pre>
+
+  <p class="desc"><strong>Why bother:</strong> one thread can hold tens of thousands of mostly-idle connections, because a parked thread (≈1&nbsp;MB of stack) is replaced by a cheap selector registration — this is the classic <em>C10k</em> problem, and how web servers, proxies, and databases scale. It is also the foundation of <code>async/await</code>, event loops (Node.js), and reactive runtimes (<code>tokio</code>, Netty, http4s). <strong>The trade-off:</strong> control flow is inverted into event handling, partial reads and writes must be handled by hand, and a single slow handler stalls every connection sharing the loop.</p>
+
+  <p class="desc">Run the tests and the demo yourself with the Maven project — see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

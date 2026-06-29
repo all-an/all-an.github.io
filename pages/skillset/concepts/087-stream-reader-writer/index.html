@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stream / reader-writer</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Stream / reader-writer</h1>
+  <p class="desc">A <em>stream</em> is a <strong>sequence of bytes (or characters) you process a piece at a time</strong> rather than holding all at once. A <strong>reader</strong> is a source you <em>pull</em> from; a <strong>writer</strong> is a sink you <em>push</em> to. Decoupling them behind the <code>InputStream</code> / <code>OutputStream</code> abstractions means the same code works whether the bytes come from a file, a socket, or memory — and the payload can be far larger than RAM. Here a <code>StreamCopier</code> pumps bytes from a source to a sink through a small buffer, and an <code>UpperCaseStream</code> filter stage transforms bytes as they flow through the pipe.<br>
+  <code>InputStream</code> / <code>OutputStream</code> (Java); <code>io.Reader</code> / <code>io.Writer</code> (Go); <code>Read</code> / <code>Write</code> trait and <code>BufReader</code> (Rust); file streams (C++, Python); <code>fs2.Stream</code> (Scala). This is a runnable Maven project; see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
+
+  <p class="desc">The heart of the abstraction is a loop that moves bytes through a <strong>fixed-size window</strong>, not all at once. It reads a chunk, writes exactly the chunk that was read, and repeats until the source signals end-of-stream by returning <code>-1</code>. Memory stays bounded by the buffer no matter how large the stream is:</p>
+  <pre><code class="language-java">public static long copy(InputStream source, OutputStream sink) throws IOException {
+  byte[] buffer = new byte[8 * 1024];   // an 8 KiB window, not the whole payload
+  long total = 0;
+
+  int read;
+  while ((read = source.read(buffer)) != -1) {   // -1 means the source is drained
+    sink.write(buffer, 0, read);                 // write only what was actually read
+    total += read;
+  }
+  return total;
+}</code></pre>
+
+  <p class="desc">Nothing in that loop knows what the source or sink concretely <em>is</em>. A 14-byte string and a 14-gigabyte file copy with the identical code, because they meet only at the <code>InputStream</code> / <code>OutputStream</code> surface — that is the whole point of streaming over a sink, socket, or buffer.</p>
+
+  <p class="desc">A processing stage <strong>is itself an <code>InputStream</code></strong>, so it drops into the same <code>copy()</code> with no special handling — streams compose like a Unix pipeline, <code>cat file | tr a-z A-Z | …</code>. This <code>UpperCaseStream</code> wraps an upstream source and uppercases each byte on the way through:</p>
+  <pre><code class="language-java">public final class UpperCaseStream extends FilterInputStream {
+
+  public UpperCaseStream(InputStream source) { super(source); }
+
+  @Override
+  public int read(byte[] buffer, int offset, int length) throws IOException {
+    int read = in.read(buffer, offset, length);   // pull from upstream
+    for (int i = offset; i &lt; offset + read; i++) {
+      buffer[i] = (byte) Character.toUpperCase(buffer[i]);   // transform on the way through
+    }
+    return read;   // -1 when drained makes the loop a no-op and stops the copy
+  }
+}</code></pre>
+
+  <p class="desc">Putting it together: the <strong>same</strong> <code>StreamCopier</code> moves bytes either straight through or routed through the filter stage — the source and sink here are in-memory buffers, but a file or socket would plug into the identical call:</p>
+  <pre><code class="language-java">// Plain copy: bytes flow source → buffer → sink unchanged.
+StreamCopier.copy(source, sink);             // sink now holds "hello, streams"
+
+// Filtered copy: an UpperCaseStream sits in the pipe and transforms each byte.
+StreamCopier.copy(new UpperCaseStream(piped), upper);   // upper holds "HELLO, STREAMS"</code></pre>
+
+  <p class="desc">The tests pin the core behaviour: every byte reaches the sink with the right count, an empty source copies nothing, a payload larger than the buffer still copies correctly (proving the chunked loop), and the filter transforms bytes while still plugging into the same copier:</p>
+  <pre><code class="language-java">@Test
+void copiesEveryByteAndReportsTheCount() throws IOException {
+  byte[] data = "hello, streams".getBytes(UTF_8);
+  ByteArrayOutputStream sink = new ByteArrayOutputStream();
+  long copied = StreamCopier.copy(new ByteArrayInputStream(data), sink);
+  assertEquals(data.length, copied);
+  assertArrayEquals(data, sink.toByteArray());
+}
+
+@Test
+void payloadLargerThanBufferCopiesCorrectly() throws IOException {
+  byte[] data = new byte[100_000];   // ~12× the internal 8 KiB buffer
+  // ... fill, copy, and assert every byte arrived
+}
+
+@Test
+void uppercasesEachByteFlowingThrough() throws IOException {
+  ByteArrayInputStream source = new ByteArrayInputStream("hello, streams".getBytes(UTF_8));
+  ByteArrayOutputStream sink = new ByteArrayOutputStream();
+  StreamCopier.copy(new UpperCaseStream(source), sink);
+  assertEquals("HELLO, STREAMS", sink.toString(UTF_8));
+}</code></pre>
+
+  <p class="desc"><strong>Why bother:</strong> streaming keeps memory <em>bounded by the buffer, not the payload</em>, so copying a file or piping a response never materialises the whole thing, and independent stages — buffering, compression, encryption, encoding (<code>GZIPInputStream</code>, <code>CipherInputStream</code>, <code>BufferedReader</code>) — snap together by wrapping one another. <strong>The trade-off:</strong> a stream is <em>forward-only and stateful</em> — you can read it once, you must close it to release the underlying resource, and a byte stream needs a charset before it becomes text.</p>
+
+  <p class="desc">Run the tests and the demo yourself with the Maven project — see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
