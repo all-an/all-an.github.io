@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Memory-mapped file</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Memory-mapped file</h1>
+  <p class="desc">Normally a program reads a file by copying bytes out with <code>read()</code> and writes by copying them back with <code>write()</code> — each call crosses into the kernel. A <strong>memory-mapped file</strong> removes the copying: <code>FileChannel.map()</code> asks the OS to back a region of the process's address space with the file itself (<code>mmap</code>), so from then on <strong>the file's bytes <em>are</em> memory</strong>. Touching a byte whose page is not resident <strong>faults it in</strong> from disk on demand; a modified page is <strong>written back lazily</strong> by the OS. Because the mapping is <em>shared</em>, every mapping of the same file refers to the same physical pages — so two mappings act as shared memory, and edits survive as the file. Here a <code>MappedFile</code> reads and writes ints and strings at byte offsets through one <code>MappedByteBuffer</code>.<br>
+  <code>MappedByteBuffer</code> (Java); <code>mmap</code> (C, Python); <code>memmap2</code> (Rust); <code>MemoryMappedFile</code> (C#). This is a runnable Maven project; see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
+
+  <p class="desc">The file is opened as a channel and a region of it is mapped read/write. The returned <code>MappedByteBuffer</code> is just memory: a <code>putInt</code> is a plain memory write, not a syscall, and the OS flushes the dirty page to the file on its own schedule. Mapping a region larger than the file grows the file to fit:</p>
+  <pre><code class="language-java">FileChannel channel = FileChannel.open(path, CREATE, READ, WRITE);
+MappedByteBuffer buffer = channel.map(FileChannel.MapMode.READ_WRITE, 0, size);
+
+buffer.putInt(64, 41);       // a plain memory write — no read()/write() syscall
+int value = buffer.getInt(64);   // faults the page in from disk if not resident</code></pre>
+
+  <p class="desc">Values are addressed by <strong>byte offset</strong> rather than by stream position, so the mapped region is true random-access memory — you can jump anywhere and read or write in place:</p>
+  <pre><code class="language-java">public void putInt(int offset, int value) { buffer.putInt(offset, value); }
+public int  getInt(int offset)            { return buffer.getInt(offset); }</code></pre>
+
+  <p class="desc">Writes through the map are writes to the file, so the bytes <strong>persist</strong>. A brand-new mapping opened later — even after the first is closed — reads back the same data, because it went to the file, not to a transient stream buffer. <code>force()</code> (<code>msync</code>) flushes dirty pages to make them durable now rather than whenever the OS chooses:</p>
+  <pre><code class="language-java">try (MappedFile writer = new MappedFile(path, 128)) {
+  writer.putString(0, "durable");
+  writer.putInt(64, 99);
+  writer.flush();                 // force dirty pages out to disk
+}
+try (MappedFile reader = new MappedFile(path, 128)) {
+  reader.getString(0);            // "durable" — read back from a fresh mapping
+  reader.getInt(64);             // 99
+}</code></pre>
+
+  <p class="desc">Because the mapping is shared, two mappings of the same file point at the <strong>same physical pages</strong>. A write through one is visible through the other with no read from disk, and no flush, in between — this is exactly what makes <code>mmap</code> a shared-memory mechanism and the basis of copy-free inter-process communication:</p>
+  <pre><code class="language-java">try (MappedFile a = new MappedFile(path, 128);
+     MappedFile b = new MappedFile(path, 128)) {
+  a.putInt(0, 12345);
+  b.getInt(0);                    // == 12345 — seen through the other mapping at once
+}</code></pre>
+
+  <p class="desc">The tests pin the three defining properties — random-access memory, persistence across mappings, and shared memory between mappings:</p>
+  <pre><code class="language-java">@Test
+void persistsAcrossRemappings() throws IOException {
+  try (MappedFile writer = new MappedFile(path, 128)) {
+    writer.putString(0, "durable");
+    writer.flush();
+  }
+  try (MappedFile reader = new MappedFile(path, 128)) {
+    assertEquals("durable", reader.getString(0));
+  }
+}
+
+@Test
+void sharesMemoryBetweenTwoMappings() throws IOException {
+  try (MappedFile a = new MappedFile(path, 128);
+       MappedFile b = new MappedFile(path, 128)) {
+    a.putInt(0, 12345);
+    assertEquals(12345, b.getInt(0));   // no disk I/O, no flush — shared pages
+  }
+}</code></pre>
+
+  <p class="desc"><strong>Why bother:</strong> there is no per-call copy between kernel and user buffers, and the OS page cache is shared rather than duplicated — so databases, search indexes, and log stores map their files for speed. Only touched pages are loaded, so a file <em>larger than RAM</em> can be processed a page at a time by demand paging. And two processes mapping the same file share those pages, the classic copy-free IPC channel. <strong>The trade-off:</strong> mappings are page-aligned and fixed in size (growing the file means remapping), I/O errors surface as <code>SIGBUS</code>/faults rather than checked exceptions, and on the JVM the region is unmapped only when the buffer is garbage-collected — there is no explicit unmap.</p>
+
+  <p class="desc">Run the tests and the demo yourself with the Maven project — see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
