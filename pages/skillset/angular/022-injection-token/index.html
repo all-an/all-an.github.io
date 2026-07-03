@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Injection token</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../angular.html">&larr; back</a>
+  <h1>Injection token</h1>
+  <p class="desc">An <code>InjectionToken</code> is a typed key for injecting values that are not classes — config objects, strings, or swappable implementations.</p>
+  <pre><code class="language-typescript">import { InjectionToken, inject } from '@angular/core';
+
+export interface AppConfig { apiUrl: string; }
+export const APP_CONFIG = new InjectionToken&lt;AppConfig&gt;('app.config');
+
+// Provide it at bootstrap:
+// providers: [{ provide: APP_CONFIG, useValue: { apiUrl: '/api' } }]
+
+const config = inject(APP_CONFIG); // typed as AppConfig</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

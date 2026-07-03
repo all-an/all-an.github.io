@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Change detection</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../angular.html">&larr; back</a>
+  <h1>Change detection</h1>
+  <p class="desc">Change detection syncs component state to the DOM. The <code>OnPush</code> strategy only re-checks a component when its inputs change or an event fires — a key performance lever.</p>
+  <pre><code class="language-typescript">import { Component, ChangeDetectionStrategy, input } from '@angular/core';
+
+@Component({
+  selector: 'app-row',
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush, // check only on input change
+  template: '{{ item().name }}',
+})
+export class RowComponent {
+  item = input.required&lt;Item&gt;();
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

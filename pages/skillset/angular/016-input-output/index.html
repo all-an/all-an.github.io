@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Input & Output</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../angular.html">&larr; back</a>
+  <h1>Input & Output</h1>
+  <p class="desc">Components communicate through inputs (data in) and outputs (events out). The signal-based <code>input()</code> and <code>output()</code> functions (v17.1+) are the modern API.</p>
+  <pre><code class="language-typescript">import { Component, input, output } from '@angular/core';
+
+@Component({ selector: 'app-user', standalone: true, template: '...' })
+export class UserComponent {
+  user = input.required&lt;User&gt;();   // parent -&gt; child data
+  deleted = output&lt;number&gt;();      // child -&gt; parent event
+
+  remove() {
+    this.deleted.emit(this.user().id); // notify the parent
+  }
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

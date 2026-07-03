@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Template-driven forms</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../angular.html">&larr; back</a>
+  <h1>Template-driven forms</h1>
+  <p class="desc">Template-driven forms are declared in the template with <code>ngModel</code> and directives. They suit simple forms; Angular builds the form model implicitly.</p>
+  <pre><code class="language-html">&lt;!-- Requires FormsModule --&gt;
+&lt;form #f="ngForm" (ngSubmit)="submit(f.value)"&gt;
+  &lt;input name="email" ngModel required /&gt;
+  &lt;input name="password" type="password" ngModel /&gt;
+  &lt;button [disabled]="f.invalid"&gt;Log in&lt;/button&gt;
+&lt;/form&gt;</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

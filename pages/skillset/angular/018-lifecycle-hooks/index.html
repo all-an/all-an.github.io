@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lifecycle hooks</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../angular.html">&larr; back</a>
+  <h1>Lifecycle hooks</h1>
+  <p class="desc">Angular calls lifecycle hooks at key moments — creation, change, destruction. <code>ngOnInit</code> initializes; <code>ngOnDestroy</code> cleans up subscriptions and timers.</p>
+  <pre><code class="language-typescript">import { Component, OnInit, OnDestroy } from '@angular/core';
+
+@Component({ selector: 'app-timer', standalone: true, template: '{{ ticks }}' })
+export class TimerComponent implements OnInit, OnDestroy {
+  ticks = 0;
+  private id?: ReturnType&lt;typeof setInterval&gt;;
+
+  ngOnInit() { this.id = setInterval(() =&gt; this.ticks++, 1000); }
+  ngOnDestroy() { clearInterval(this.id); } // avoid leaks
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

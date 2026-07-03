@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scheduling</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../springboot.html">&larr; back</a>
+  <h1>Scheduling</h1>
+  <p class="desc"><code>@Scheduled</code> runs a method on a fixed rate, fixed delay or cron expression — handy for background jobs like cleanups and reports.</p>
+  <pre><code class="language-java">@Component
+public class ReportJob {
+    @Scheduled(cron = "0 0 2 * * *") // every day at 02:00
+    public void nightlyReport() {
+        // generate and send the report
+    }
+}
+// Activate with @EnableScheduling on a configuration class</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Service layer</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../springboot.html">&larr; back</a>
+  <h1>Service layer</h1>
+  <p class="desc">The service layer holds business logic, keeping controllers thin and repositories focused on data access. It is the natural home for transactions and orchestration.</p>
+  <pre><code class="language-java">@Service
+public class TransferService {
+    private final AccountRepository accounts;
+
+    public TransferService(AccountRepository accounts) { this.accounts = accounts; }
+
+    @Transactional
+    public void transfer(Long from, Long to, BigDecimal amount) {
+        accounts.debit(from, amount);
+        accounts.credit(to, amount);
+    }
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

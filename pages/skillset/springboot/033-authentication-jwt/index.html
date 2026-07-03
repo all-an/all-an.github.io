@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Authentication & JWT</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../springboot.html">&larr; back</a>
+  <h1>Authentication & JWT</h1>
+  <p class="desc">For stateless APIs, clients send a JWT bearer token that Spring Security validates as an OAuth2 resource server, establishing the authenticated principal per request.</p>
+  <pre><code class="language-java">@Bean
+public SecurityFilterChain api(HttpSecurity http) throws Exception {
+    http.authorizeHttpRequests(a -&gt; a.anyRequest().authenticated())
+        // Validate incoming JWTs against the configured issuer
+        .oauth2ResourceServer(o -&gt; o.jwt(Customizer.withDefaults()));
+    return http.build();
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

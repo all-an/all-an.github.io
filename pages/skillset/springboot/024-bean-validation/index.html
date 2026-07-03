@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bean validation</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../springboot.html">&larr; back</a>
+  <h1>Bean validation</h1>
+  <p class="desc">Jakarta Bean Validation constraints (<code>@NotBlank</code>, <code>@Size</code>, <code>@Email</code>…) on a request object plus <code>@Valid</code> on the parameter reject bad input automatically with a 400.</p>
+  <pre><code class="language-java">public record Signup(
+    @NotBlank String name,
+    @Email String email,
+    @Size(min = 8) String password) {}
+
+@PostMapping("/signup")
+public User signup(@Valid @RequestBody Signup form) {
+    return service.register(form); // only runs if valid
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

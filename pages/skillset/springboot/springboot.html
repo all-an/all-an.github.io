@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spring Boot Concepts</title>
+<style>
+:root {
+  --color-background-primary:   #111113;
+  --color-background-secondary: #1a1a1e;
+  --color-text-primary:         #e8e8ea;
+  --color-text-secondary:       #9898a0;
+  --color-text-tertiary:        #5e5e66;
+  --color-border-secondary:     #2e2e33;
+  --color-border-tertiary:      #232328;
+  --border-radius-md:           7px;
+  --font-mono:                  'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+}
+body { background: var(--color-background-primary); color: var(--color-text-primary); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+.wrap { max-width: 1200px; margin: 0 auto; padding: 2.5rem 2rem 3rem; }
+h1 { font-size: 28px; font-weight: 600; color: var(--color-text-primary); margin-bottom: 1.75rem; letter-spacing: -0.01em; }
+.controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 1.25rem; align-items: center; }
+input[type=text] { flex: 1; min-width: 220px; font-size: 18px; padding: 8px 12px; border-radius: var(--border-radius-md); border: 1px solid var(--color-border-secondary); background: var(--color-background-secondary); color: var(--color-text-primary); outline: none; }
+input[type=text]:focus { border-color: #3a3a44; }
+select { font-size: 18px; padding: 8px 12px; border-radius: var(--border-radius-md); border: 1px solid var(--color-border-secondary); background: var(--color-background-secondary); color: var(--color-text-primary); outline: none; cursor: pointer; }
+.count { font-size: 17px; color: var(--color-text-secondary); white-space: nowrap; }
+.tbl-wrap { overflow-x: auto; border-radius: var(--border-radius-md); border: 1px solid var(--color-border-tertiary); }
+table { width: 100%; border-collapse: collapse; font-size: 18px; table-layout: fixed; }
+th { text-align: left; font-weight: 500; font-size: 16px; color: var(--color-text-secondary); padding: 10px 14px; border-bottom: 1px solid var(--color-border-tertiary); background: var(--color-background-secondary); letter-spacing: 0.03em; text-transform: uppercase; }
+td { padding: 11px 14px; border-bottom: 1px solid var(--color-border-tertiary); vertical-align: top; color: var(--color-text-primary); }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #16161a; }
+tr.clickable { cursor: pointer; }
+.idx { font-family: var(--font-mono); font-size: 16px; color: var(--color-text-tertiary); padding-top: 3px; }
+.concept { font-weight: 500; font-size: 18px; }
+.concept a { color: inherit; text-decoration: none; }
+.concept a:hover { text-decoration: underline; }
+.cat { display: inline-block; font-size: 14px; padding: 2px 8px; border-radius: 99px; margin-top: 4px; white-space: nowrap; }
+.apis { display: flex; flex-wrap: wrap; gap: 5px; }
+.api { font-family: var(--font-mono); font-size: 15px; background: #1e1e23; border: 1px solid var(--color-border-tertiary); border-radius: 4px; padding: 2px 7px; color: var(--color-text-secondary); }
+.note { font-size: 16px; color: var(--color-text-tertiary); font-style: italic; line-height: 1.5; }
+.no-results { text-align: center; padding: 3rem; color: var(--color-text-secondary); font-size: 20px; }
+th:nth-child(1) { width: 4%; }
+th:nth-child(2) { width: 22%; }
+th:nth-child(3) { width: 14%; }
+th:nth-child(4) { width: 34%; }
+th:nth-child(5) { width: 26%; }
+
+.cat-intro { background:#1A2E3E; color:#A8C8E0; }
+.cat-tooling { background:#2C2C2A; color:#D3D1C7; }
+.cat-core { background:#173404; color:#C0DD97; }
+.cat-config { background:#412402; color:#FAC775; }
+.cat-web { background:#26215C; color:#CECBF6; }
+.cat-data { background:#042C53; color:#B5D4F4; }
+.cat-security { background:#501313; color:#F7C1C1; }
+.cat-observability { background:#0D2B3E; color:#7EC8E3; }
+.cat-messaging { background:#4A1B0C; color:#F5C4B3; }
+.cat-advanced { background:#3E0D3E; color:#E0A6E6; }
+.cat-testing { background:#04342C; color:#9FE1CB; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:1.75rem;">
+  <div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
+    <h1 style="margin-bottom:0;">Spring Boot Concepts</h1>
+    <span style="font-size:16px; color:var(--color-text-secondary); font-style:italic;">From the basics to advanced. Click a concept to learn more.</span>
+  </div>
+  <a href="../skillset.html" style="font-size:18px; color:var(--color-text-secondary); text-decoration:none; white-space:nowrap;">&larr; skillset</a>
+</div>
+<div class="controls">
+  <input type="text" id="search" placeholder="Search concepts, annotations, categories..." />
+  <select id="catFilter">
+    <option value="">All categories</option>
+    <option value="intro">Introduction</option>
+    <option value="tooling">Tooling</option>
+    <option value="core">Core / IoC</option>
+    <option value="config">Configuration</option>
+    <option value="web">Web / REST</option>
+    <option value="data">Data / Persistence</option>
+    <option value="security">Security</option>
+    <option value="observability">Observability</option>
+    <option value="messaging">Messaging</option>
+    <option value="advanced">Advanced</option>
+    <option value="testing">Testing</option>
+  </select>
+  <span class="count" id="count"></span>
+</div>
+<div class="tbl-wrap">
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Concept</th>
+      <th>Category</th>
+      <th>Key APIs / annotations</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody id="tbody"></tbody>
+</table>
+</div>
+<div class="no-results" id="noResults" style="display:none;">No concepts match.</div>
+</div>
+
+<script>
+// Spring Boot concepts, ordered from the most basic to the most advanced.
+const DATA = [
+  {c:"What is Spring Boot",url:"001-what-is-spring-boot/",cat:"intro",cl:"Introduction",apis:["Spring","auto-config","starters","embedded server"],t:"Spring Boot builds stand-alone, production-grade Spring applications with minimal setup. It favours convention over configuration, bundling an embedded server and opinionated defaults so you can just run your app."},
+  {c:"Spring IoC container",url:"002-spring-ioc-container/",cat:"core",cl:"Core / IoC",apis:["ApplicationContext","BeanFactory","IoC","DI"],t:"At the heart of Spring is the Inversion of Control (IoC) container. It creates, wires and manages your objects — called beans — so classes declare what they need instead of constructing it themselves."},
+  {c:"Spring Initializr",url:"003-spring-initializr/",cat:"tooling",cl:"Tooling",apis:["start.spring.io","dependencies","project setup"],t:"Spring Initializr (start.spring.io) generates a ready-to-run project skeleton. Pick your build tool, language, Boot version and starters, and it produces a zip you can open and run."},
+  {c:"Build: Maven / Gradle",url:"004-build-maven-gradle/",cat:"tooling",cl:"Tooling",apis:["pom.xml","build.gradle","spring-boot-maven-plugin"],t:"Spring Boot projects build with Maven or Gradle. The Spring Boot plugin packages your code and dependencies into a single executable “fat” jar."},
+  {c:"@SpringBootApplication",url:"005-springbootapplication/",cat:"core",cl:"Core / IoC",apis:["@SpringBootApplication","SpringApplication.run","main"],t:"@SpringBootApplication is a meta-annotation combining @Configuration, @EnableAutoConfiguration and @ComponentScan. It marks the entry point and scans its package for components."},
+  {c:"Auto-configuration",url:"006-auto-configuration/",cat:"core",cl:"Core / IoC",apis:["@EnableAutoConfiguration","conditional beans","classpath"],t:"Auto-configuration inspects the classpath and your properties, then configures beans automatically — a DataSource if a JDBC driver is present, a web server if Spring MVC is. Conditions back off when you define your own."},
+  {c:"Starter dependencies",url:"007-starter-dependencies/",cat:"tooling",cl:"Tooling",apis:["starter-web","starter-data-jpa","starter-test"],t:"Starters are curated dependency bundles. Adding spring-boot-starter-web pulls in Spring MVC, Jackson and an embedded Tomcat with compatible versions — no version juggling."},
+  {c:"Bean",url:"008-bean/",cat:"core",cl:"Core / IoC",apis:["@Bean","@Configuration","singleton"],t:"A bean is an object the Spring container instantiates, wires and manages. You declare one with a stereotype annotation or a @Bean method in a @Configuration class."},
+  {c:"Stereotype annotations",url:"009-stereotype-annotations/",cat:"core",cl:"Core / IoC",apis:["@Component","@Service","@Repository","@Controller"],t:"Stereotypes mark classes for component scanning. @Component is generic; @Service, @Repository and @Controller are specializations that carry extra semantics (e.g. persistence exception translation)."},
+  {c:"Dependency injection",url:"010-dependency-injection/",cat:"core",cl:"Core / IoC",apis:["@Autowired","injection","wiring"],t:"Spring injects a bean’s collaborators for it. Constructor injection is preferred; @Autowired can also target fields or setters, though those are harder to test."},
+  {c:"Constructor injection",url:"011-constructor-injection/",cat:"core",cl:"Core / IoC",apis:["final fields","immutability","testability"],t:"Injecting dependencies through the constructor makes them final and mandatory, yields immutable, easily testable objects, and needs no annotation on a single constructor."},
+  {c:"Bean scopes",url:"012-bean-scopes/",cat:"core",cl:"Core / IoC",apis:["@Scope","singleton","prototype","request"],t:"A bean’s scope controls its lifecycle. The default singleton shares one instance per context; prototype creates a new one per injection; web scopes like request and session exist too."},
+  {c:"Configuration class",url:"013-configuration-class/",cat:"core",cl:"Core / IoC",apis:["@Configuration","@Bean","@Import"],t:"A @Configuration class defines beans programmatically with @Bean methods — ideal for third-party types you cannot annotate, or when construction needs logic."},
+  {c:"application.yml / properties",url:"014-application-yml-properties/",cat:"config",cl:"Configuration",apis:["application.yml","application.properties","external config"],t:"Boot reads configuration from application.properties or application.yml. These externalize settings — ports, URLs, credentials — from code."},
+  {c:"@ConfigurationProperties",url:"015-configurationproperties/",cat:"config",cl:"Configuration",apis:["@ConfigurationProperties","type-safe","prefix"],t:"@ConfigurationProperties binds a group of properties to a typed object, giving validated, IDE-friendly access instead of scattered @Value lookups."},
+  {c:"Profiles",url:"016-profiles/",cat:"config",cl:"Configuration",apis:["@Profile","spring.profiles.active","dev / prod"],t:"Profiles let one build behave differently per environment. Beans and property files can be profile-specific; activate with spring.profiles.active."},
+  {c:"@Value injection",url:"017-value-injection/",cat:"config",cl:"Configuration",apis:["@Value","placeholders","SpEL"],t:"@Value injects a single property or expression into a field or parameter, with optional defaults and SpEL support. Good for one-offs; prefer typed properties for groups."},
+  {c:"REST controller",url:"018-rest-controller/",cat:"web",cl:"Web / REST",apis:["@RestController","@RequestMapping","JSON"],t:"@RestController marks a class whose methods return data serialized straight to the HTTP response body (JSON by default) — the standard way to build REST APIs."},
+  {c:"Request mapping",url:"019-request-mapping/",cat:"web",cl:"Web / REST",apis:["@GetMapping","@PostMapping","@PutMapping","@DeleteMapping"],t:"Mapping annotations bind HTTP methods and paths to handler methods. @GetMapping, @PostMapping, @PutMapping and @DeleteMapping cover the CRUD verbs."},
+  {c:"Path variables & params",url:"020-path-variables-params/",cat:"web",cl:"Web / REST",apis:["@PathVariable","@RequestParam","query string"],t:"@PathVariable binds a URI template segment; @RequestParam binds a query-string or form parameter, with optional defaults."},
+  {c:"Request & response body",url:"021-request-response-body/",cat:"web",cl:"Web / REST",apis:["@RequestBody","@ResponseBody","Jackson"],t:"@RequestBody deserializes the incoming JSON into a Java object; return values are serialized back to JSON by Jackson. On @RestController this is implicit."},
+  {c:"ResponseEntity & status",url:"022-responseentity-status/",cat:"web",cl:"Web / REST",apis:["ResponseEntity","HttpStatus","@ResponseStatus"],t:"ResponseEntity gives full control over the status code, headers and body of a response, for cases where the default 200 OK is not enough."},
+  {c:"Exception handling",url:"023-exception-handling/",cat:"web",cl:"Web / REST",apis:["@ExceptionHandler","@ControllerAdvice","ProblemDetail"],t:"@ControllerAdvice with @ExceptionHandler centralizes error handling across controllers, mapping exceptions to clean HTTP responses (e.g. RFC 7807 ProblemDetail)."},
+  {c:"Bean validation",url:"024-bean-validation/",cat:"web",cl:"Web / REST",apis:["@Valid","@NotBlank","@Email","@Size"],t:"Jakarta Bean Validation constraints (@NotBlank, @Size, @Email…) on a request object plus @Valid on the parameter reject bad input automatically with a 400."},
+  {c:"Service layer",url:"025-service-layer/",cat:"core",cl:"Core / IoC",apis:["@Service","business logic","separation of concerns"],t:"The service layer holds business logic, keeping controllers thin and repositories focused on data access. It is the natural home for transactions and orchestration."},
+  {c:"Spring Data JPA",url:"026-spring-data-jpa/",cat:"data",cl:"Data / Persistence",apis:["JpaRepository","CrudRepository","auto-implemented"],t:"Spring Data JPA generates repository implementations at runtime from an interface. Extend JpaRepository and you get CRUD, paging and sorting for free."},
+  {c:"Entity mapping",url:"027-entity-mapping/",cat:"data",cl:"Data / Persistence",apis:["@Entity","@Id","@GeneratedValue","@Column"],t:"A JPA @Entity maps a class to a database table. @Id marks the primary key and @GeneratedValue lets the database generate it."},
+  {c:"Query methods",url:"028-query-methods/",cat:"data",cl:"Data / Persistence",apis:["derived queries","@Query","JPQL"],t:"Spring Data derives queries from method names (findByEmail) and lets you write explicit JPQL or SQL with @Query when names get unwieldy."},
+  {c:"Transactions",url:"029-transactions/",cat:"data",cl:"Data / Persistence",apis:["@Transactional","rollback","commit"],t:"@Transactional wraps a method in a database transaction that commits on success and rolls back on a runtime exception, keeping multi-step writes atomic."},
+  {c:"DataSource & pooling",url:"030-datasource-pooling/",cat:"data",cl:"Data / Persistence",apis:["HikariCP","spring.datasource","pool size"],t:"Boot auto-configures a DataSource backed by HikariCP, a fast connection pool, from your datasource properties. You can tune pool size and timeouts in configuration."},
+  {c:"Database migration",url:"031-database-migration/",cat:"data",cl:"Data / Persistence",apis:["Flyway","Liquibase","versioned schema"],t:"Tools like Flyway apply versioned SQL migrations at startup so your schema evolves in lockstep with the code — tracked, ordered and repeatable across environments."},
+  {c:"Spring Security",url:"032-spring-security/",cat:"security",cl:"Security",apis:["SecurityFilterChain","HttpSecurity","authorization"],t:"Spring Security secures the app with a filter chain. A SecurityFilterChain bean declares which endpoints are public and which require authentication."},
+  {c:"Authentication & JWT",url:"033-authentication-jwt/",cat:"security",cl:"Security",apis:["oauth2ResourceServer","JWT","bearer token"],t:"For stateless APIs, clients send a JWT bearer token that Spring Security validates as an OAuth2 resource server, establishing the authenticated principal per request."},
+  {c:"Method security",url:"034-method-security/",cat:"security",cl:"Security",apis:["@PreAuthorize","@EnableMethodSecurity","roles"],t:"Method-level security guards individual methods with SpEL expressions. @PreAuthorize checks roles or authorities before the method runs."},
+  {c:"Actuator",url:"035-actuator/",cat:"observability",cl:"Observability",apis:["actuator","/actuator/health","metrics"],t:"Spring Boot Actuator exposes production endpoints — health, metrics, info, environment — over HTTP or JMX for monitoring and management."},
+  {c:"Logging",url:"036-logging/",cat:"observability",cl:"Observability",apis:["SLF4J","Logback","log levels"],t:"Boot uses SLF4J over Logback by default. Log levels are configurable per package in properties, and you log through the SLF4J API in code."},
+  {c:"Caching",url:"037-caching/",cat:"advanced",cl:"Advanced",apis:["@Cacheable","@EnableCaching","@CacheEvict"],t:"The caching abstraction memoizes method results. @Cacheable stores a return value keyed by arguments; @CacheEvict clears it. Backed by a provider like Caffeine or Redis."},
+  {c:"Scheduling",url:"038-scheduling/",cat:"advanced",cl:"Advanced",apis:["@Scheduled","@EnableScheduling","cron"],t:"@Scheduled runs a method on a fixed rate, fixed delay or cron expression — handy for background jobs like cleanups and reports."},
+  {c:"Async execution",url:"039-async-execution/",cat:"advanced",cl:"Advanced",apis:["@Async","@EnableAsync","CompletableFuture"],t:"@Async runs a method on a separate thread pool, returning immediately or a CompletableFuture — useful for fire-and-forget work like sending email."},
+  {c:"Messaging",url:"040-messaging/",cat:"messaging",cl:"Messaging",apis:["Kafka","RabbitMQ","@KafkaListener"],t:"Boot integrates message brokers for asynchronous, decoupled communication. A @KafkaListener (or RabbitMQ listener) consumes messages as they arrive."},
+  {c:"Testing",url:"041-testing/",cat:"testing",cl:"Testing",apis:["@SpringBootTest","@WebMvcTest","MockMvc"],t:"Boot’s test support spins up a context for integration tests (@SpringBootTest) or a slice like the web layer (@WebMvcTest) with MockMvc to drive endpoints."},
+  {c:"WebFlux / reactive",url:"042-webflux-reactive/",cat:"advanced",cl:"Advanced",apis:["Mono","Flux","WebClient","non-blocking"],t:"Spring WebFlux is the reactive, non-blocking web stack built on Project Reactor. Endpoints return Mono (0–1) or Flux (0–N), scaling to many connections with few threads."},
+  {c:"Native image (GraalVM)",url:"043-native-image-graalvm/",cat:"advanced",cl:"Advanced",apis:["GraalVM","native-image","AOT"],t:"Spring Boot can compile to a GraalVM native image — an ahead-of-time compiled binary with near-instant startup and low memory, ideal for serverless and containers."},
+  {c:"Containerization",url:"044-containerization/",cat:"advanced",cl:"Advanced",apis:["buildpacks","build-image","Docker"],t:"Boot builds optimized OCI container images without a Dockerfile using Cloud Native Buildpacks, layering dependencies and classes for efficient rebuilds and deploys."},
+];
+
+const catClass = {intro:"cat-intro",tooling:"cat-tooling",core:"cat-core",config:"cat-config",web:"cat-web",data:"cat-data",security:"cat-security",observability:"cat-observability",messaging:"cat-messaging",advanced:"cat-advanced",testing:"cat-testing"};
+const STATE_KEY = 'springboot-concepts-index-state';
+
+// Persist search/filter/scroll so returning from a detail page restores the view.
+function saveIndexState() {
+  sessionStorage.setItem(STATE_KEY, JSON.stringify({
+    search: document.getElementById('search').value,
+    category: document.getElementById('catFilter').value,
+    scrollY: window.scrollY,
+    pendingRestore: true,
+  }));
+}
+
+function consumeIndexState() {
+  const raw = sessionStorage.getItem(STATE_KEY);
+  if (!raw) return null;
+  try {
+    const state = JSON.parse(raw);
+    if (!state.pendingRestore) return null;
+    sessionStorage.removeItem(STATE_KEY);
+    return state;
+  } catch {
+    sessionStorage.removeItem(STATE_KEY);
+    return null;
+  }
+}
+
+function openConcept(url) {
+  saveIndexState();
+  location.href = url;
+}
+
+// Render the API/annotation chips for one concept row.
+function renderApis(apis) {
+  return apis.map(a => '<span class="api">' + a + '</span>').join('');
+}
+
+// Filter by search text and category, then paint the table.
+function render() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const cat = document.getElementById('catFilter').value;
+  let rows = DATA;
+  if (cat) rows = rows.filter(d => d.cat === cat);
+  if (q) rows = rows.filter(d => (d.c + d.t + d.apis.join(' ')).toLowerCase().includes(q));
+  document.getElementById('count').textContent = rows.length + ' concepts';
+  document.getElementById('noResults').style.display = rows.length ? 'none' : 'block';
+  document.getElementById('tbody').innerHTML = rows.map((d, i) => `
+    <tr class="clickable" onclick="openConcept('${d.url}')">
+      <td><span class="idx">${i + 1}</span></td>
+      <td><div class="concept"><a href="${d.url}" onclick="event.stopPropagation(); saveIndexState();">${d.c}</a></div><span class="cat ${catClass[d.cat]}">${d.cl}</span></td>
+      <td><span class="note">${d.cl}</span></td>
+      <td><div class="apis">${renderApis(d.apis)}</div></td>
+      <td><span class="note">${d.t}</span></td>
+    </tr>`).join('');
+}
+
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+
+const savedState = consumeIndexState();
+if (savedState) {
+  document.getElementById('search').value = savedState.search || '';
+  document.getElementById('catFilter').value = savedState.category || '';
+}
+
+document.getElementById('search').addEventListener('input', render);
+document.getElementById('catFilter').addEventListener('change', render);
+render();
+
+if (savedState) {
+  requestAnimationFrame(() => {
+    window.scrollTo({ top: savedState.scrollY || 0, behavior: 'auto' });
+  });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>View queries</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../angular.html">&larr; back</a>
+  <h1>View queries</h1>
+  <p class="desc">View queries grab references to child elements, directives or components from a template. The signal-based <code>viewChild</code> / <code>contentChild</code> (v17.3+) return reactive signals.</p>
+  <pre><code class="language-typescript">import { Component, viewChild, ElementRef, AfterViewInit } from '@angular/core';
+
+@Component({
+  selector: 'app-search',
+  standalone: true,
+  template: '&lt;input #box /&gt;',
+})
+export class SearchComponent implements AfterViewInit {
+  box = viewChild&lt;ElementRef&lt;HTMLInputElement&gt;&gt;('box');
+
+  ngAfterViewInit() {
+    this.box()?.nativeElement.focus(); // available once the view exists
+  }
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

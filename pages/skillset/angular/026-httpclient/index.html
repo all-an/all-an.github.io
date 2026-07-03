@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HttpClient</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../angular.html">&larr; back</a>
+  <h1>HttpClient</h1>
+  <p class="desc"><code>HttpClient</code> makes HTTP requests that return Observables. Register it once with <code>provideHttpClient()</code>, then inject it wherever you need it.</p>
+  <pre><code class="language-typescript">import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+
+@Injectable({ providedIn: 'root' })
+export class UserApi {
+  private http = inject(HttpClient);
+
+  getUsers() { return this.http.get&lt;User[]&gt;('/api/users'); }
+  create(u: User) { return this.http.post&lt;User&gt;('/api/users', u); }
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

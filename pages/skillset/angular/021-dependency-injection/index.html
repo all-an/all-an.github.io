@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dependency injection</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../angular.html">&larr; back</a>
+  <h1>Dependency injection</h1>
+  <p class="desc">Angular’s hierarchical injector supplies dependencies to classes rather than having them build their own. The <code>inject()</code> function is the modern way to request one.</p>
+  <pre><code class="language-typescript">import { Component, inject } from '@angular/core';
+import { CartService } from './cart.service';
+
+@Component({ selector: 'app-cart', standalone: true, template: '{{ cart.count }}' })
+export class CartComponent {
+  // Angular resolves and provides the singleton instance
+  cart = inject(CartService);
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

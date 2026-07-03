@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spring Initializr</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../springboot.html">&larr; back</a>
+  <h1>Spring Initializr</h1>
+  <p class="desc">Spring Initializr (start.spring.io) generates a ready-to-run project skeleton. Pick your build tool, language, Boot version and starters, and it produces a zip you can open and run.</p>
+  <pre><code class="language-bash"># Generate a project from the command line
+curl https://start.spring.io/starter.zip \
+  -d dependencies=web,data-jpa,postgresql \
+  -d type=maven-project \
+  -d javaVersion=21 \
+  -o demo.zip
+
+unzip demo.zip &amp;&amp; ./mvnw spring-boot:run</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

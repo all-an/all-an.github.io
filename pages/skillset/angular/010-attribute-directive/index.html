@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Attribute directive</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../angular.html">&larr; back</a>
+  <h1>Attribute directive</h1>
+  <p class="desc">An attribute directive is a class with <code>@Directive</code> that attaches behaviour to a host element — changing its appearance or reacting to events.</p>
+  <pre><code class="language-typescript">import { Directive, ElementRef, HostListener } from '@angular/core';
+
+@Directive({ selector: '[appHighlight]', standalone: true })
+export class HighlightDirective {
+  constructor(private el: ElementRef) {}
+
+  // Toggle a background colour on hover
+  @HostListener('mouseenter') onEnter() {
+    this.el.nativeElement.style.background = 'yellow';
+  }
+  @HostListener('mouseleave') onLeave() {
+    this.el.nativeElement.style.background = '';
+  }
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Angular Concepts</title>
+<style>
+:root {
+  --color-background-primary:   #111113;
+  --color-background-secondary: #1a1a1e;
+  --color-text-primary:         #e8e8ea;
+  --color-text-secondary:       #9898a0;
+  --color-text-tertiary:        #5e5e66;
+  --color-border-secondary:     #2e2e33;
+  --color-border-tertiary:      #232328;
+  --border-radius-md:           7px;
+  --font-mono:                  'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+}
+body { background: var(--color-background-primary); color: var(--color-text-primary); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+.wrap { max-width: 1200px; margin: 0 auto; padding: 2.5rem 2rem 3rem; }
+h1 { font-size: 28px; font-weight: 600; color: var(--color-text-primary); margin-bottom: 1.75rem; letter-spacing: -0.01em; }
+.controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 1.25rem; align-items: center; }
+input[type=text] { flex: 1; min-width: 220px; font-size: 18px; padding: 8px 12px; border-radius: var(--border-radius-md); border: 1px solid var(--color-border-secondary); background: var(--color-background-secondary); color: var(--color-text-primary); outline: none; }
+input[type=text]:focus { border-color: #3a3a44; }
+select { font-size: 18px; padding: 8px 12px; border-radius: var(--border-radius-md); border: 1px solid var(--color-border-secondary); background: var(--color-background-secondary); color: var(--color-text-primary); outline: none; cursor: pointer; }
+.count { font-size: 17px; color: var(--color-text-secondary); white-space: nowrap; }
+.tbl-wrap { overflow-x: auto; border-radius: var(--border-radius-md); border: 1px solid var(--color-border-tertiary); }
+table { width: 100%; border-collapse: collapse; font-size: 18px; table-layout: fixed; }
+th { text-align: left; font-weight: 500; font-size: 16px; color: var(--color-text-secondary); padding: 10px 14px; border-bottom: 1px solid var(--color-border-tertiary); background: var(--color-background-secondary); letter-spacing: 0.03em; text-transform: uppercase; }
+td { padding: 11px 14px; border-bottom: 1px solid var(--color-border-tertiary); vertical-align: top; color: var(--color-text-primary); }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #16161a; }
+tr.clickable { cursor: pointer; }
+.idx { font-family: var(--font-mono); font-size: 16px; color: var(--color-text-tertiary); padding-top: 3px; }
+.concept { font-weight: 500; font-size: 18px; }
+.concept a { color: inherit; text-decoration: none; }
+.concept a:hover { text-decoration: underline; }
+.cat { display: inline-block; font-size: 14px; padding: 2px 8px; border-radius: 99px; margin-top: 4px; white-space: nowrap; }
+.apis { display: flex; flex-wrap: wrap; gap: 5px; }
+.api { font-family: var(--font-mono); font-size: 15px; background: #1e1e23; border: 1px solid var(--color-border-tertiary); border-radius: 4px; padding: 2px 7px; color: var(--color-text-secondary); }
+.note { font-size: 16px; color: var(--color-text-tertiary); font-style: italic; line-height: 1.5; }
+.no-results { text-align: center; padding: 3rem; color: var(--color-text-secondary); font-size: 20px; }
+th:nth-child(1) { width: 4%; }
+th:nth-child(2) { width: 24%; }
+th:nth-child(3) { width: 14%; }
+th:nth-child(4) { width: 33%; }
+th:nth-child(5) { width: 25%; }
+
+.cat-intro { background:#1A2E3E; color:#A8C8E0; }
+.cat-tooling { background:#2C2C2A; color:#D3D1C7; }
+.cat-blocks { background:#4B1528; color:#F4C0D1; }
+.cat-template { background:#26215C; color:#CECBF6; }
+.cat-reactive { background:#412402; color:#FAC775; }
+.cat-di { background:#042C53; color:#B5D4F4; }
+.cat-http { background:#0D2B3E; color:#7EC8E3; }
+.cat-routing { background:#173404; color:#C0DD97; }
+.cat-forms { background:#04342C; color:#9FE1CB; }
+.cat-render { background:#4A1B0C; color:#F5C4B3; }
+.cat-advanced { background:#3E0D3E; color:#E0A6E6; }
+.cat-testing { background:#501313; color:#F7C1C1; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:1.75rem;">
+  <div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
+    <h1 style="margin-bottom:0;">Angular Concepts</h1>
+    <span style="font-size:16px; color:var(--color-text-secondary); font-style:italic;">From the basics to advanced. Click a concept to learn more.</span>
+  </div>
+  <a href="../skillset.html" style="font-size:18px; color:var(--color-text-secondary); text-decoration:none; white-space:nowrap;">&larr; skillset</a>
+</div>
+<div class="controls">
+  <input type="text" id="search" placeholder="Search concepts, APIs, categories..." />
+  <select id="catFilter">
+    <option value="">All categories</option>
+    <option value="intro">Introduction</option>
+    <option value="tooling">Tooling</option>
+    <option value="blocks">Building Blocks</option>
+    <option value="template">Templates</option>
+    <option value="reactive">Reactivity</option>
+    <option value="di">Dependency Injection</option>
+    <option value="http">HTTP</option>
+    <option value="routing">Routing</option>
+    <option value="forms">Forms</option>
+    <option value="render">Rendering</option>
+    <option value="advanced">Advanced</option>
+    <option value="testing">Testing</option>
+  </select>
+  <span class="count" id="count"></span>
+</div>
+<div class="tbl-wrap">
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Concept</th>
+      <th>Category</th>
+      <th>Key APIs / syntax</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody id="tbody"></tbody>
+</table>
+</div>
+<div class="no-results" id="noResults" style="display:none;">No concepts match.</div>
+</div>
+
+<script>
+// Angular concepts, ordered from the most basic to the most advanced.
+const DATA = [
+  {c:"What is Angular",url:"001-what-is-angular/",cat:"intro",cl:"Introduction",apis:["SPA","components","TypeScript","@angular/core"],t:"Angular is a TypeScript-based framework for building single-page applications (SPAs). It bundles components, dependency injection, routing, forms and reactivity, maintained by Google."},
+  {c:"TypeScript foundation",url:"002-typescript-foundation/",cat:"intro",cl:"Introduction",apis:["type","interface","class","generics"],t:"Angular is written in and for TypeScript — typed classes, interfaces and decorators are the language of the framework."},
+  {c:"Angular CLI",url:"003-angular-cli/",cat:"tooling",cl:"Tooling",apis:["ng new","ng generate","ng serve","ng build"],t:"The Angular CLI scaffolds, runs, tests and builds a project with one command each. It is the standard entry point for every Angular workflow."},
+  {c:"Application bootstrap",url:"004-application-bootstrap/",cat:"blocks",cl:"Building Blocks",apis:["bootstrapApplication","main.ts","ApplicationConfig"],t:"An Angular app starts in main.ts by bootstrapping a root component with a configuration object. Providers registered here are available application-wide."},
+  {c:"Component",url:"005-component/",cat:"blocks",cl:"Building Blocks",apis:["@Component","selector","template","templateUrl"],t:"A component is a class decorated with @Component that binds a template and styles to a selector. It is the fundamental UI building block; apps are trees of components."},
+  {c:"Template & interpolation",url:"006-template-interpolation/",cat:"template",cl:"Templates",apis:["{{ }}","expression"],t:"Interpolation with {{ }} renders a component expression as text in the DOM. The expression is re-evaluated whenever the data it depends on changes."},
+  {c:"Property binding",url:"007-property-binding/",cat:"template",cl:"Templates",apis:["[prop]","[src]","[disabled]"],t:"Square brackets bind a DOM property to a component expression: [prop]=\"value\". Unlike interpolation it passes the real value — number, boolean, object — not a string."},
+  {c:"Event binding",url:"008-event-binding/",cat:"template",cl:"Templates",apis:["(click)","(input)","$event"],t:"Parentheses bind a template event to a handler: (event)=\"handler()\". The $event object carries the event payload."},
+  {c:"Two-way binding",url:"009-two-way-binding/",cat:"template",cl:"Templates",apis:["[(ngModel)]","banana-in-a-box"],t:"The \"banana in a box\" syntax [(ngModel)] combines property and event binding to keep an input and a component property in sync."},
+  {c:"Attribute directive",url:"010-attribute-directive/",cat:"blocks",cl:"Building Blocks",apis:["@Directive","[appHighlight]","HostListener"],t:"An attribute directive is a class with @Directive that attaches behaviour to a host element — changing its appearance or reacting to events."},
+  {c:"Structural directive",url:"011-structural-directive/",cat:"template",cl:"Templates",apis:["*ngIf","*ngFor","*ngSwitch","ng-template"],t:"Structural directives (prefixed with *) add or remove DOM subtrees. *ngIf, *ngFor and *ngSwitch are the classic trio."},
+  {c:"Built-in control flow",url:"012-built-in-control-flow/",cat:"template",cl:"Templates",apis:["@if","@for","@switch","track"],t:"Angular 17 introduced block control flow — @if, @for and @switch — a faster, built-in replacement for the structural directives. @for requires a track expression."},
+  {c:"Pipe",url:"013-pipe/",cat:"template",cl:"Templates",apis:["@Pipe","transform","| date","| currency"],t:"A pipe transforms a value for display with the | operator. Angular ships pipes like date, currency and async, and you can write your own with @Pipe."},
+  {c:"Standalone component",url:"014-standalone-component/",cat:"blocks",cl:"Building Blocks",apis:["standalone: true","imports"],t:"Standalone components declare their own template dependencies via imports, removing the need for NgModules. They are the default since Angular 17."},
+  {c:"NgModule",url:"015-ngmodule/",cat:"blocks",cl:"Building Blocks",apis:["@NgModule","declarations","imports","exports"],t:"An @NgModule groups components, directives and pipes and wires up providers. It was the primary organizing unit before standalone components; you still meet it in older codebases."},
+  {c:"Input & Output",url:"016-input-output/",cat:"reactive",cl:"Reactivity",apis:["input()","output()","@Input","@Output"],t:"Components communicate through inputs (data in) and outputs (events out). The signal-based input() and output() functions (v17.1+) are the modern API."},
+  {c:"Content projection",url:"017-content-projection/",cat:"template",cl:"Templates",apis:["<ng-content>","select"],t:"&lt;ng-content&gt; projects markup supplied by a parent into a component’s template — the basis of reusable wrappers like cards and dialogs. Multiple slots use select."},
+  {c:"Lifecycle hooks",url:"018-lifecycle-hooks/",cat:"render",cl:"Rendering",apis:["ngOnInit","ngOnDestroy","ngOnChanges"],t:"Angular calls lifecycle hooks at key moments — creation, change, destruction. ngOnInit initializes; ngOnDestroy cleans up subscriptions and timers."},
+  {c:"View queries",url:"019-view-queries/",cat:"render",cl:"Rendering",apis:["viewChild","@ViewChild","contentChild"],t:"View queries grab references to child elements, directives or components from a template. The signal-based viewChild / contentChild (v17.3+) return reactive signals."},
+  {c:"Service",url:"020-service/",cat:"di",cl:"Dependency Injection",apis:["@Injectable","providedIn: 'root'"],t:"A service is a plain @Injectable class holding shared logic or state. providedIn: ’root’ makes it a lazy, app-wide singleton."},
+  {c:"Dependency injection",url:"021-dependency-injection/",cat:"di",cl:"Dependency Injection",apis:["inject()","constructor","providers"],t:"Angular’s hierarchical injector supplies dependencies to classes rather than having them build their own. The inject() function is the modern way to request one."},
+  {c:"Injection token",url:"022-injection-token/",cat:"di",cl:"Dependency Injection",apis:["InjectionToken","useValue","useFactory"],t:"An InjectionToken is a typed key for injecting values that are not classes — config objects, strings, or swappable implementations."},
+  {c:"Signals",url:"023-signals/",cat:"reactive",cl:"Reactivity",apis:["signal()","computed()","effect()"],t:"Signals (v16+) are fine-grained reactive values. Reading one tracks it; setting it notifies dependents. computed derives cached values and effect runs side effects."},
+  {c:"Observable / RxJS",url:"024-observable-rxjs/",cat:"reactive",cl:"Reactivity",apis:["Observable","pipe","map","switchMap"],t:"Observables from RxJS model streams of asynchronous values — HTTP responses, events, timers. Operators like map and switchMap compose them declaratively."},
+  {c:"Async pipe",url:"025-async-pipe/",cat:"reactive",cl:"Reactivity",apis:["| async","subscribe","unsubscribe"],t:"The async pipe subscribes to an Observable or Promise in the template, renders its latest value, and unsubscribes automatically when the component is destroyed."},
+  {c:"HttpClient",url:"026-httpclient/",cat:"http",cl:"HTTP",apis:["provideHttpClient","http.get","http.post"],t:"HttpClient makes HTTP requests that return Observables. Register it once with provideHttpClient(), then inject it wherever you need it."},
+  {c:"HTTP interceptor",url:"027-http-interceptor/",cat:"http",cl:"HTTP",apis:["HttpInterceptorFn","withInterceptors"],t:"Functional interceptors sit in the HTTP pipeline to add headers, log, retry or handle errors for every request. Register them with withInterceptors."},
+  {c:"Router",url:"028-router/",cat:"routing",cl:"Routing",apis:["provideRouter","Routes","routerLink","router-outlet"],t:"The Angular Router maps URL paths to components and renders them into a &lt;router-outlet&gt;. routerLink navigates without full page reloads."},
+  {c:"Route guards & resolvers",url:"029-route-guards-resolvers/",cat:"routing",cl:"Routing",apis:["canActivate","canMatch","resolve"],t:"Guards decide whether navigation may proceed; resolvers pre-fetch data before a route activates. Modern guards are plain functions returning a boolean, UrlTree or Observable."},
+  {c:"Lazy loading",url:"030-lazy-loading/",cat:"routing",cl:"Routing",apis:["loadComponent","loadChildren"],t:"Lazy loading defers a route’s code until the user navigates to it, shrinking the initial bundle. Use loadComponent for a component or loadChildren for a set of routes."},
+  {c:"Template-driven forms",url:"031-template-driven-forms/",cat:"forms",cl:"Forms",apis:["ngModel","ngForm","FormsModule"],t:"Template-driven forms are declared in the template with ngModel and directives. They suit simple forms; Angular builds the form model implicitly."},
+  {c:"Reactive forms",url:"032-reactive-forms/",cat:"forms",cl:"Forms",apis:["FormControl","FormGroup","FormBuilder"],t:"Reactive forms define the model explicitly in the component with FormControl / FormGroup, giving typed, testable and synchronous access to form state."},
+  {c:"Form validation",url:"033-form-validation/",cat:"forms",cl:"Forms",apis:["Validators","errors","ValidatorFn"],t:"Validators attach rules to controls; failing rules populate errors and mark the form invalid. Angular provides built-in validators and supports custom ones."},
+  {c:"Change detection",url:"034-change-detection/",cat:"render",cl:"Rendering",apis:["ChangeDetectorRef","OnPush","markForCheck"],t:"Change detection syncs component state to the DOM. The OnPush strategy only re-checks a component when its inputs change or an event fires — a key performance lever."},
+  {c:"Zoneless change detection",url:"035-zoneless-change-detection/",cat:"render",cl:"Rendering",apis:["provideZonelessChangeDetection"],t:"Zoneless change detection (experimental) drops Zone.js and lets signals schedule updates directly — less overhead and clearer control over when the UI refreshes."},
+  {c:"Deferrable views (@defer)",url:"036-deferrable-views-defer/",cat:"render",cl:"Rendering",apis:["@defer","@placeholder","@loading","@error"],t:"@defer blocks (v17+) lazily load a section of a template on a trigger — viewport, interaction or idle — with placeholder, loading and error states built in."},
+  {c:"Dynamic components",url:"037-dynamic-components/",cat:"advanced",cl:"Advanced",apis:["ViewContainerRef","createComponent","NgComponentOutlet"],t:"Components can be created at runtime — for modals, wizards or plugin systems. ViewContainerRef.createComponent or the NgComponentOutlet directive instantiate them dynamically."},
+  {c:"State management",url:"038-state-management/",cat:"advanced",cl:"Advanced",apis:["NgRx","Store","signalStore","@ngrx/signals"],t:"As apps grow, shared state needs structure. NgRx offers a Redux-style store; the newer @ngrx/signals SignalStore models state with signals for a lighter, reactive approach."},
+  {c:"SSR & hydration",url:"039-ssr-hydration/",cat:"advanced",cl:"Advanced",apis:["@angular/ssr","provideClientHydration"],t:"Server-side rendering renders the first page on the server for faster paint and SEO, then hydration reuses that DOM on the client instead of re-rendering. ng add @angular/ssr wires it up."},
+  {c:"Testing",url:"040-testing/",cat:"testing",cl:"Testing",apis:["TestBed","ComponentFixture","Jasmine"],t:"Angular’s TestBed configures a testing module and creates component fixtures you can drive and inspect. Tests run on Jasmine/Karma, or increasingly Jest/Vitest."},
+];
+
+const catClass = {intro:"cat-intro",tooling:"cat-tooling",blocks:"cat-blocks",template:"cat-template",reactive:"cat-reactive",di:"cat-di",http:"cat-http",routing:"cat-routing",forms:"cat-forms",render:"cat-render",advanced:"cat-advanced",testing:"cat-testing"};
+const STATE_KEY = 'angular-concepts-index-state';
+
+// Persist search/filter/scroll so returning from a detail page restores the view.
+function saveIndexState() {
+  sessionStorage.setItem(STATE_KEY, JSON.stringify({
+    search: document.getElementById('search').value,
+    category: document.getElementById('catFilter').value,
+    scrollY: window.scrollY,
+    pendingRestore: true,
+  }));
+}
+
+function consumeIndexState() {
+  const raw = sessionStorage.getItem(STATE_KEY);
+  if (!raw) return null;
+  try {
+    const state = JSON.parse(raw);
+    if (!state.pendingRestore) return null;
+    sessionStorage.removeItem(STATE_KEY);
+    return state;
+  } catch {
+    sessionStorage.removeItem(STATE_KEY);
+    return null;
+  }
+}
+
+function openConcept(url) {
+  saveIndexState();
+  location.href = url;
+}
+
+// Render the API chips for one concept row.
+function renderApis(apis) {
+  return apis.map(a => '<span class="api">' + a + '</span>').join('');
+}
+
+// Filter by search text and category, then paint the table.
+function render() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const cat = document.getElementById('catFilter').value;
+  let rows = DATA;
+  if (cat) rows = rows.filter(d => d.cat === cat);
+  if (q) rows = rows.filter(d => (d.c + d.t + d.apis.join(' ')).toLowerCase().includes(q));
+  document.getElementById('count').textContent = rows.length + ' concepts';
+  document.getElementById('noResults').style.display = rows.length ? 'none' : 'block';
+  document.getElementById('tbody').innerHTML = rows.map((d, i) => `
+    <tr class="clickable" onclick="openConcept('${d.url}')">
+      <td><span class="idx">${i + 1}</span></td>
+      <td><div class="concept"><a href="${d.url}" onclick="event.stopPropagation(); saveIndexState();">${d.c}</a></div><span class="cat ${catClass[d.cat]}">${d.cl}</span></td>
+      <td><span class="note">${d.cl}</span></td>
+      <td><div class="apis">${renderApis(d.apis)}</div></td>
+      <td><span class="note">${d.t}</span></td>
+    </tr>`).join('');
+}
+
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+
+const savedState = consumeIndexState();
+if (savedState) {
+  document.getElementById('search').value = savedState.search || '';
+  document.getElementById('catFilter').value = savedState.category || '';
+}
+
+document.getElementById('search').addEventListener('input', render);
+document.getElementById('catFilter').addEventListener('change', render);
+render();
+
+if (savedState) {
+  requestAnimationFrame(() => {
+    window.scrollTo({ top: savedState.scrollY || 0, behavior: 'auto' });
+  });
+}
+</script>
+</body>
+</html>

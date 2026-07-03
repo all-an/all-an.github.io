@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Service</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../angular.html">&larr; back</a>
+  <h1>Service</h1>
+  <p class="desc">A service is a plain <code>@Injectable</code> class holding shared logic or state. <code>providedIn: ’root’</code> makes it a lazy, app-wide singleton.</p>
+  <pre><code class="language-typescript">import { Injectable } from '@angular/core';
+
+@Injectable({ providedIn: 'root' })
+export class CartService {
+  private items: Product[] = [];
+
+  add(product: Product) { this.items.push(product); }
+  get count() { return this.items.length; }
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

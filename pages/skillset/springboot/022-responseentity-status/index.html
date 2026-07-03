@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ResponseEntity & status</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../springboot.html">&larr; back</a>
+  <h1>ResponseEntity & status</h1>
+  <p class="desc"><code>ResponseEntity</code> gives full control over the status code, headers and body of a response, for cases where the default 200 OK is not enough.</p>
+  <pre><code class="language-java">@PostMapping("/users")
+public ResponseEntity&lt;User&gt; create(@RequestBody CreateUser dto) {
+    User saved = service.register(dto);
+    return ResponseEntity
+        .status(HttpStatus.CREATED)              // 201
+        .header("Location", "/users/" + saved.id())
+        .body(saved);
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

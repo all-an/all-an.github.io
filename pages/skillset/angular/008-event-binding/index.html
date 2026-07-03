@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Event binding</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../angular.html">&larr; back</a>
+  <h1>Event binding</h1>
+  <p class="desc">Parentheses bind a template event to a handler: <code>(event)="handler()"</code>. The <code>$event</code> object carries the event payload.</p>
+  <pre><code class="language-html">&lt;!-- Respond to DOM and component events --&gt;
+&lt;button (click)="save()"&gt;Save&lt;/button&gt;
+&lt;input (input)="onType($event)" /&gt;
+&lt;app-user (deleted)="removeUser($event)"&gt;&lt;/app-user&gt;</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

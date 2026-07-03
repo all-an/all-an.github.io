@@ -1,0 +1,123 @@
+/* Mobile warning — hidden on desktop, phone-frame styled on small screens */
+#mobile-warning {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  #mobile-warning {
+    display: flex;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(17, 17, 17, 0.92);
+    z-index: 400;
+    align-items: center;
+    justify-content: center;
+    font-family: monospace;
+  }
+
+  /* Phone-frame card */
+  #mobile-warning .phone-frame {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 1rem;
+    padding: 2.5rem 1.8rem;
+    width: calc(100% - 40px);
+    max-width: 340px;
+    background: #111;
+    border: 2px solid #ffaa44;
+    border-radius: 36px;
+    box-shadow: 0 0 40px rgba(255, 170, 68, 0.15);
+    position: relative;
+  }
+
+  /* Decorative notch */
+  #mobile-warning .phone-frame::before {
+    content: '';
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 6px;
+    background: #ffaa44;
+    border-radius: 3px;
+    opacity: 0.4;
+  }
+
+  #mobile-warning h2 {
+    font-size: 1.6rem;
+    color: #ffaa44;
+    letter-spacing: 4px;
+    text-shadow: 0 0 16px #ffaa4488;
+    margin-bottom: 0.5rem;
+  }
+
+  #mobile-warning p {
+    color: #8888cc;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+    line-height: 1.6;
+  }
+
+  #mobile-warning a {
+    margin-top: 1rem;
+    color: #ffaa44;
+    text-decoration: none;
+    letter-spacing: 2px;
+    font-size: 0.85rem;
+    border: 1px solid #ffaa44;
+    padding: 0.5rem 1.2rem;
+    transition: background 0.2s;
+  }
+
+  #mobile-warning a:hover {
+    background: rgba(255, 170, 68, 0.1);
+  }
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Dark backdrop; the canvas paints the grid over the whole viewport. */
+body {
+  background: #111;
+  min-height: 100vh;
+  overflow: hidden;
+  font-family: monospace;
+}
+
+/* Full-screen playfield. Hand cursor that grabs while dragging. */
+#game-canvas {
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  cursor: grab;
+}
+
+#game-canvas.dragging {
+  cursor: grabbing;
+}
+
+/* Cell-under-cursor readout, pinned to the upper-right of the screen. */
+#hover-info {
+  position: fixed;
+  top: 14px;
+  right: 16px;
+  z-index: 300;
+  font-family: monospace;
+  font-size: 14px;
+  letter-spacing: 1px;
+  color: #ffaa44;
+  pointer-events: none;
+  min-height: 18px; /* reserve space so nothing shifts when it fills in */
+}

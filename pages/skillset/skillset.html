@@ -40,7 +40,7 @@
     /* divider */
     hr { border: none; border-top: 1px solid var(--color-border-tertiary); margin: 2.25rem 0; }
 
-    /* small italic running total of items across the four programming lists */
+    /* small italic running total of items across the six programming lists */
     .section p.list-total { font-size: 14px; font-style: italic; color: #6b6b73; margin-top: 1.5rem; }
   </style>
 </head>
@@ -63,8 +63,10 @@
       <a class="link" href="clean-code/clean-code.html">Clean Code Principles</a>
       <a class="link" href="algorithms/algorithms.html">Algorithms</a>
       <a class="link" href="aws/aws.html">AWS</a>
+      <a class="link" href="angular/angular.html">Angular</a>
+      <a class="link" href="springboot/springboot.html">Spring Boot</a>
     </div>
-    <!-- Running total of all entries across the four programming lists, filled in by script. -->
+    <!-- Running total of all entries across the six programming lists, filled in by script. -->
     <p class="list-total" id="listTotal" style="display: none;"></p>
   </div>
 
@@ -80,7 +82,7 @@
 </div>
 
 <script>
-  // Count items across the four programming lists by fetching each list's data
+  // Count items across the six programming lists by fetching each list's data
   // source and counting its per-entry marker, so the total stays correct as the
   // lists grow without hand-editing this number. Each source uses a distinct
   // object-literal marker that appears exactly once per entry.
@@ -89,6 +91,8 @@
     { url: 'clean-code/clean-code.html',     marker: /\{code:"/g },   // Clean Code Principles
     { url: 'algorithms/algorithms-data.js',  marker: /\{n:"/g },      // Algorithms
     { url: 'aws/aws.js',                     marker: /\{n:"/g },      // AWS
+    { url: 'angular/angular.html',           marker: /\{c:"/g },      // Angular
+    { url: 'springboot/springboot.html',     marker: /\{c:"/g },      // Spring Boot
   ];
 
   // Fetch one source and return how many entries its marker matches.
@@ -104,7 +108,7 @@
       const counts = await Promise.all(LIST_SOURCES.map(countEntries));
       const total = counts.reduce((sum, n) => sum + n, 0);
       const el = document.getElementById('listTotal');
-      el.textContent = total + ' items across the four lists';
+      el.textContent = total + ' items across the six lists';
       el.style.display = 'block';
     } catch {
       // Counting is a nice-to-have; silently skip it if the data can't be read.

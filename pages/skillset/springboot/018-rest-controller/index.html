@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>REST controller</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../springboot.html">&larr; back</a>
+  <h1>REST controller</h1>
+  <p class="desc"><code>@RestController</code> marks a class whose methods return data serialized straight to the HTTP response body (JSON by default) — the standard way to build REST APIs.</p>
+  <pre><code class="language-java">@RestController
+@RequestMapping("/api/users")
+public class UserController {
+    private final UserService users;
+
+    public UserController(UserService users) { this.users = users; }
+
+    @GetMapping
+    public List&lt;User&gt; all() { return users.findAll(); }
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

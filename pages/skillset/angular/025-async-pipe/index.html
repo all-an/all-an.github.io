@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Async pipe</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../angular.html">&larr; back</a>
+  <h1>Async pipe</h1>
+  <p class="desc">The <code>async</code> pipe subscribes to an Observable or Promise in the template, renders its latest value, and unsubscribes automatically when the component is destroyed.</p>
+  <pre><code class="language-html">&lt;!-- No manual subscribe/unsubscribe needed --&gt;
+&lt;ul&gt;
+  &lt;li *ngFor="let user of users$ | async"&gt;{{ user.name }}&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Now: {{ clock$ | async | date:'mediumTime' }}&lt;/p&gt;</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

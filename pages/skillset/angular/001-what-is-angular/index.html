@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>What is Angular</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../angular.html">&larr; back</a>
+  <h1>What is Angular</h1>
+  <p class="desc">Angular is a TypeScript-based framework for building single-page applications (SPAs). It bundles components, dependency injection, routing, forms and reactivity, maintained by Google.<br>Every app is a tree of <code>components</code> that the framework renders and keeps up to date.</p>
+  <pre><code class="language-typescript">// A minimal Angular component — the atom of every Angular app
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  template: '&lt;h1&gt;Hello, {{ name }}!&lt;/h1&gt;',
+})
+export class AppComponent {
+  name = 'Angular';
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

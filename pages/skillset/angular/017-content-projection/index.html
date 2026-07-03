@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Content projection</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../angular.html">&larr; back</a>
+  <h1>Content projection</h1>
+  <p class="desc"><code>&lt;ng-content&gt;</code> projects markup supplied by a parent into a component’s template — the basis of reusable wrappers like cards and dialogs. Multiple slots use <code>select</code>.</p>
+  <pre><code class="language-html">&lt;!-- card.component template --&gt;
+&lt;div class="card"&gt;
+  &lt;header&gt;&lt;ng-content select="[title]"&gt;&lt;/ng-content&gt;&lt;/header&gt;
+  &lt;div class="body"&gt;&lt;ng-content&gt;&lt;/ng-content&gt;&lt;/div&gt;
+&lt;/div&gt;
+
+&lt;!-- usage --&gt;
+&lt;app-card&gt;
+  &lt;h2 title&gt;Report&lt;/h2&gt;
+  &lt;p&gt;Projected body content.&lt;/p&gt;
+&lt;/app-card&gt;</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

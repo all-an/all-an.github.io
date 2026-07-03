@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>@SpringBootApplication</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../springboot.html">&larr; back</a>
+  <h1>@SpringBootApplication</h1>
+  <p class="desc"><code>@SpringBootApplication</code> is a meta-annotation combining <code>@Configuration</code>, <code>@EnableAutoConfiguration</code> and <code>@ComponentScan</code>. It marks the entry point and scans its package for components.</p>
+  <pre><code class="language-java">@SpringBootApplication // = @Configuration + @EnableAutoConfiguration + @ComponentScan
+public class StoreApplication {
+    public static void main(String[] args) {
+        // Boots the context, starts the embedded server
+        SpringApplication.run(StoreApplication.class, args);
+    }
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

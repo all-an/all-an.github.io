@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Structural directive</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../angular.html">&larr; back</a>
+  <h1>Structural directive</h1>
+  <p class="desc">Structural directives (prefixed with <code>*</code>) add or remove DOM subtrees. <code>*ngIf</code>, <code>*ngFor</code> and <code>*ngSwitch</code> are the classic trio.</p>
+  <pre><code class="language-html">&lt;!-- Conditionally render and repeat elements --&gt;
+&lt;p *ngIf="isLoggedIn"&gt;Welcome back!&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li *ngFor="let item of items; index as i"&gt;
+    {{ i + 1 }}. {{ item.name }}
+  &lt;/li&gt;
+&lt;/ul&gt;</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

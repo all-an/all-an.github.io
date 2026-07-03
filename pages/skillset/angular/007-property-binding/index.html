@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Property binding</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../angular.html">&larr; back</a>
+  <h1>Property binding</h1>
+  <p class="desc">Square brackets bind a DOM property to a component expression: <code>[prop]="value"</code>. Unlike interpolation it passes the real value — number, boolean, object — not a string.</p>
+  <pre><code class="language-html">&lt;!-- Bind element and directive properties --&gt;
+&lt;img [src]="avatarUrl" [alt]="user.name" /&gt;
+&lt;button [disabled]="isSaving"&gt;Save&lt;/button&gt;
+&lt;app-user [user]="currentUser"&gt;&lt;/app-user&gt;</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

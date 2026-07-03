@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Caching</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../springboot.html">&larr; back</a>
+  <h1>Caching</h1>
+  <p class="desc">The caching abstraction memoizes method results. <code>@Cacheable</code> stores a return value keyed by arguments; <code>@CacheEvict</code> clears it. Backed by a provider like Caffeine or Redis.</p>
+  <pre><code class="language-java">@Service
+public class CatalogService {
+    @Cacheable("products") // repeated calls with the same id hit the cache
+    public Product findById(Long id) {
+        return repository.findById(id).orElseThrow();
+    }
+}
+// Enable with @EnableCaching on a configuration class</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

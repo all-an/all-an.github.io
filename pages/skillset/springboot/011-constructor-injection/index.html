@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Constructor injection</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../springboot.html">&larr; back</a>
+  <h1>Constructor injection</h1>
+  <p class="desc">Injecting dependencies through the constructor makes them <code>final</code> and mandatory, yields immutable, easily testable objects, and needs no annotation on a single constructor.</p>
+  <pre><code class="language-java">@Service
+public class ReportService {
+    private final Repo repo;
+    private final Clock clock;
+
+    // All dependencies supplied at construction — no nulls, easy to mock
+    public ReportService(Repo repo, Clock clock) {
+        this.repo = repo;
+        this.clock = clock;
+    }
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

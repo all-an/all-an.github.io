@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Testing</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../springboot.html">&larr; back</a>
+  <h1>Testing</h1>
+  <p class="desc">Boot’s test support spins up a context for integration tests (<code>@SpringBootTest</code>) or a slice like the web layer (<code>@WebMvcTest</code>) with <code>MockMvc</code> to drive endpoints.</p>
+  <pre><code class="language-java">@WebMvcTest(UserController.class)
+class UserControllerTest {
+    @Autowired MockMvc mvc;
+    @MockBean UserService service;
+
+    @Test
+    void returnsUser() throws Exception {
+        when(service.get(1L)).thenReturn(new User(1L, "Ada"));
+        mvc.perform(get("/api/users/1"))
+           .andExpect(status().isOk());
+    }
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

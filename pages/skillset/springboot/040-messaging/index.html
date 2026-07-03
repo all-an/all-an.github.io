@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Messaging</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../springboot.html">&larr; back</a>
+  <h1>Messaging</h1>
+  <p class="desc">Boot integrates message brokers for asynchronous, decoupled communication. A <code>@KafkaListener</code> (or RabbitMQ listener) consumes messages as they arrive.</p>
+  <pre><code class="language-java">@Component
+public class OrderEventsListener {
+    // Invoked for each message on the topic
+    @KafkaListener(topics = "orders", groupId = "billing")
+    public void onOrder(OrderEvent event) {
+        billing.charge(event.orderId());
+    }
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>breakoutz</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Shown only on small screens: this game needs a mouse and keyboard. -->
+  <div id="mobile-warning">
+    <div class="phone-frame">
+      <h2>Best on Desktop</h2>
+      <p>This game uses a mouse and keyboard — it's not playable on a small screen.</p>
+      <a href="../../unfinished-games.html">← Back to games</a>
+    </div>
+  </div>
+
+  <!-- Fixed readout: the cell currently under the cursor, upper-right of screen. -->
+  <div id="hover-info"></div>
+
+  <!-- The playfield: the full-screen background grid, ready to build breakoutz on. -->
+  <canvas id="game-canvas"></canvas>
+
+  <script type="module" src="game.js"></script>
+</body>
+</html>

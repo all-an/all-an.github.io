@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Observable / RxJS</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../angular.html">&larr; back</a>
+  <h1>Observable / RxJS</h1>
+  <p class="desc">Observables from RxJS model streams of asynchronous values — HTTP responses, events, timers. Operators like <code>map</code> and <code>switchMap</code> compose them declaratively.</p>
+  <pre><code class="language-typescript">import { interval } from 'rxjs';
+import { map, take } from 'rxjs/operators';
+
+// A stream that emits 0,2,4,6,8 then completes
+const evens$ = interval(1000).pipe(
+  map(n =&gt; n * 2),
+  take(5),
+);
+
+const sub = evens$.subscribe(v =&gt; console.log(v));
+// sub.unsubscribe() when done to release the stream</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

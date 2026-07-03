@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NgModule</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../angular.html">&larr; back</a>
+  <h1>NgModule</h1>
+  <p class="desc">An <code>@NgModule</code> groups components, directives and pipes and wires up providers. It was the primary organizing unit before standalone components; you still meet it in older codebases.</p>
+  <pre><code class="language-typescript">import { NgModule } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { UserComponent } from './user.component';
+
+@NgModule({
+  declarations: [UserComponent], // components owned by this module
+  imports: [CommonModule],       // modules it depends on
+  exports: [UserComponent],      // what it exposes to importers
+})
+export class UserModule {}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

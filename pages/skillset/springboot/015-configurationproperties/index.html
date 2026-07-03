@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>@ConfigurationProperties</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../springboot.html">&larr; back</a>
+  <h1>@ConfigurationProperties</h1>
+  <p class="desc"><code>@ConfigurationProperties</code> binds a group of properties to a typed object, giving validated, IDE-friendly access instead of scattered <code>@Value</code> lookups.</p>
+  <pre><code class="language-java">@ConfigurationProperties(prefix = "mail")
+public record MailProperties(String host, int port, String from) {}
+
+// mail.host, mail.port, mail.from -&gt; bound automatically
+// Enable with @ConfigurationPropertiesScan on the main class</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pipe</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../angular.html">&larr; back</a>
+  <h1>Pipe</h1>
+  <p class="desc">A pipe transforms a value for display with the <code>|</code> operator. Angular ships pipes like <code>date</code>, <code>currency</code> and <code>async</code>, and you can write your own with <code>@Pipe</code>.</p>
+  <pre><code class="language-typescript">import { Pipe, PipeTransform } from '@angular/core';
+
+@Pipe({ name: 'exclaim', standalone: true })
+export class ExclaimPipe implements PipeTransform {
+  transform(value: string): string {
+    return value + '!';
+  }
+}
+// Usage in a template:  {{ 'hello' | exclaim }}  -&gt;  hello!</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

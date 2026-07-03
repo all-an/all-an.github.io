@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Request & response body</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../springboot.html">&larr; back</a>
+  <h1>Request & response body</h1>
+  <p class="desc"><code>@RequestBody</code> deserializes the incoming JSON into a Java object; return values are serialized back to JSON by Jackson. On <code>@RestController</code> this is implicit.</p>
+  <pre><code class="language-java">public record CreateUser(String name, String email) {}
+
+@PostMapping("/users")
+public User create(@RequestBody CreateUser dto) {
+    // JSON body -&gt; CreateUser; returned User -&gt; JSON response
+    return service.register(dto.name(), dto.email());
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

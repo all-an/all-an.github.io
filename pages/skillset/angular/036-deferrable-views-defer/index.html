@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Deferrable views (@defer)</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../angular.html">&larr; back</a>
+  <h1>Deferrable views (@defer)</h1>
+  <p class="desc"><code>@defer</code> blocks (v17+) lazily load a section of a template on a trigger — viewport, interaction or idle — with placeholder, loading and error states built in.</p>
+  <pre><code class="language-html">@defer (on viewport) {
+  &lt;app-heavy-chart [data]="data" /&gt;
+} @placeholder {
+  &lt;p&gt;Scroll to load the chart&amp;hellip;&lt;/p&gt;
+} @loading (minimum 200ms) {
+  &lt;p&gt;Loading&amp;hellip;&lt;/p&gt;
+} @error {
+  &lt;p&gt;Failed to load.&lt;/p&gt;
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

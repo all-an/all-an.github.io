@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Database migration</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../springboot.html">&larr; back</a>
+  <h1>Database migration</h1>
+  <p class="desc">Tools like Flyway apply versioned SQL migrations at startup so your schema evolves in lockstep with the code — tracked, ordered and repeatable across environments.</p>
+  <pre><code class="language-sql">-- src/main/resources/db/migration/V1__create_users.sql
+CREATE TABLE users (
+    id     BIGSERIAL PRIMARY KEY,
+    email  VARCHAR(255) NOT NULL UNIQUE,
+    name   VARCHAR(255) NOT NULL
+);
+-- Flyway runs this once and records it in flyway_schema_history</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

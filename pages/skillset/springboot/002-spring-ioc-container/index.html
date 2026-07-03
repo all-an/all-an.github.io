@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spring IoC container</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../springboot.html">&larr; back</a>
+  <h1>Spring IoC container</h1>
+  <p class="desc">At the heart of Spring is the Inversion of Control (IoC) container. It creates, wires and manages your objects — called <code>beans</code> — so classes declare what they need instead of constructing it themselves.</p>
+  <pre><code class="language-java">// The container builds and injects beans for you
+@Service
+public class OrderService {
+    private final PaymentGateway gateway;
+
+    // Spring supplies the PaymentGateway bean
+    public OrderService(PaymentGateway gateway) {
+        this.gateway = gateway;
+    }
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Template & interpolation</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../angular.html">&larr; back</a>
+  <h1>Template & interpolation</h1>
+  <p class="desc">Interpolation with <code>{{ }}</code> renders a component expression as text in the DOM. The expression is re-evaluated whenever the data it depends on changes.</p>
+  <pre><code class="language-html">&lt;!-- Any component property or expression can be interpolated --&gt;
+&lt;h1&gt;{{ title }}&lt;/h1&gt;
+&lt;p&gt;{{ user.name }} has {{ items.length }} items&lt;/p&gt;
+&lt;p&gt;Total: {{ price * quantity | currency }}&lt;/p&gt;</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

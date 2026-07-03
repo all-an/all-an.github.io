@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stereotype annotations</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../springboot.html">&larr; back</a>
+  <h1>Stereotype annotations</h1>
+  <p class="desc">Stereotypes mark classes for component scanning. <code>@Component</code> is generic; <code>@Service</code>, <code>@Repository</code> and <code>@Controller</code> are specializations that carry extra semantics (e.g. persistence exception translation).</p>
+  <pre><code class="language-java">@Service        // business logic
+public class InvoiceService {}
+
+@Repository     // data access; adds persistence exception translation
+public class InvoiceRepository {}
+
+@RestController // web endpoint
+public class InvoiceController {}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

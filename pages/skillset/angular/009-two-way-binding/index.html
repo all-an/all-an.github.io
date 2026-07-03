@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Two-way binding</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../angular.html">&larr; back</a>
+  <h1>Two-way binding</h1>
+  <p class="desc">The "banana in a box" syntax <code>[(ngModel)]</code> combines property and event binding to keep an input and a component property in sync.</p>
+  <pre><code class="language-html">&lt;!-- Requires FormsModule; keeps name in sync both ways --&gt;
+&lt;input [(ngModel)]="name" /&gt;
+&lt;p&gt;Hello, {{ name }}&lt;/p&gt;
+
+&lt;!-- Equivalent to binding value and (ngModelChange) together --&gt;
+&lt;input [ngModel]="name" (ngModelChange)="name = $event" /&gt;</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

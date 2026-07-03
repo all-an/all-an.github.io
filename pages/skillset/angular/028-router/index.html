@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Router</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../angular.html">&larr; back</a>
+  <h1>Router</h1>
+  <p class="desc">The Angular Router maps URL paths to components and renders them into a <code>&lt;router-outlet&gt;</code>. <code>routerLink</code> navigates without full page reloads.</p>
+  <pre><code class="language-typescript">import { Routes } from '@angular/router';
+
+export const routes: Routes = [
+  { path: '', component: HomeComponent },
+  { path: 'users/:id', component: UserComponent }, // route parameter
+  { path: '**', component: NotFoundComponent },    // wildcard
+];
+// Template:  &lt;a routerLink="/users/1"&gt;User 1&lt;/a&gt;  &lt;router-outlet /&gt;</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

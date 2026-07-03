@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bean scopes</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../springboot.html">&larr; back</a>
+  <h1>Bean scopes</h1>
+  <p class="desc">A bean’s scope controls its lifecycle. The default <code>singleton</code> shares one instance per context; <code>prototype</code> creates a new one per injection; web scopes like <code>request</code> and <code>session</code> exist too.</p>
+  <pre><code class="language-java">@Component
+@Scope("prototype") // a fresh instance each time it is requested
+public class ShoppingCart {
+    private final List&lt;Item&gt; items = new ArrayList&lt;&gt;();
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

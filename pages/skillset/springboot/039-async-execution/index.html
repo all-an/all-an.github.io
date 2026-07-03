@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Async execution</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../springboot.html">&larr; back</a>
+  <h1>Async execution</h1>
+  <p class="desc"><code>@Async</code> runs a method on a separate thread pool, returning immediately or a <code>CompletableFuture</code> — useful for fire-and-forget work like sending email.</p>
+  <pre><code class="language-java">@Service
+public class MailService {
+    @Async // runs off the caller's thread
+    public CompletableFuture&lt;Void&gt; send(Email email) {
+        client.deliver(email);
+        return CompletableFuture.completedFuture(null);
+    }
+}
+// Enable with @EnableAsync on a configuration class</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

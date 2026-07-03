@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Query methods</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../springboot.html">&larr; back</a>
+  <h1>Query methods</h1>
+  <p class="desc">Spring Data derives queries from method names (<code>findByEmail</code>) and lets you write explicit JPQL or SQL with <code>@Query</code> when names get unwieldy.</p>
+  <pre><code class="language-java">public interface OrderRepository extends JpaRepository&lt;Order, Long&gt; {
+    // Derived straight from the method name
+    List&lt;Order&gt; findByStatusAndTotalGreaterThan(Status status, BigDecimal min);
+
+    @Query("select o from Order o where o.customer.id = :id")
+    List&lt;Order&gt; findForCustomer(@Param("id") Long id);
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

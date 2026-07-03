@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Signals</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../angular.html">&larr; back</a>
+  <h1>Signals</h1>
+  <p class="desc">Signals (v16+) are fine-grained reactive values. Reading one tracks it; setting it notifies dependents. <code>computed</code> derives cached values and <code>effect</code> runs side effects.</p>
+  <pre><code class="language-typescript">import { signal, computed, effect } from '@angular/core';
+
+const count = signal(0);                    // writable signal
+const double = computed(() =&gt; count() * 2); // derived, cached
+
+effect(() =&gt; console.log('count is', count())); // reacts to changes
+
+count.set(5);            // double() is now 10
+count.update(n =&gt; n + 1);</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

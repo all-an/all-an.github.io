@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Built-in control flow</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../angular.html">&larr; back</a>
+  <h1>Built-in control flow</h1>
+  <p class="desc">Angular 17 introduced block control flow — <code>@if</code>, <code>@for</code> and <code>@switch</code> — a faster, built-in replacement for the structural directives. <code>@for</code> requires a <code>track</code> expression.</p>
+  <pre><code class="language-html">@if (user) {
+  &lt;p&gt;Hello, {{ user.name }}&lt;/p&gt;
+} @else {
+  &lt;p&gt;Please log in&lt;/p&gt;
+}
+
+@for (item of items; track item.id) {
+  &lt;li&gt;{{ item.name }}&lt;/li&gt;
+} @empty {
+  &lt;li&gt;No items yet&lt;/li&gt;
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

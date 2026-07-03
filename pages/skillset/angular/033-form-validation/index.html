@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Form validation</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../angular.html">&larr; back</a>
+  <h1>Form validation</h1>
+  <p class="desc">Validators attach rules to controls; failing rules populate <code>errors</code> and mark the form invalid. Angular provides built-in validators and supports custom ones.</p>
+  <pre><code class="language-typescript">import { FormControl, Validators } from '@angular/forms';
+
+const email = new FormControl('', [
+  Validators.required,
+  Validators.email,
+]);
+
+// Custom validator: value must not be blank/whitespace
+function notBlank(c: FormControl) {
+  return c.value?.trim() ? null : { blank: true };
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

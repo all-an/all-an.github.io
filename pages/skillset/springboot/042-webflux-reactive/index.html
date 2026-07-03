@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WebFlux / reactive</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../springboot.html">&larr; back</a>
+  <h1>WebFlux / reactive</h1>
+  <p class="desc">Spring WebFlux is the reactive, non-blocking web stack built on Project Reactor. Endpoints return <code>Mono</code> (0–1) or <code>Flux</code> (0–N), scaling to many connections with few threads.</p>
+  <pre><code class="language-java">@RestController
+public class PriceController {
+    private final WebClient client;
+
+    @GetMapping("/prices/{symbol}")
+    public Mono&lt;Price&gt; price(@PathVariable String symbol) {
+        // Non-blocking call; the thread is freed while awaiting
+        return client.get().uri("/quote/{s}", symbol)
+            .retrieve().bodyToMono(Price.class);
+    }
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
