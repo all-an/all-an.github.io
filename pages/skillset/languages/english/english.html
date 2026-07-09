@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>English Conjugation — Allan Pereira Abrahão</title>
+<style>
+:root {
+  --color-background-primary:   #111113;
+  --color-background-secondary: #1a1a1e;
+  --color-text-primary:         #e8e8ea;
+  --color-text-secondary:       #9898a0;
+  --color-text-tertiary:        #5e5e66;
+  --color-border-secondary:     #2e2e33;
+  --color-border-tertiary:      #232328;
+  --color-correct:              #9FE1CB;
+  --color-correct-bg:           #04342C;
+  --color-wrong:                #F7C1C1;
+  --color-wrong-bg:             #501313;
+  --border-radius-md:           7px;
+  --font-mono:                  'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--color-background-primary); color: var(--color-text-primary); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+.wrap { max-width: 640px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
+
+/* nav */
+.nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem; }
+.nav a { font-size: 18px; color: var(--color-text-secondary); text-decoration: none; }
+.nav a:hover { color: var(--color-text-primary); }
+
+/* header */
+h1 { font-size: 34px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.4rem; }
+.tagline { font-size: 20px; color: var(--color-text-secondary); margin-bottom: 2rem; line-height: 1.5; }
+
+/* generic card */
+.card { background: var(--color-background-secondary); border: 1px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 1.75rem; }
+
+/* start screen */
+.how { font-size: 17px; color: var(--color-text-secondary); line-height: 1.7; margin-bottom: 1.5rem; }
+.how ul { margin: 0.5rem 0 0 1.1rem; }
+.how li { margin-bottom: 0.3rem; }
+.level-label { font-size: 14px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-text-tertiary); margin-bottom: 0.75rem; }
+.levels { display: flex; gap: 10px; flex-wrap: wrap; }
+.btn { font-size: 17px; color: var(--color-text-primary); background: var(--color-background-secondary); border: 1px solid var(--color-border-secondary); border-radius: var(--border-radius-md); padding: 10px 18px; cursor: pointer; font-family: inherit; }
+.btn:hover { border-color: #3a3a44; background: #202027; }
+.btn-primary { background: #26215C; border-color: #3a3480; color: #CECBF6; }
+.btn-primary:hover { background: #302a72; }
+
+/* game HUD */
+.hud { display: flex; gap: 10px; margin-bottom: 1.25rem; }
+.stat { flex: 1; background: var(--color-background-secondary); border: 1px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 10px 14px; text-align: center; }
+.stat-label { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-tertiary); }
+.stat-value { font-size: 26px; font-weight: 700; font-family: var(--font-mono); margin-top: 2px; }
+#timeValue.low { color: var(--color-wrong); }
+
+/* time bar */
+.timebar-track { height: 6px; background: var(--color-border-tertiary); border-radius: 99px; overflow: hidden; margin-bottom: 1.5rem; }
+.timebar-fill { height: 100%; width: 100%; background: #26215C; transition: width 0.25s linear; }
+
+/* prompt */
+.prompt { text-align: center; margin-bottom: 1.5rem; }
+.prompt-verb { font-size: 40px; font-weight: 700; font-family: var(--font-mono); letter-spacing: -0.01em; }
+.prompt-ask { font-size: 18px; color: var(--color-text-secondary); margin-top: 0.5rem; }
+.prompt-ask b { color: #CECBF6; font-weight: 600; }
+
+/* answer input */
+.answer { width: 100%; font-size: 24px; font-family: var(--font-mono); text-align: center; padding: 12px 14px; border-radius: var(--border-radius-md); border: 1px solid var(--color-border-secondary); background: var(--color-background-primary); color: var(--color-text-primary); outline: none; }
+.answer:focus { border-color: #3a3480; }
+.answer.correct { border-color: var(--color-correct); background: var(--color-correct-bg); }
+.answer.wrong { border-color: var(--color-wrong); background: var(--color-wrong-bg); }
+
+/* feedback line */
+.feedback { min-height: 26px; text-align: center; font-size: 17px; margin-top: 1rem; }
+.feedback.ok { color: var(--color-correct); }
+.feedback.no { color: var(--color-wrong); }
+.feedback .sol { font-family: var(--font-mono); font-weight: 600; }
+
+/* end screen */
+.final-score { font-size: 52px; font-weight: 700; font-family: var(--font-mono); text-align: center; }
+.final-sub { text-align: center; color: var(--color-text-secondary); font-size: 18px; margin-bottom: 1.5rem; }
+.summary-label { font-size: 14px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-text-tertiary); margin: 1.5rem 0 0.6rem; }
+.missed { display: flex; flex-direction: column; gap: 6px; }
+.missed-row { display: flex; justify-content: space-between; font-size: 16px; padding: 7px 12px; background: var(--color-background-primary); border: 1px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); }
+.missed-q { color: var(--color-text-secondary); }
+.missed-a { font-family: var(--font-mono); color: var(--color-correct); }
+.center { text-align: center; margin-top: 1.5rem; }
+
+.hidden { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <nav class="nav">
+    <a href="../../skillset.html">← skillset</a>
+  </nav>
+
+  <h1>English Conjugation</h1>
+  <p class="tagline">A timed drill for English verb forms. Conjugate as many as you can before the clock runs out.</p>
+
+  <!-- START SCREEN -->
+  <div id="startScreen" class="card">
+    <div class="how">
+      How to play:
+      <ul>
+        <li>You get <b>60 seconds</b>. Each verb shows a base form and the tense to produce.</li>
+        <li>Type the conjugation and press <b>Enter</b>.</li>
+        <li>Right answers score points and build a streak; the streak adds a bonus.</li>
+      </ul>
+    </div>
+    <div class="level-label">Choose a level</div>
+    <div class="levels">
+      <button class="btn" onclick="startGame('regular')">Regular verbs</button>
+      <button class="btn" onclick="startGame('irregular')">Irregular verbs</button>
+      <button class="btn btn-primary" onclick="startGame('all')">All mixed</button>
+    </div>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div id="gameScreen" class="hidden">
+    <div class="hud">
+      <div class="stat"><div class="stat-label">Time</div><div class="stat-value" id="timeValue">60</div></div>
+      <div class="stat"><div class="stat-label">Score</div><div class="stat-value" id="scoreValue">0</div></div>
+      <div class="stat"><div class="stat-label">Streak</div><div class="stat-value" id="streakValue">0</div></div>
+    </div>
+    <div class="timebar-track"><div class="timebar-fill" id="timebarFill"></div></div>
+
+    <div class="card">
+      <div class="prompt">
+        <div class="prompt-verb" id="promptVerb">—</div>
+        <div class="prompt-ask" id="promptAsk"></div>
+      </div>
+      <input type="text" id="answer" class="answer" autocomplete="off" autocapitalize="off"
+             autocorrect="off" spellcheck="false" placeholder="type the form…" />
+      <div class="feedback" id="feedback"></div>
+    </div>
+  </div>
+
+  <!-- END SCREEN -->
+  <div id="endScreen" class="hidden card">
+    <div class="final-score" id="finalScore">0</div>
+    <div class="final-sub" id="finalSub"></div>
+    <div id="missedWrap" class="hidden">
+      <div class="summary-label">Review these</div>
+      <div class="missed" id="missedList"></div>
+    </div>
+    <div class="center">
+      <button class="btn btn-primary" onclick="backToStart()">Play again</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ---- Verb data --------------------------------------------------------------
+// Each verb lists its four target forms. Where more than one answer is accepted
+// (e.g. "got" / "gotten"), the forms are joined with "|"; the first is canonical.
+// irr = true marks irregular verbs so levels can filter by verb type.
+const VERBS = [
+  // Regular verbs
+  {base:"work",  third:"works",   past:"worked",  pp:"worked",  ing:"working",  irr:false},
+  {base:"play",  third:"plays",   past:"played",  pp:"played",  ing:"playing",  irr:false},
+  {base:"watch", third:"watches", past:"watched", pp:"watched", ing:"watching", irr:false},
+  {base:"study", third:"studies", past:"studied", pp:"studied", ing:"studying", irr:false},
+  {base:"try",   third:"tries",   past:"tried",   pp:"tried",   ing:"trying",   irr:false},
+  {base:"stop",  third:"stops",   past:"stopped", pp:"stopped", ing:"stopping", irr:false},
+  {base:"plan",  third:"plans",   past:"planned", pp:"planned", ing:"planning", irr:false},
+  {base:"live",  third:"lives",   past:"lived",   pp:"lived",   ing:"living",   irr:false},
+  {base:"use",   third:"uses",    past:"used",    pp:"used",    ing:"using",    irr:false},
+  {base:"like",  third:"likes",   past:"liked",   pp:"liked",   ing:"liking",   irr:false},
+  {base:"want",  third:"wants",   past:"wanted",  pp:"wanted",  ing:"wanting",  irr:false},
+  {base:"need",  third:"needs",   past:"needed",  pp:"needed",  ing:"needing",  irr:false},
+  {base:"help",  third:"helps",   past:"helped",  pp:"helped",  ing:"helping",  irr:false},
+  {base:"call",  third:"calls",   past:"called",  pp:"called",  ing:"calling",  irr:false},
+  {base:"walk",  third:"walks",   past:"walked",  pp:"walked",  ing:"walking",  irr:false},
+  {base:"open",  third:"opens",   past:"opened",  pp:"opened",  ing:"opening",  irr:false},
+  {base:"close", third:"closes",  past:"closed",  pp:"closed",  ing:"closing",  irr:false},
+  {base:"start", third:"starts",  past:"started", pp:"started", ing:"starting", irr:false},
+  // Irregular verbs
+  {base:"go",    third:"goes",    past:"went",    pp:"gone",       ing:"going",       irr:true},
+  {base:"have",  third:"has",     past:"had",     pp:"had",        ing:"having",      irr:true},
+  {base:"do",    third:"does",    past:"did",     pp:"done",       ing:"doing",       irr:true},
+  {base:"make",  third:"makes",   past:"made",    pp:"made",       ing:"making",      irr:true},
+  {base:"take",  third:"takes",   past:"took",    pp:"taken",      ing:"taking",      irr:true},
+  {base:"come",  third:"comes",   past:"came",    pp:"come",       ing:"coming",      irr:true},
+  {base:"see",   third:"sees",    past:"saw",     pp:"seen",       ing:"seeing",      irr:true},
+  {base:"get",   third:"gets",    past:"got",     pp:"gotten|got", ing:"getting",     irr:true},
+  {base:"give",  third:"gives",   past:"gave",    pp:"given",      ing:"giving",      irr:true},
+  {base:"eat",   third:"eats",    past:"ate",     pp:"eaten",      ing:"eating",      irr:true},
+  {base:"write", third:"writes",  past:"wrote",   pp:"written",    ing:"writing",     irr:true},
+  {base:"run",   third:"runs",    past:"ran",     pp:"run",        ing:"running",     irr:true},
+  {base:"speak", third:"speaks",  past:"spoke",   pp:"spoken",     ing:"speaking",    irr:true},
+  {base:"read",  third:"reads",   past:"read",    pp:"read",       ing:"reading",     irr:true},
+  {base:"know",  third:"knows",   past:"knew",    pp:"known",      ing:"knowing",     irr:true},
+  {base:"think", third:"thinks",  past:"thought", pp:"thought",    ing:"thinking",    irr:true},
+  {base:"find",  third:"finds",   past:"found",   pp:"found",      ing:"finding",     irr:true},
+  {base:"begin", third:"begins",  past:"began",   pp:"begun",      ing:"beginning",   irr:true},
+  {base:"drive", third:"drives",  past:"drove",   pp:"driven",     ing:"driving",     irr:true},
+  {base:"swim",  third:"swims",   past:"swam",    pp:"swum",       ing:"swimming",    irr:true},
+  {base:"sing",  third:"sings",   past:"sang",    pp:"sung",       ing:"singing",     irr:true},
+  {base:"drink", third:"drinks",  past:"drank",   pp:"drunk",      ing:"drinking",    irr:true},
+  {base:"buy",   third:"buys",    past:"bought",  pp:"bought",     ing:"buying",      irr:true},
+  {base:"bring", third:"brings",  past:"brought", pp:"brought",    ing:"bringing",    irr:true},
+  {base:"teach", third:"teaches", past:"taught",  pp:"taught",     ing:"teaching",    irr:true},
+  {base:"catch", third:"catches", past:"caught",  pp:"caught",     ing:"catching",    irr:true},
+  {base:"build", third:"builds",  past:"built",   pp:"built",      ing:"building",    irr:true},
+  {base:"send",  third:"sends",   past:"sent",    pp:"sent",       ing:"sending",     irr:true},
+  {base:"leave", third:"leaves",  past:"left",    pp:"left",       ing:"leaving",     irr:true},
+  {base:"feel",  third:"feels",   past:"felt",    pp:"felt",       ing:"feeling",     irr:true},
+  {base:"keep",  third:"keeps",   past:"kept",    pp:"kept",       ing:"keeping",     irr:true},
+  {base:"meet",  third:"meets",   past:"met",     pp:"met",        ing:"meeting",     irr:true},
+  {base:"pay",   third:"pays",    past:"paid",    pp:"paid",       ing:"paying",      irr:true},
+  {base:"sit",   third:"sits",    past:"sat",     pp:"sat",        ing:"sitting",     irr:true},
+  {base:"stand", third:"stands",  past:"stood",   pp:"stood",      ing:"standing",    irr:true},
+  {base:"win",   third:"wins",    past:"won",     pp:"won",        ing:"winning",     irr:true},
+  {base:"tell",  third:"tells",   past:"told",    pp:"told",       ing:"telling",     irr:true},
+  {base:"fall",  third:"falls",   past:"fell",    pp:"fallen",     ing:"falling",     irr:true},
+];
+
+// The four tenses drilled, with the label shown to the player.
+const FORMS = [
+  {key:"third", ask:"third person singular (he/she/it)"},
+  {key:"past",  ask:"past simple"},
+  {key:"pp",    ask:"past participle (have …)"},
+  {key:"ing",   ask:"present participle (-ing)"},
+];
+
+const ROUND_SECONDS = 60;   // total time for one game
+const BASE_POINTS = 10;     // points per correct answer, before streak bonus
+
+// ---- Game state -------------------------------------------------------------
+let pool = [];         // verbs available for the chosen level
+let current = null;    // {verb, form} being asked
+let timeLeft = 0;      // seconds remaining
+let timerId = null;    // setInterval handle
+let score = 0;
+let streak = 0;
+let bestStreak = 0;
+let answered = 0;      // total questions shown
+let correctCount = 0;  // total answered correctly
+let missed = [];       // {prompt, solution} for the end-of-game review
+let locked = false;    // true briefly after a wrong answer while feedback shows
+
+// Cached elements
+const el = (id) => document.getElementById(id);
+
+// Pick a random element from an array.
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+// The list of accepted answers for a form value ("got|gotten" -> ["got","gotten"]).
+function accepted(value) { return value.split("|"); }
+
+// Start a new game at the given level: 'regular', 'irregular', or 'all'.
+function startGame(level) {
+  if (level === "regular")   pool = VERBS.filter(v => !v.irr);
+  else if (level === "irregular") pool = VERBS.filter(v => v.irr);
+  else pool = VERBS.slice();
+
+  score = 0; streak = 0; bestStreak = 0; answered = 0; correctCount = 0;
+  missed = []; locked = false; timeLeft = ROUND_SECONDS;
+
+  el("startScreen").classList.add("hidden");
+  el("endScreen").classList.add("hidden");
+  el("gameScreen").classList.remove("hidden");
+
+  updateHud();
+  nextQuestion();
+
+  timerId = setInterval(tick, 1000);
+  el("answer").focus();
+}
+
+// Advance the countdown once per second and end the game at zero.
+function tick() {
+  timeLeft--;
+  updateHud();
+  if (timeLeft <= 0) endGame();
+}
+
+// Show the numbers and time bar for the current state.
+function updateHud() {
+  el("timeValue").textContent = timeLeft;
+  el("scoreValue").textContent = score;
+  el("streakValue").textContent = streak;
+  el("timeValue").classList.toggle("low", timeLeft <= 10);
+  el("timebarFill").style.width = (timeLeft / ROUND_SECONDS * 100) + "%";
+}
+
+// Choose a fresh verb + tense and render the prompt.
+function nextQuestion() {
+  const verb = pick(pool);
+  const form = pick(FORMS);
+  current = { verb, form };
+  el("promptVerb").textContent = verb.base;
+  el("promptAsk").innerHTML = "Give the <b>" + form.ask + "</b>";
+  const input = el("answer");
+  input.value = "";
+  input.className = "answer";
+  input.focus();
+}
+
+// Grade the typed answer, update score/streak, and queue the next question.
+function submitAnswer() {
+  if (locked || !current) return;
+  const input = el("answer");
+  const guess = input.value.trim().toLowerCase();
+  if (!guess) return;
+
+  answered++;
+  const solutionValue = current.verb[current.form.key];
+  const solutions = accepted(solutionValue);
+  const isCorrect = solutions.includes(guess);
+
+  if (isCorrect) {
+    correctCount++;
+    streak++;
+    bestStreak = Math.max(bestStreak, streak);
+    // Streak bonus: +1 point per prior consecutive correct answer.
+    score += BASE_POINTS + (streak - 1);
+    input.classList.add("correct");
+    showFeedback(true, "");
+    updateHud();
+    // Brief pause so the green state is visible, then continue.
+    setTimeout(() => { if (timeLeft > 0) nextQuestion(); }, 250);
+  } else {
+    streak = 0;
+    input.classList.add("wrong");
+    showFeedback(false, solutions[0]);
+    missed.push({
+      prompt: current.verb.base + " — " + current.form.ask,
+      solution: solutions[0],
+    });
+    updateHud();
+    // Hold the correct answer on screen briefly before the next verb.
+    locked = true;
+    setTimeout(() => { locked = false; if (timeLeft > 0) nextQuestion(); }, 1100);
+  }
+}
+
+// Render the feedback line under the input.
+function showFeedback(ok, solution) {
+  const fb = el("feedback");
+  if (ok) {
+    fb.className = "feedback ok";
+    fb.textContent = "✓ Correct";
+  } else {
+    fb.className = "feedback no";
+    fb.innerHTML = "✗ Answer: <span class=\"sol\">" + solution + "</span>";
+  }
+}
+
+// Stop the clock and show the results screen.
+function endGame() {
+  clearInterval(timerId);
+  timerId = null;
+  el("gameScreen").classList.add("hidden");
+  el("endScreen").classList.remove("hidden");
+
+  el("finalScore").textContent = score;
+  const accuracy = answered ? Math.round(correctCount / answered * 100) : 0;
+  el("finalSub").textContent =
+    correctCount + "/" + answered + " correct · " + accuracy + "% accuracy · best streak " + bestStreak;
+
+  // Show a review list of unique missed conjugations, if any.
+  const wrap = el("missedWrap");
+  if (missed.length) {
+    // Keep only the first occurrence of each prompt.
+    const seen = new Set();
+    const unique = missed.filter(m => !seen.has(m.prompt) && seen.add(m.prompt));
+    el("missedList").innerHTML = unique.map(m =>
+      '<div class="missed-row"><span class="missed-q">' + m.prompt +
+      '</span><span class="missed-a">' + m.solution + '</span></div>'
+    ).join("");
+    wrap.classList.remove("hidden");
+  } else {
+    wrap.classList.add("hidden");
+  }
+}
+
+// Return to the level-select screen.
+function backToStart() {
+  el("endScreen").classList.add("hidden");
+  el("startScreen").classList.remove("hidden");
+}
+
+// Enter submits the current answer.
+el("answer").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") submitAnswer();
+});
+</script>
+</body>
+</html>

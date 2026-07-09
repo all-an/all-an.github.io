@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Serialization / marshalling</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Serialization / marshalling</h1>
+  <p class="desc">An object lives as a graph of references in memory — a private layout the process alone can read. To store it in a file, put it in a cache, or send it over a socket, it must first become a flat sequence of <strong>bytes</strong>. <strong>Serialization</strong> (also called <em>marshalling</em>) is that flattening: it walks every reachable field of an object and writes a self-describing byte stream; <strong>deserialization</strong> reads the stream back and <strong>reconstructs an equal object graph</strong>. The bytes are portable — they carry no pointers, so they survive being written to disk or crossing the network to another process. Only the object's declared <em>serial state</em> travels: its identity is not preserved (you get a brand-new instance), and <code>transient</code> fields are skipped. Here a <code>Serialization</code> helper marshals an <code>Account</code> — holding a tag collection and a nested <code>Contact</code> — to a <code>byte[]</code> and back.<br>
+  <code>Jackson</code> / <code>ObjectOutputStream</code> (Java); <code>serde</code> (Rust); <code>json.Marshal</code> (Go); <code>circe</code> / <code>upickle</code> (Scala); <code>pickle</code> (Python); <code>protobuf</code> (polyglot). This is a runnable Maven project; see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
+
+  <p class="desc">Marshalling writes the graph to a stream; unmarshalling reads it back. Java's built-in mechanism emits a stream header — the magic bytes <code>0xAC 0xED</code> — then a description of each class and its field values, recursively. The caller passes the expected type so the reconstructed object comes back already cast:</p>
+  <pre><code class="language-java">public static byte[] serialize(Serializable object) {
+  ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+  try (ObjectOutputStream out = new ObjectOutputStream(bytes)) {
+    out.writeObject(object);      // walk the graph, flatten it to bytes
+  } catch (IOException e) {
+    throw new UncheckedIOException("serialization failed", e);
+  }
+  return bytes.toByteArray();
+}
+
+public static &lt;T&gt; T deserialize(byte[] data, Class&lt;T&gt; type) {
+  try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(data))) {
+    return type.cast(in.readObject());   // rebuild the graph from bytes
+  } catch (IOException | ClassNotFoundException e) {
+    throw new IllegalArgumentException("deserialization failed", e);
+  }
+}</code></pre>
+
+  <p class="desc">An object opts in by implementing <code>Serializable</code>. Every non-<code>transient</code> field is part of the <strong>serial state</strong> and travels — including collections and nested objects, so the whole graph is captured. A field the wire must never carry (a per-session secret) is marked <code>transient</code> and is simply left out; it returns at its default value. The <code>serialVersionUID</code> stamps the format so incompatible old bytes are rejected rather than silently misread:</p>
+  <pre><code class="language-java">public final class Account implements Serializable {
+  private static final long serialVersionUID = 1L;
+
+  private final String id;
+  private final long balanceCents;
+  private final List&lt;String&gt; tags;       // a collection — part of the graph
+  private final Contact contact;         // a nested object — also part of the graph
+  private final transient String sessionToken;   // NOT serialized
+}</code></pre>
+
+  <p class="desc">The round trip is <strong>lossless for the value</strong> but <strong>not for identity</strong>: <code>deserialize(serialize(x))</code> equals <code>x</code>, yet it is a distinct instance — a <em>deep copy</em>. Every nested object is a fresh instance too, because the graph was rebuilt from bytes rather than shared:</p>
+  <pre><code class="language-java">Account original = /* ... */;
+Account copy = Serialization.deserialize(Serialization.serialize(original), Account.class);
+
+original.equals(copy);              // true  — same value
+original == copy;                   // false — a brand-new instance
+original.contact() == copy.contact();   // false — the whole graph was rebuilt</code></pre>
+
+  <p class="desc">The tests pin the defining properties — round-trip fidelity, a portable byte stream, a distinct deep copy, and that <code>transient</code> state is not written:</p>
+  <pre><code class="language-java">@Test
+void producesPortableByteStream() {
+  byte[] wire = Serialization.serialize(sampleAccount(null));
+  assertTrue(wire.length &gt; 0);
+  assertEquals((byte) 0xAC, wire[0]);   // Java serialization stream magic
+  assertEquals((byte) 0xED, wire[1]);
+}
+
+@Test
+void transientFieldIsNotSerialized() {
+  Account original = sampleAccount("secret-session-token");
+  Account copy = Serialization.deserialize(Serialization.serialize(original), Account.class);
+  assertNull(copy.sessionToken());     // the secret never went on the wire
+}</code></pre>
+
+  <p class="desc"><strong>Why bother:</strong> serialization is the boundary between a program's private memory and everything outside it — persistence, caches, message queues, and RPC all need objects turned into bytes and back. A stable, versioned format lets one process (or a later run of the same process) rebuild exactly what another produced. <strong>The trade-offs:</strong> the format is a contract — change a class carelessly and old bytes no longer deserialize; Java's <em>native</em> serialization in particular is verbose, JVM-only, and a notorious security risk, because <code>readObject</code> can be coaxed into constructing arbitrary types (deserialization of untrusted data is a classic remote-code-execution vector). Real systems therefore usually marshal to an explicit, cross-language schema — JSON, Protocol Buffers, Avro — rather than the language's built-in object stream.</p>
+
+  <p class="desc">Run the tests and the demo yourself with the Maven project — see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
