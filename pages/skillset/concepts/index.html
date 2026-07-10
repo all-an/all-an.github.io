@@ -227,10 +227,9 @@ const DATA = [
   {c:"Memory-mapped file",url:"089-memory-mapped-file/",cat:"io",cl:"I/O",langs:[["MappedByteBuffer","Java"],["mmap","C","Python"],["memmap2","Rust"],["MemoryMappedFile","C#"]],t:"Virtual memory · paging"},
   {c:"Serialization / marshalling",url:"090-serialization-marshalling/",cat:"io",cl:"I/O",langs:[["Jackson","Java"],["serde","Rust"],["json.Marshal","Go"],["circe / upickle","Scala"],["pickle","Python"],["protobuf","polyglot"]],t:"Data interchange formats"},
 
-  {c:"JIT compilation",cat:"runtime",cl:"Runtime",langs:[["JIT","JVM (HotSpot) — Java/Scala/Clojure","V8","CLR"],["LuaJIT","Lua"],["PyPy","Python"],["Cranelift","Rust/Wasmtime"]],t:"Adaptive optimization · profiling"},
+  {c:"JIT compilation",url:"091-jit-compilation/",cat:"runtime",cl:"Runtime",langs:[["JIT","JVM (HotSpot) — Java/Scala/Clojure","V8","CLR"],["LuaJIT","Lua"],["PyPy","Python"],["Cranelift","Rust/Wasmtime"]],t:"Adaptive optimization · profiling"},
   {c:"AOT compilation",cat:"runtime",cl:"Runtime",langs:[["GraalVM Native Image","Java","Scala"],["Rust (LLVM)","Rust"],["Go compiler","Go"],["NativeAOT","C#"],["Kotlin Native","Kotlin"],["LDC2","D"]],t:"Static compilation · LTO"},
   {c:"Bytecode / IR",cat:"runtime",cl:"Runtime",langs:[["JVM bytecode","Java/Kotlin/Scala/Clojure"],["LLVM IR","C","C++","Rust","D","Jank"],["WASM","polyglot"],["CLR IL","C#","F#"],["BEAM bytecode","Erlang/Elixir"]],t:"Virtual machines · portable code"},
-  {c:"Native image / ahead-of-time",cat:"runtime",cl:"Runtime",langs:[["GraalVM Native","Java","Scala"],["NativeAOT","C#"],["Rust binary","Rust"],["Go binary","Go"],["Kotlin Native","Kotlin"]],t:"Startup time · memory footprint"},
 
   {c:"Capability / permission system",cat:"safety",cl:"Safety",langs:[["sealed/module system","Java","Kotlin","Scala"],["capability","Pony"],["Wasm capabilities","WASI"],["object capabilities","E language"]],t:"Object-capability model (Miller)"},
   {c:"Type-safe null elimination",cat:"safety",cl:"Safety",langs:[["Option<T>","Rust","Scala"],["Maybe","Haskell"],["?. / !! operator","Kotlin"],["Optional","Java 8+"],["NonNull","Kotlin type system"]],t:"Type-driven null safety"},

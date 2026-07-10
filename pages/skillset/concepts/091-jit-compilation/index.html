@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JIT compilation</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>JIT compilation</h1>
+  <p class="desc">Code can be <strong>interpreted</strong> — walked and executed step by step, which starts instantly and stays flexible but re-does the dispatch work on every run — or <strong>compiled ahead of time</strong> to native code, which runs fast but pays the compile cost up front for code that might never run. A <strong>just-in-time (JIT) compiler</strong> takes the middle path: it runs code interpreted at first, <em>profiles</em> which parts run often, and compiles only those <strong>hot</strong> paths to optimized code <strong>while the program is running</strong>. This is <em>adaptive optimization</em> — you pay the compile cost only for code that has proven it runs enough to earn it. The defining rule: a JIT may change <strong>speed</strong>, never <strong>behavior</strong> — the compiled code must produce exactly what interpreting would. Here a miniature <code>Jit</code> engine runs a small bytecode program interpreted while it is cold, then compiles it to a specialized callable once it turns hot.<br>
+  <code>JIT</code> in HotSpot (Java / Scala / Clojure), <code>V8</code> (JavaScript), the <code>CLR</code> (C# / F#); <code>LuaJIT</code> (Lua); <code>PyPy</code> (Python); <code>Cranelift</code> (Rust / Wasmtime). This is a runnable Maven project; see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
+
+  <p class="desc">The engine keeps a per-program call counter — its <strong>profile</strong>. While the count is below the compile threshold, every call <strong>interprets</strong> the bytecode, dispatching one opcode at a time. On the first call past the threshold the program is compiled <strong>once</strong>, and from then on the hot program runs the compiled code. Real JITs use large counters (HotSpot's default <code>-XX:CompileThreshold</code> is ~10000); a small value keeps the demo fast:</p>
+  <pre><code class="language-java">public int run(Program program, int input) {
+  int count = invocationCounts.merge(program.name(), 1, Integer::sum);
+
+  // Compile exactly once, on the first call past the threshold: the program
+  // has now proven itself hot, so it is worth the one-time cost of compiling.
+  if (!compiledCode.containsKey(program.name()) &amp;&amp; count &gt; compileThreshold) {
+    compiledCode.put(program.name(), compile(program));
+  }
+
+  IntUnaryOperator hotCode = compiledCode.get(program.name());
+  return hotCode != null ? hotCode.applyAsInt(input) : interpret(program, input);
+}</code></pre>
+
+  <p class="desc">The <strong>interpreter</strong> walks the instruction list every call. The <strong>compiler</strong> folds that whole list into <em>one</em> callable ahead of any input, so running the compiled form no longer loops over or dispatches the bytecode — that work was done once. Both route through the same <code>OpCode.apply</code>, so they cannot disagree:</p>
+  <pre><code class="language-java">static int interpret(Program program, int input) {
+  int accumulator = input;
+  for (Op op : program.ops()) {        // walk the bytecode every call
+    accumulator = op.applyTo(accumulator);
+  }
+  return accumulator;
+}
+
+static IntUnaryOperator compile(Program program) {
+  IntUnaryOperator code = IntUnaryOperator.identity();
+  for (Op op : program.ops()) {        // fold the bytecode ONCE, ahead of any input
+    IntUnaryOperator preceding = code;
+    code = input -&gt; op.applyTo(preceding.applyAsInt(input));
+  }
+  return code;
+}</code></pre>
+
+  <p class="desc">A program starts <strong>interpreted</strong>; once it has run past the threshold it turns <strong>hot</strong> and switches to compiled code — with the <strong>same result</strong> either way. The switch is invisible except in speed:</p>
+  <pre><code class="language-java">Jit jit = new Jit(4);          // compile a program after 4 interpreted calls
+jit.run(program, 7);           // call #1  -> interpreted, returns 27
+// ... calls #2, #3, #4 ...    // still interpreted
+jit.run(program, 7);           // call #5  -> now compiled, still returns 27</code></pre>
+
+  <p class="desc">The tests pin the defining properties — cold code is interpreted but correct, hot code gets compiled, the compiled form is <strong>observably identical</strong> to interpreting for every input, and each program is profiled on its own (like a real JIT compiling individual hot methods):</p>
+  <pre><code class="language-java">@Test
+void compiledCodeMatchesInterpreterForAllInputs() {
+  Program program = poly();
+  IntUnaryOperator compiled = Jit.compile(program);
+  for (int input = -100; input &lt;= 100; input++) {
+    assertEquals(Jit.interpret(program, input), compiled.applyAsInt(input));
+  }
+}
+
+@Test
+void programsAreProfiledIndependently() {
+  for (int call = 0; call &lt; 6; call++) jit.run(hot, 7);   // this one turns hot
+  jit.run(cold, 7);                                       // called once — stays cold
+  assertTrue(jit.isCompiled(hot));
+  assertFalse(jit.isCompiled(cold));   // making one hot does not compile the other
+}</code></pre>
+
+  <p class="desc"><strong>Why bother:</strong> a JIT gets both fast startup <em>and</em> fast steady-state — it interprets immediately, then compiles the hot loops for near-native throughput once they prove worth it, and never spends effort compiling cold code that rarely runs. Compiling <em>during</em> execution also lets the compiler specialize to how the code is actually being used, not just how it was written. <strong>The trade-offs:</strong> the compiler runs inside your process, competing for CPU and memory, and adds warm-up time before the fast code exists; real engines can also <em>deoptimize</em> — fall back to the interpreter when an assumption a compilation was built on turns out to be wrong. This project keeps a fixed threshold and no deoptimization to stay small, but the shape — interpret, profile, compile the hot path — is the essence.</p>
+
+  <p class="desc">Run the tests and the demo yourself with the Maven project — see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

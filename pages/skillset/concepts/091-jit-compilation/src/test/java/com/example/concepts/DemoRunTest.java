@@ -1,0 +1,15 @@
+package com.example.concepts;
+
+import org.junit.jupiter.api.Test;
+
+// Runs the Main demo so its console output appears during `mvn test`, showing a
+// program interpreted while cold and compiled once it runs hot — with an unchanged
+// result either way.
+class DemoRunTest {
+
+  // Passes by simply not throwing — it exists to exercise and surface the demo.
+  @Test
+  void demoRunsWithoutError() {
+    Main.main(new String[] {});
+  }
+}
