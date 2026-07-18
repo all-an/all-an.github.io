@@ -48,6 +48,16 @@ th:nth-child(4) { width: 44%; }
 th:nth-child(5) { width: 21%; }
 td:nth-child(3) { overflow-wrap: anywhere; word-break: break-word; }
 
+/* mobile — no room for the category, examples and theory, so the list shows just the concept name */
+@media (max-width: 600px) {
+  th:nth-child(3), td:nth-child(3),
+  th:nth-child(4), td:nth-child(4),
+  th:nth-child(5), td:nth-child(5) { display: none; }
+  th:nth-child(1) { width: 12%; }
+  th:nth-child(2) { width: 88%; }
+  .cat { display: none; }
+}
+
 .cat-types    { background:#26215C; color:#CECBF6; }
 .cat-memory   { background:#4A1B0C; color:#F5C4B3; }
 .cat-conc     { background:#04342C; color:#9FE1CB; }

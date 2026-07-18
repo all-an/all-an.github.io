@@ -61,3 +61,19 @@
     font-size: 0.6em;
     color: #ffd700;
 }
+
+/* mobile — five fixed 80px buttons overflow a phone, so they share the row
+   width instead and stay square via the aspect ratio */
+@media (max-width: 600px) {
+    .match-grid {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 8px;
+    }
+
+    .match-button {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 1;
+        font-size: 1.2em;
+    }
+}

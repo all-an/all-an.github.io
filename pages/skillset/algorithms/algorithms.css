@@ -64,3 +64,11 @@ th:nth-child(2) { width: 50%; }
 th:nth-child(3) { width: 16%; }
 th:nth-child(4) { width: 29%; }
 td:nth-child(2) { overflow-wrap: anywhere; word-break: break-word; }
+
+/* mobile — no room for difficulty and technique, so the list shows just the algorithm name */
+@media (max-width: 600px) {
+  th:nth-child(3), td:nth-child(3),
+  th:nth-child(4), td:nth-child(4) { display: none; }
+  th:nth-child(1) { width: 12%; }
+  th:nth-child(2) { width: 88%; }
+}

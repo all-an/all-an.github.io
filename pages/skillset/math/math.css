@@ -52,6 +52,15 @@ th:nth-child(2) { width: 28%; }
 th:nth-child(3) { width: 44%; }
 th:nth-child(4) { width: 24%; }
 
+/* mobile — no room for key ideas and theory, so the list shows just the concept name */
+@media (max-width: 600px) {
+  th:nth-child(3), td:nth-child(3),
+  th:nth-child(4), td:nth-child(4) { display: none; }
+  th:nth-child(1) { width: 12%; }
+  th:nth-child(2) { width: 88%; }
+  .cat { display: none; }
+}
+
 /* field badges — one color per mathematical field, basic → advanced */
 .cat-arith   { background:#173404; color:#C0DD97; }
 .cat-alg     { background:#26215C; color:#CECBF6; }

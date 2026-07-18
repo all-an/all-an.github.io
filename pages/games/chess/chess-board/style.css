@@ -196,3 +196,58 @@
 .promotion-choices span:hover {
     background: var(--accent-color);
 }
+
+/* mobile — 70px squares overflow a phone, so the board is sized off the viewport
+   and the corner-pinned trays fold back into the page flow above and below it */
+@media (max-width: 600px) {
+    /* 8 squares plus the board's 8px border must fit inside the body's 16px
+       horizontal padding and the panel's 24px, so 48px is reserved */
+    :root {
+        --square-size: calc((100vw - 48px) / 8);
+    }
+
+    .status-board {
+        font-size: 1em;
+        margin-bottom: 10px;
+    }
+
+    /* the address label has to shrink with the square it sits in */
+    .square-coord {
+        left: 2px;
+        font-size: 9px;
+    }
+
+    /* trays sit above and below the board rather than in the screen corners */
+    .captures {
+        position: static;
+        max-width: 100%;
+        font-size: 1.8em;
+        justify-content: center;
+    }
+
+    .captures-black { order: 1; }
+    .game-container { order: 2; }
+    .captures-white { order: 3; justify-content: center; }
+
+    /* the banner spans the bottom of the screen instead of the right edge,
+       where it would sit on top of the board */
+    .check-indicator {
+        top: auto;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        transform: none;
+        border-radius: 0;
+        font-size: 1.1em;
+        text-align: center;
+    }
+
+    /* the tooltip is driven by hover, which a touch screen never fires */
+    .piece-tooltip {
+        display: none;
+    }
+
+    .promotion-choices span {
+        font-size: 2em;
+    }
+}

@@ -47,6 +47,16 @@ th:nth-child(3) { width: 14%; }
 th:nth-child(4) { width: 34%; }
 th:nth-child(5) { width: 26%; }
 
+/* mobile — no room for the category, APIs and notes, so the list shows just the concept name */
+@media (max-width: 600px) {
+  th:nth-child(3), td:nth-child(3),
+  th:nth-child(4), td:nth-child(4),
+  th:nth-child(5), td:nth-child(5) { display: none; }
+  th:nth-child(1) { width: 12%; }
+  th:nth-child(2) { width: 88%; }
+  .cat { display: none; }
+}
+
 .cat-intro { background:#1A2E3E; color:#A8C8E0; }
 .cat-tooling { background:#2C2C2A; color:#D3D1C7; }
 .cat-core { background:#173404; color:#C0DD97; }

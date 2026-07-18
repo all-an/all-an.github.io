@@ -41,3 +41,10 @@ hr { border: none; border-top: 1px solid var(--color-border-tertiary); margin: 0
 .eye { position: relative; width: 30px; height: 30px; background: var(--color-text-primary); border: 1px solid var(--color-border-tertiary); border-radius: 50%; }
 /* pupil is centred on the eye via the negative margins; JS translates it toward the cursor */
 .pupil { position: absolute; top: 50%; left: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px; background: var(--color-background-primary); border-radius: 50%; }
+
+/* mobile — there is no cursor for the pupils to follow, so the eyes just sit there staring; hide them */
+@media (max-width: 600px) {
+  .eyes { display: none; }
+  /* justified text stretches the spaces into gaps on a narrow column, so fall back to ragged-right */
+  .tagline, .section p { text-align: left; }
+}
