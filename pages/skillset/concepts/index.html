@@ -25,9 +25,18 @@ input[type=text] { flex: 1; min-width: 220px; font-size: 18px; padding: 8px 12px
 input[type=text]:focus { border-color: #3a3a44; }
 select { font-size: 18px; padding: 8px 12px; border-radius: var(--border-radius-md); border: 1px solid var(--color-border-secondary); background: var(--color-background-secondary); color: var(--color-text-primary); outline: none; cursor: pointer; }
 .count { font-size: 17px; color: var(--color-text-secondary); white-space: nowrap; }
-.tbl-wrap { overflow-x: auto; border-radius: var(--border-radius-md); border: 1px solid var(--color-border-tertiary); }
+/* no overflow here: a scroll container would trap the sticky header inside it,
+   so the column titles could not stick to the viewport while the page scrolls */
+.tbl-wrap { border-radius: var(--border-radius-md); border: 1px solid var(--color-border-tertiary); }
 table { width: 100%; border-collapse: collapse; font-size: 18px; table-layout: fixed; }
-th { text-align: left; font-weight: 500; font-size: 16px; color: var(--color-text-secondary); padding: 10px 14px; border-bottom: 1px solid var(--color-border-tertiary); background: var(--color-background-secondary); letter-spacing: 0.03em; text-transform: uppercase; }
+/* the header row stays pinned to the top of the viewport, so which column is which
+   remains readable however far down the list you scroll */
+/* the bottom rule is an inset shadow, not a border: collapsed borders do not
+   travel with a sticky cell and would be left behind as the rows scroll under it */
+th { position: sticky; top: 0; z-index: 1; text-align: left; font-weight: 500; font-size: 16px; color: var(--color-text-secondary); padding: 10px 14px; box-shadow: inset 0 -1px 0 var(--color-border-tertiary); background: var(--color-background-secondary); letter-spacing: 0.03em; text-transform: uppercase; }
+/* round the header's own top corners, since the wrapper no longer clips them */
+th:first-child { border-top-left-radius: var(--border-radius-md); }
+th:last-child { border-top-right-radius: var(--border-radius-md); }
 td { padding: 11px 14px; border-bottom: 1px solid var(--color-border-tertiary); vertical-align: top; color: var(--color-text-primary); }
 tr:last-child td { border-bottom: none; }
 tr:hover td { background: #16161a; }
@@ -54,7 +63,8 @@ td:nth-child(3) { overflow-wrap: anywhere; word-break: break-word; }
   th:nth-child(4), td:nth-child(4),
   th:nth-child(5), td:nth-child(5) { display: none; }
   th:nth-child(1) { width: 12%; }
-  th:nth-child(2) { width: 88%; }
+  /* the concept column is the last visible one here, so it carries the top corner */
+  th:nth-child(2) { width: 88%; border-top-right-radius: var(--border-radius-md); }
   .cat { display: none; }
 }
 
@@ -238,7 +248,7 @@ const DATA = [
   {c:"Serialization / marshalling",url:"090-serialization-marshalling/",cat:"io",cl:"I/O",langs:[["Jackson","Java"],["serde","Rust"],["json.Marshal","Go"],["circe / upickle","Scala"],["pickle","Python"],["protobuf","polyglot"]],t:"Data interchange formats"},
 
   {c:"JIT compilation",url:"091-jit-compilation/",cat:"runtime",cl:"Runtime",langs:[["JIT","JVM (HotSpot) — Java/Scala/Clojure","V8","CLR"],["LuaJIT","Lua"],["PyPy","Python"],["Cranelift","Rust/Wasmtime"]],t:"Adaptive optimization · profiling"},
-  {c:"AOT compilation",cat:"runtime",cl:"Runtime",langs:[["GraalVM Native Image","Java","Scala"],["Rust (LLVM)","Rust"],["Go compiler","Go"],["NativeAOT","C#"],["Kotlin Native","Kotlin"],["LDC2","D"]],t:"Static compilation · LTO"},
+  {c:"AOT compilation",url:"092-aot-compilation/",cat:"runtime",cl:"Runtime",langs:[["GraalVM Native Image","Java","Scala"],["Rust (LLVM)","Rust"],["Go compiler","Go"],["NativeAOT","C#"],["Kotlin Native","Kotlin"],["LDC2","D"]],t:"Static compilation · LTO"},
   {c:"Bytecode / IR",cat:"runtime",cl:"Runtime",langs:[["JVM bytecode","Java/Kotlin/Scala/Clojure"],["LLVM IR","C","C++","Rust","D","Jank"],["WASM","polyglot"],["CLR IL","C#","F#"],["BEAM bytecode","Erlang/Elixir"]],t:"Virtual machines · portable code"},
 
   {c:"Capability / permission system",cat:"safety",cl:"Safety",langs:[["sealed/module system","Java","Kotlin","Scala"],["capability","Pony"],["Wasm capabilities","WASI"],["object capabilities","E language"]],t:"Object-capability model (Miller)"},

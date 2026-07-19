@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AOT compilation</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>AOT compilation</h1>
+  <p class="desc"><strong>Ahead-of-time (AOT) compilation</strong> translates a whole program to machine code <strong>at build time</strong>, before it is ever run. It is the opposite trade to a <a href="../091-jit-compilation/">JIT</a>: a JIT ships the source, starts interpreted, profiles what runs hot and compiles <em>during</em> execution; an AOT compiler pays the entire compile cost up front and ships a finished binary, so the program starts at <strong>full speed with no warm-up</strong>. Because compilation is finished before startup, the compiler can see the <strong>whole program at once</strong> — it optimizes with static facts and performs <em>closed-world analysis</em>, keeping only code reachable from the entry points and <strong>eliminating the rest</strong>. That is also the price: nothing can be compiled after the build, so anything the analysis did not see — dynamically loaded classes, reflection, proxies — simply is not there. Here a compiler folds a program's instructions at build time and seals the reachable ones into a <code>NativeImage</code> that carries no compiler at all.<br>
+  <code>GraalVM Native Image</code> (Java / Scala) — its <code>native-image</code> tool compiles a JVM application and everything it can prove reachable into a single self-contained executable that starts in milliseconds with no JVM warm-up; <code>Rust</code> (LLVM); the <code>Go</code> compiler; <code>NativeAOT</code> (C#); <code>Kotlin/Native</code>; <code>LDC2</code> (D). This is a runnable Maven project; see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
+
+  <p class="desc">The build does three things, all before the first input exists: <strong>closed-world analysis</strong> decides what is reachable, <strong>optimization</strong> folds each surviving program, and <strong>emission</strong> seals them into the image. Programs outside the reachable set are never compiled — exactly what <code>native-image</code> does when it drops classes no entry point can reach:</p>
+  <pre><code class="language-java">public static NativeImage compile(List&lt;Program&gt; allPrograms, Set&lt;String&gt; entryPoints) {
+  Map&lt;String, IntUnaryOperator&gt; compiledCode = new LinkedHashMap&lt;&gt;();
+
+  for (Program program : allPrograms) {
+    // Unreachable code is dead-code eliminated: it is not compiled, and there is
+    // no second chance to compile it later — that is the closed-world bargain.
+    if (entryPoints.contains(program.name())) {
+      compiledCode.put(program.name(), emit(optimize(program)));
+    }
+  }
+
+  return new NativeImage(compiledCode);
+}</code></pre>
+
+  <p class="desc">The optimizer uses only what is knowable statically. The accumulator's value is unknown — that is the input — but the <em>instructions</em> are fully known, so adjacent steps that combine algebraically collapse into one. Five instructions become two, and every run of the shipped binary gets that saving for free:</p>
+  <pre><code class="language-java">// [MUL 2, MUL 3, ADD 10, SUB 4, ADD 1]  ->  [MUL 6, ADD 7]
+public static Program optimize(Program program) {
+  List&lt;Op&gt; folded = new ArrayList&lt;&gt;();
+
+  for (Op op : program.ops()) {
+    // Rewrite SUB n as ADD -n so additions and subtractions can merge together.
+    Op normalized = op.code() == OpCode.SUB ? new Op(OpCode.ADD, -op.operand()) : op;
+    Op previous = folded.isEmpty() ? null : folded.get(folded.size() - 1);
+
+    if (previous != null &amp;&amp; previous.code() == OpCode.ADD &amp;&amp; normalized.code() == OpCode.ADD) {
+      folded.set(folded.size() - 1, new Op(OpCode.ADD, previous.operand() + normalized.operand()));
+    } else if (previous != null &amp;&amp; previous.code() == OpCode.MUL &amp;&amp; normalized.code() == OpCode.MUL) {
+      folded.set(folded.size() - 1, new Op(OpCode.MUL, previous.operand() * normalized.operand()));
+    } else {
+      folded.add(normalized);
+    }
+  }
+
+  return new Program(program.name(), folded);
+}</code></pre>
+
+  <p class="desc">The shipped artifact holds <strong>nothing but finished code</strong> — no source, no interpreter, no compiler, no profiler. A program left out of the build cannot be compiled on demand, because there is nothing left to compile it with; a JIT would just compile it on first use, an AOT binary can only fail. This is the same failure a <code>native-image</code> build produces for a class reflection reaches but the analysis never saw:</p>
+  <pre><code class="language-java">public int run(String programName, int input) {
+  IntUnaryOperator code = compiledCode.get(programName);
+
+  if (code == null) {
+    throw new IllegalArgumentException(
+        "not in the image: " + programName + " — it was not reachable at build time");
+  }
+
+  return code.applyAsInt(input);   // straight into finished code, no warm-up
+}</code></pre>
+
+  <p class="desc">The tests pin the defining properties — everything is compiled before the first run, the first call is as fast as the thousandth, folding shrinks the code without changing its meaning (overflow included, since two's-complement <code>+</code> and <code>*</code> stay associative), and eliminated code stays gone:</p>
+  <pre><code class="language-java">@Test
+void compiledImageMatchesReferenceSemanticsForAllInputs() {
+  Program source = poly();
+  NativeImage image = AotCompiler.compile(List.of(source), Set.of("poly"));
+  for (int input = -100; input &lt;= 100; input++) {
+    assertEquals(Interpreter.interpret(source, input), image.run("poly", input));
+  }
+}
+
+@Test
+void eliminatedCodeCannotBeCompiledAtRunTime() {
+  Program unreachable = new Program("unused", List.of(new Op(OpCode.ADD, 99)));
+  NativeImage image = AotCompiler.compile(List.of(poly(), unreachable), Set.of("poly"));
+
+  assertThrows(IllegalArgumentException.class, () -&gt; image.run("unused", 1));
+}</code></pre>
+
+  <p class="desc"><strong>Why bother:</strong> instant startup and flat, predictable performance from the first request — no warm-up curve, no compiler competing for CPU and memory inside your process, and a much smaller artifact once unreachable code is dropped. That combination is why <code>native-image</code> suits short-lived and scale-to-zero workloads (CLIs, serverless functions, containers) where a JVM would still be warming up when the process exits. <strong>The trade-offs:</strong> the world is closed, so reflection, dynamic proxies and runtime class loading need explicit configuration or they vanish from the image; builds are slow and target a specific platform; and the compiler optimizes on static guesses only — it never sees the real workload, so a long-running JIT can eventually beat it on peak throughput using profile data AOT could not have.</p>
+
+  <p class="desc">Run the tests and the demo yourself with the Maven project — see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
