@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Capability / permission system</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Capability / permission system</h1>
+  <p class="desc">In the <strong>object-capability model</strong>, authority <em>is</em> a reference. To be allowed to do something you must hold an unforgeable object that does it; there is no identity to check and no permission list to consult, because code that was never handed the object cannot express the request at all. This is the opposite of <strong>ambient authority</strong> — the design every mainstream language ships with, where <code>Files.readString(path)</code> is reachable from any line in the process and the only defence is asking <em>who is calling</em>. Under an ACL, a library you imported runs with all of your permissions; under capabilities it runs with exactly what you passed it. Capabilities are <strong>unforgeable</strong> (only obtainable by being given one), <strong>attenuable</strong> (derive a weaker one to hand on), <strong>delegable</strong> (authority travels with the reference) and <strong>revocable</strong> (withdraw a grant after the fact). Here an untrusted plugin gets a read-only view of one directory, and can do precisely that and nothing else.<br>
+  <code>sealed</code> types and the module system (Java / Kotlin / Scala), <code>capability</code> types (Pony), <code>WASI</code> (WebAssembly — a module reaches only the handles the host passes in), object capabilities (the <code>E</code> language). This is a runnable Maven project; see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
+
+  <p class="desc">"No ambient authority" is a structural property, not a rule anyone follows. The resource is unreachable: the store is never handed out, only a capability that closes over it, and it comes into existence together with the single root reference that can reach it — the way an operating system hands a fresh process its initial capabilities. There is no static accessor to call and no registry to look in:</p>
+  <pre><code class="language-java">public final class FileStore {
+
+  private final Map&lt;String, String&gt; files = new LinkedHashMap&lt;&gt;();
+
+  // Private: a store can only come into existence together with its root capability.
+  private FileStore() {
+  }
+
+  // Create a store and return the *only* reference that can reach it — the root of
+  // all authority over it. Every narrower capability is derived from this one;
+  // authority can be given away and narrowed, but never conjured up.
+  public static FileAccess createWithRootAccess() {
+    return new RootAccess(new FileStore());
+  }
+
+  // Private and final, so no other code can build one — capabilities are
+  // *unforgeable*. The only way to hold one is to be given it.
+  private record RootAccess(FileStore store) implements FileAccess { /* ... */ }
+}</code></pre>
+
+  <p class="desc"><strong>Attenuation</strong> derives a weaker capability from one you hold — least privilege by construction rather than by policy. The subtle part is that narrowing must produce a genuinely <em>different object</em>, not the same one seen through a narrower interface: if <code>FileAccess</code> were a subtype of <code>ReadAccess</code>, anyone given the "read-only" view could cast it straight back to full authority. That is why the two interfaces are deliberately unrelated:</p>
+  <pre><code class="language-java">// Drop the authority to write, keeping the authority to look. The result is a
+// genuinely different object of a type that has no write method — not the same
+// object viewed through a narrower interface, which the holder could cast back.
+public static ReadAccess readOnly(FileAccess full) {
+  return new ReadOnlyView(full);
+}
+
+// Forwards only reads. Private and final: nobody outside can construct one, and
+// it does not implement FileAccess, so `(FileAccess) readOnlyCapability` fails.
+private record ReadOnlyView(FileAccess full) implements ReadAccess {
+
+  @Override
+  public String read(String path) {
+    return full.read(path);
+  }
+}</code></pre>
+
+  <p class="desc">Scoping narrows differently — still full read/write authority, but only within a subtree. Note what the check does <em>not</em> do: it never asks who is calling. The answer depends only on which capability was used, so the same code invoked by anyone gets the same result. An attenuated capability also refuses to reveal what lies outside it, since a listing is information too:</p>
+  <pre><code class="language-java">private String checkInScope(String path) {
+  if (!path.startsWith(pathPrefix)) {
+    throw new SecurityException("outside this capability's scope: " + path);
+  }
+  return path;
+}
+
+// Only the paths this view can reach — an attenuated capability must not even
+// reveal what lies outside it.
+@Override
+public Set&lt;String&gt; list() {
+  return full.list().stream()
+      .filter(path -&gt; path.startsWith(pathPrefix))
+      .collect(Collectors.toUnmodifiableSet());
+}</code></pre>
+
+  <p class="desc"><strong>Delegation</strong> is just passing the reference — and it makes authority <em>legible</em>. Everything this untrusted plugin can reach arrives through its constructor, so a reader can establish its full powers from the call site without reading a line of its body:</p>
+  <pre><code class="language-java">public final class Plugin {
+
+  private final ReadAccess files;   // the entirety of its authority over the world
+
+  public Plugin(ReadAccess files) {
+    this.files = files;
+  }
+}
+
+// At the call site, the plugin's complete authority is visible in one expression:
+Plugin plugin = new Plugin(Attenuation.readOnly(Attenuation.scopedTo(root, "/home/")));</code></pre>
+
+  <p class="desc"><strong>Revocation</strong> is the hard one: a reference handed away is gone, and you cannot reach into another component to take it back. The <em>caretaker</em> pattern (Redell, 1974) solves it by never handing over the real capability — you give out a forwarder you can switch off. The essential move is that this splits one capability into two that go to different places: the grantee gets <code>access()</code>, the grantor keeps the caretaker and with it the power to <code>revoke()</code>:</p>
+  <pre><code class="language-java">// Held privately and dropped on revocation. Nulling it is what makes revocation
+// real: afterwards no path from the forwarder reaches the resource, whatever the
+// grantee still has a reference to.
+private ReadAccess target;
+
+// Created once, so the grantee holds the same object before and after revocation.
+// Its authority changes underneath it; the reference does not.
+private final ReadAccess forwarder = new Forwarder();
+
+public ReadAccess access() { return forwarder; }
+
+public void revoke() { target = null; }</code></pre>
+
+  <p class="desc">The tests pin the defining properties — narrowing cannot be undone, delegation carries authority with the reference, and a grant can be cut off after it was handed over without damaging the capability it came from:</p>
+  <pre><code class="language-java">@Test
+void readOnlyCapabilityCannotBeCastBackToFullAccess() {
+  ReadAccess readOnly = Attenuation.readOnly(root);
+
+  assertEquals("hunter2", readOnly.read("/etc/secrets.txt"));
+  assertFalse(readOnly instanceof FileAccess);
+}
+
+@Test
+void revocationCutsOffACapabilityAlreadyHandedOver() {
+  Caretaker caretaker = Caretaker.forwarding(Attenuation.readOnly(root));
+  ReadAccess granted = caretaker.access();
+  assertEquals("hunter2", granted.read("/etc/secrets.txt"));
+
+  caretaker.revoke();
+
+  assertThrows(SecurityException.class, () -&gt; granted.read("/etc/secrets.txt"));
+}</code></pre>
+
+  <p class="desc">One assertion is deliberately missing: there is no test that the granted reference is not a <code>Caretaker</code>, because it cannot be written — <code>caretaker.access() instanceof Caretaker</code> is a <em>compile error</em>, since a <code>ReadAccess</code> provably can never be that unrelated final type. The compiler rules it out before the code can exist, which is a stronger guarantee than any test could give. That is capability design working as intended: the safety property becomes something the type system enforces rather than something a check catches at run time.</p>
+
+  <p class="desc"><strong>Where this shows up for real.</strong> Every piece of this project has a counterpart in software you have already used:</p>
+  <pre><code class="language-plaintext">FileStore.createWithRootAccess()   the fds a process is handed at exec;
+                                   the host passing handles into a wasm module
+Attenuation.scopedTo(root, "/home/")   wasmtime --dir=/tmp; openat(dirfd, ...);
+                                       an S3 policy scoped to a key prefix
+Attenuation.readOnly(...)          open(O_RDONLY); Deno's --allow-read=/tmp;
+                                   an OAuth token carrying only a read scope
+Caretaker.revoke()                 OAuth revocation endpoints; session
+                                   invalidation; short-TTL STS credentials</code></pre>
+
+  <p class="desc">The clearest everyday example is the <strong>Unix file descriptor</strong>, which is already a capability: unforgeable (an index into a kernel table you cannot fabricate), attenuable (<code>O_RDONLY</code>), and genuinely delegable — you can pass one to another process over a Unix socket with <code>SCM_RIGHTS</code>. What spoils it is <code>open()</code>, which takes a <em>path</em> and checks <em>who you are</em>: ambient authority, right in the middle of an otherwise capability-shaped design. FreeBSD's <strong>Capsicum</strong> removes exactly that. After <code>cap_enter()</code> the process is confined: path-based <code>open()</code> stops working entirely, and files can only be reached through a directory descriptor already held. That is the same move as making this project's <code>FileStore</code> constructor private — delete the ambient entry point, and confinement becomes structural rather than checked:</p>
+  <pre><code class="language-c">cap_enter();                              // no more ambient authority, ever
+
+open("/etc/passwd", O_RDONLY);            // ECAPMODE — the path names nothing now
+openat(home_fd, "notes.txt", O_RDONLY);   // fine: derived from a held capability</code></pre>
+
+  <p class="desc"><strong>WASI</strong> is the cleanest mainstream deployment of the model, and it matches this code almost line for line. A WebAssembly module starts with <em>zero</em> ambient authority — it cannot open a file, because no reachable call takes a path out of nowhere. The host preopens directories and passes the handles in, so the module reaches <code>/tmp</code> and nothing else, not because a check rejects other paths but because it holds no handle that names them:</p>
+  <pre><code class="language-sh">wasmtime --dir=/tmp app.wasm    # this is literally Attenuation.scopedTo</code></pre>
+
+  <p class="desc">The practical stakes are clearest in the <strong>supply chain</strong>. When the <code>event-stream</code> npm package was compromised in 2018, the injected payload could read the filesystem and exfiltrate wallet keys — not by defeating any check, but because in Node every transitive dependency runs with the full authority of the process. This is the confused deputy at scale, and identity checks are powerless against it: the malicious code genuinely <em>is</em> you. Deno's <code>--allow-read=/tmp</code> and Node's permission model are retrofits of precisely this concept, imperfect for the reason below — one ambient back door undoes the property — but capability-shaped in direction.</p>
+
+  <p class="desc">You have likely done this in ordinary application code without naming it: injecting a <code>ReadOnlyUserRepository</code> instead of the full <code>UserRepository</code> <em>is</em> attenuation, with the narrow type as the capability. The failure mode is the familiar one too — if <code>UserRepository extends ReadOnlyUserRepository</code>, the "read-only" collaborator can cast straight back to the writable one, which is exactly the bug the two unrelated interfaces above exist to prevent. Be honest about the limit, though: in Java this is a <em>convention</em>, not a guarantee. Reflection defeats it, and any static <code>Files</code> call or unguarded singleton is an ambient back door. It buys legibility and accident-prevention, not defence against hostile code sharing your process.</p>
+
+  <p class="desc"><strong>Why bother:</strong> as the supply-chain case above shows, it dissolves the confused deputy problem — a component's authority is bounded by what was passed to it, visible at the call site, and auditable without reading its body. It also makes least privilege the default: you cannot accidentally grant more than you meant to, because granting is an explicit act. <strong>The trade-offs:</strong> it must be pervasive to be worth much — one ambient back door (a static file API, reflection, an unguarded singleton) undoes it, which is why retrofitting capabilities onto an existing language is so hard and why Java's <code>SecurityManager</code> was deprecated rather than fixed. Passing capabilities explicitly is also more plumbing than calling a global, revocation costs an indirection per grant, and answering "who can reach this file?" becomes hard precisely because there is no central list to consult.</p>
+
+  <p class="desc">Run the tests and the demo yourself with the Maven project — see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
