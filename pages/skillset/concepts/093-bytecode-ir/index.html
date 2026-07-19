@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bytecode / IR</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Bytecode / IR</h1>
+  <p class="desc">An <strong>intermediate representation</strong> is a language in the middle: not the source anyone writes, not the machine code anything executes, but a flat instruction set both sides agree on. A compiler <em>frontend</em> lowers source to it; a <em>backend</em> turns it into something that runs. The payoff is decoupling — with <strong>M</strong> languages and <strong>N</strong> targets you write <strong>M + N</strong> pieces instead of <strong>M × N</strong>, and every new backend works for every existing language for free. <strong>Bytecode</strong> is an IR designed to be executed directly by a virtual machine, usually a <em>stack machine</em>: operands live on an operand stack, so instructions are compact and trivial to generate. Being flat also makes it <strong>verifiable</strong> — stack depth and well-formedness can be checked by walking the code once, before it runs. Here two unrelated source languages lower to one instruction list, which is then both executed and translated.<br>
+  <code>JVM bytecode</code> (Java / Kotlin / Scala / Clojure), <code>LLVM IR</code> (C / C++ / Rust / D), <code>WASM</code> (polyglot), <code>CLR IL</code> (C# / F#), <code>BEAM bytecode</code> (Erlang / Elixir). This is a runnable Maven project; see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
+
+  <p class="desc">The source is a <strong>nested</strong> expression tree — convenient to parse, but not something a machine executes directly. Lowering walks it in <strong>post-order</strong>: both operands are emitted before the operation that consumes them, so by the time that operation runs its inputs are already on the stack. The tree's nesting becomes an <em>ordering</em> — that is the whole lowering:</p>
+  <pre><code class="language-java">private static void emit(Expr expr, List&lt;Instruction&gt; code) {
+  switch (expr) {
+    case Expr.Literal literal -&gt; code.add(new Instruction.Push(literal.value()));
+    case Expr.Variable variable -&gt; code.add(new Instruction.Load(variable.name()));
+    case Expr.BinaryOp binary -&gt; {
+      emit(binary.left(), code);    // left first — this fixes the operand order
+      emit(binary.right(), code);
+      code.add(binary.op());        // ...then the operation that consumes both
+    }
+  }
+}
+
+// 3 * x + 7   lowers to:   [push 3, load x, mul, push 7, add]</code></pre>
+
+  <p class="desc">A second frontend — reverse Polish notation text, a language sharing nothing with the tree — lowers to the <strong>identical</strong> instruction list. RPN is already written in the order a stack machine wants, so each token becomes exactly one instruction. Two languages, one representation, and everything downstream is shared:</p>
+  <pre><code class="language-java">for (String token : source.trim().split("\\s+")) {
+  code.add(switch (token) {
+    case "+" -&gt; Arith.ADD;
+    case "-" -&gt; Arith.SUB;
+    case "*" -&gt; Arith.MUL;
+    // Anything else is a literal if it parses as a number, or a variable name.
+    default -&gt; token.matches("-?\\d+")
+        ? new Instruction.Push(Integer.parseInt(token))
+        : new Instruction.Load(token);
+  });
+}
+
+// "3 x * 7 +"  lowers to:  [push 3, load x, mul, push 7, add]   — the same list</code></pre>
+
+  <p class="desc">Backends consume that list without knowing which language produced it. One <strong>executes</strong> it on an operand stack — this is what a bytecode interpreter <em>is</em>; the JVM, the CLR and a WASM runtime do exactly this with a bigger instruction set. Note the pop order: the right operand was emitted last, so it sits on top, and reversing it would silently compute <code>4 - 10</code> for <code>10 - 4</code>:</p>
+  <pre><code class="language-java">for (Instruction instruction : code) {
+  switch (instruction) {
+    case Instruction.Push push -&gt; stack.push(push.value());
+    case Instruction.Load load -&gt; stack.push(environment.get(load.name()));
+    case Arith arith -&gt; {
+      int right = stack.pop();   // emitted last, so it is on top
+      int left = stack.pop();
+      stack.push(arith.apply(left, right));
+    }
+  }
+}</code></pre>
+
+  <p class="desc">The other backend <strong>translates</strong> the same list to source text instead of running it — identical algorithm, but the "values" are fragments of source, so the tree the frontend flattened is reconstructed as text. A second target costs one new backend, not one new compiler per language; this is how <code>LLVM IR</code> is lowered to x86, ARM or WASM by swapping backends:</p>
+  <pre><code class="language-java">case Arith arith -&gt; {
+  String right = stack.pop();
+  String left = stack.pop();
+  stack.push("(" + left + " " + arith.symbol() + " " + right + ")");
+}
+
+// [push 3, load x, mul, push 7, add]  ->  "((3 * x) + 7)"</code></pre>
+
+  <p class="desc">Because the list is flat with a fixed stack effect per instruction, it can be <strong>verified statically</strong> — no inputs, no execution. The walk also yields the deepest the stack will ever get, which is exactly what the JVM records as a method's <code>max_stack</code> so the frame can be sized before entry:</p>
+  <pre><code class="language-java">for (Instruction instruction : code) {
+  // An operation consumes two operands and leaves one: net -1. Anything else: +1.
+  if (instruction instanceof Arith) {
+    if (depth &lt; 2) throw new IllegalArgumentException("stack underflow at `" + instruction.text() + "`");
+    depth--;
+  } else {
+    depth++;
+  }
+  maxDepth = Math.max(maxDepth, depth);
+}
+
+// A well-formed expression leaves exactly its one result behind.
+if (depth != 1) throw new IllegalArgumentException("code must leave exactly 1 value");</code></pre>
+
+  <p class="desc">The tests pin the defining properties — unrelated frontends converge on one representation, every backend consumes it without knowing its origin, operand order survives the flattening, and malformed code is rejected before it runs:</p>
+  <pre><code class="language-java">@Test
+void unrelatedFrontendsProduceTheSameIr() {
+  assertEquals(ExprCompiler.compile(tree()), RpnCompiler.compile("3 x * 7 +"));
+}
+
+@Test
+void oneIrFeedsSeveralBackends() {
+  List&lt;Instruction&gt; code = ExprCompiler.compile(tree());
+  assertEquals(22, StackMachine.run(code, Map.of("x", 5)));
+  assertEquals("((3 * x) + 7)", SourceEmitter.emit(code));
+}
+
+@Test
+void verifierRejectsStackUnderflow() {
+  assertThrows(IllegalArgumentException.class, () -&gt; StackMachine.verify(List.of(Arith.ADD)));
+}</code></pre>
+
+  <p class="desc"><strong>Why bother:</strong> the IR is the seam that makes a toolchain tractable. Languages and targets evolve independently — Kotlin and Clojure got the JVM's optimizer and GC for free by emitting its bytecode, and Rust got every LLVM backend the same way. It is also where optimization lives: a pass written against the IR improves every language at once. And a flat, verifiable format is what makes running untrusted code plausible at all, which is the whole premise of the JVM sandbox and of <code>WASM</code> in a browser. <strong>The trade-offs:</strong> an IR is a lowest common denominator — it must be general enough for every frontend, so language-specific meaning gets erased on the way down and is hard to recover later (which is why generic type information and other source-level detail is famously thin in bytecode). Lowering also costs a compilation stage, and a stack machine's compactness is paid for in dispatch: real engines <a href="../091-jit-compilation/">JIT</a> the bytecode to registers precisely to win that back.</p>
+
+  <p class="desc">Run the tests and the demo yourself with the Maven project — see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
