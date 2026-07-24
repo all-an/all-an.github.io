@@ -56,14 +56,10 @@ h1 { font-size: 34px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 
 .field::placeholder { color: var(--color-text-tertiary); }
 .form-error { font-size: 16px; color: var(--color-wrong); margin: 0.75rem 0; }
 
-/* saved question list */
-.saved { display: flex; flex-direction: column; gap: 6px; }
-.saved-empty { font-size: 16px; color: var(--color-text-tertiary); }
-.saved-row { display: flex; align-items: center; gap: 12px; font-size: 16px; padding: 8px 12px; background: var(--color-background-primary); border: 1px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); }
-.saved-text { flex: 1; color: var(--color-text-secondary); }
-.saved-type { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-tertiary); white-space: nowrap; }
-.saved-del { font-size: 18px; line-height: 1; color: var(--color-text-tertiary); background: none; border: none; cursor: pointer; padding: 0 2px; font-family: inherit; }
-.saved-del:hover { color: var(--color-wrong); }
+.form-note { font-size: 16px; color: var(--color-correct); margin: 0.75rem 0; }
+
+/* the "my questions" button is a link, so it needs the button box styles */
+a.btn { display: inline-block; text-decoration: none; }
 
 /* game HUD */
 .hud { display: flex; gap: 10px; margin-bottom: 1.25rem; }
@@ -119,7 +115,7 @@ h1 { font-size: 34px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 
 <div class="wrap">
 
   <nav class="nav">
-    <a href="../../skillset.html">← skillset</a>
+    <a id="backLink" href="../../skillset.html">← skillset</a>
   </nav>
 
   <h1>English Questions</h1>
@@ -165,15 +161,11 @@ h1 { font-size: 34px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 
     </div>
 
     <div class="form-error hidden" id="formError"></div>
+    <div class="form-note hidden" id="formNote"></div>
 
     <div class="btn-row">
       <button class="btn" onclick="addQuestion()">Add question</button>
-    </div>
-
-    <div class="summary-label">Saved questions (<span id="savedCount">0</span>)</div>
-    <div class="saved" id="savedList"></div>
-
-    <div class="center">
+      <a class="btn" href="my-questions.html">My questions</a>
       <button class="btn btn-primary" onclick="startRound()">Start the drill</button>
     </div>
   </div>
@@ -297,8 +289,16 @@ function showFormError(message) {
   box.classList.toggle("hidden", !message);
 }
 
+// Confirm an addition under the form, since the saved list lives on its own page.
+function showFormNote(message) {
+  const box = el("formNote");
+  box.textContent = message;
+  box.classList.toggle("hidden", !message);
+}
+
 // Read the form, validate it, and append the question to the bank.
 function addQuestion() {
+  showFormNote("");
   const text = el("customText").value.trim();
   if (!text) return showFormError("Write the question first.");
 
@@ -320,9 +320,9 @@ function addQuestion() {
   }
 
   saveQuestions();
-  renderSavedList();
   clearForm();
   showFormError("");
+  showFormNote("Added — " + questions.length + " saved. See them under “My questions”.");
 }
 
 // Empty the form fields, ready for the next question.
@@ -332,31 +332,15 @@ function clearForm() {
   el("customText").focus();
 }
 
-// Drop one question from the bank.
-function deleteQuestion(index) {
-  questions.splice(index, 1);
-  saveQuestions();
-  renderSavedList();
-}
-
-// Draw the saved bank with a delete button per row.
-function renderSavedList() {
-  el("savedCount").textContent = questions.length;
-  const list = el("savedList");
-  if (!questions.length) {
-    list.innerHTML = '<div class="saved-empty">No questions yet — add your first one above.</div>';
-    return;
-  }
-  list.innerHTML = questions.map((q, i) =>
-    '<div class="saved-row">' +
-      '<span class="saved-text">' + escapeHtml(q.text) + '</span>' +
-      '<span class="saved-type">' + (q.type === "typed" ? "typed" : "choice") + '</span>' +
-      '<button class="saved-del" title="Delete" onclick="deleteQuestion(' + i + ')">×</button>' +
-    '</div>'
-  ).join("");
-}
-
 // ---- Round ------------------------------------------------------------------
+
+// Point the nav link at the editor while a round is running, so leaving the
+// drill does not mean leaving the page.
+function setBackTarget(inRound) {
+  const link = el("backLink");
+  link.textContent = inRound ? "← back" : "← skillset";
+  link.href = inRound ? "#" : "../../skillset.html";
+}
 
 // Start a timed round over the saved bank.
 function startRound() {
@@ -369,6 +353,7 @@ function startRound() {
   el("editorScreen").classList.add("hidden");
   el("endScreen").classList.add("hidden");
   el("gameScreen").classList.remove("hidden");
+  setBackTarget(true);
 
   updateHud();
   nextQuestion();
@@ -534,12 +519,17 @@ function endRound() {
   }
 }
 
-// Return to the editor, where another round can be started.
+// Return to the editor from the drill or the results screen.
 function backToEditor() {
+  clearInterval(timerId);
+  timerId = null;
   current = null;
+  el("gameScreen").classList.add("hidden");
   el("endScreen").classList.add("hidden");
   el("editorScreen").classList.remove("hidden");
+  setBackTarget(false);
   showFormError("");
+  showFormNote("");
 }
 
 // Enter submits a typed answer.
@@ -554,7 +544,12 @@ document.addEventListener("keydown", (e) => {
   if (index !== -1 && index < current.shownOptions.length) submitOption(index);
 });
 
-renderSavedList();
+// Away from the editor the nav link returns to it; on the editor it leaves the page.
+el("backLink").addEventListener("click", (e) => {
+  if (el("backLink").getAttribute("href") !== "#") return;
+  e.preventDefault();
+  backToEditor();
+});
 </script>
 </body>
 </html>
