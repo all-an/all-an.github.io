@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FFI / foreign function interface</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>FFI / foreign function interface</h1>
+  <p class="desc">Linking finds the function; the FFI is what happens at the call itself. Two languages disagree about where arguments live, who cleans up the stack, how a string is laid out and who owns the memory afterwards — the FFI is the translation layer that makes one side's calling convention acceptable to the other.</p>
+
+  <p class="desc">Panama FFM API (Java 22+), JNI (legacy Java), <code>cgo</code> (Go), <code>ctypes</code> (Python), <code>extern "C"</code> (Rust, C++), P/Invoke (C#).</p>
+
+  <p class="desc">Panama describes the C signature as data — <code>strlen(const char*) -&gt; size_t</code> becomes a <code>FunctionDescriptor</code>, and the linker builds a call stub from it, with no C glue to write or compile:</p>
+  <pre><code class="language-java">Linker linker = Linker.nativeLinker();
+MethodHandle strlen = linker.downcallHandle(
+    linker.defaultLookup().find("strlen").orElseThrow(),
+    FunctionDescriptor.of(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS));</code></pre>
+
+  <p class="desc">The other half is memory. An <code>Arena</code> owns the off-heap copy of the string and frees it at the end of the block — the lifetime is scoped, not left to the GC, which knows nothing about it:</p>
+  <pre><code class="language-java">try (Arena arena = Arena.ofConfined()) {
+    MemorySegment cString = arena.allocateFrom("hello");   // NUL-terminated, off-heap
+    long len = (long) strlen.invoke(cString);              // 5
+}   // freed here; using cString afterwards throws, it does not corrupt</code></pre>
+
+  <p class="desc"><strong>The cost:</strong> every crossing is a boundary the compiler cannot see through — no inlining, no escape analysis, and a GC that must not move an object the native side is holding. Get a descriptor wrong and there is no type error, just a mismatched stack frame and a JVM crash. JNI paid that price in hand-written C and manual pinning; Panama moves the description into Java and the lifetime into <code>Arena</code>, but the boundary itself stays expensive — batch across it, do not chatter.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
