@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>English Conjugation — Allan Pereira Abrahão</title>
+  <title>English Questions — Allan Pereira Abrahão</title>
 <style>
 :root {
   --color-background-primary:   #111113;
@@ -36,16 +36,34 @@ h1 { font-size: 34px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 
 /* generic card */
 .card { background: var(--color-background-secondary); border: 1px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 1.75rem; }
 
-/* start screen */
+/* how-to block */
 .how { font-size: 17px; color: var(--color-text-secondary); line-height: 1.7; margin-bottom: 1.5rem; }
 .how ul { margin: 0.5rem 0 0 1.1rem; }
 .how li { margin-bottom: 0.3rem; }
-.level-label { font-size: 14px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-text-tertiary); margin-bottom: 0.75rem; }
-.levels { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* buttons */
 .btn { font-size: 17px; color: var(--color-text-primary); background: var(--color-background-secondary); border: 1px solid var(--color-border-secondary); border-radius: var(--border-radius-md); padding: 10px 18px; cursor: pointer; font-family: inherit; }
 .btn:hover { border-color: #3a3a44; background: #202027; }
 .btn-primary { background: #26215C; border-color: #3a3480; color: #CECBF6; }
 .btn-primary:hover { background: #302a72; }
+.btn.selected { background: #26215C; border-color: #3a3480; color: #CECBF6; }
+.btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* question editor form */
+.field-label { font-size: 14px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-text-tertiary); margin: 1.25rem 0 0.5rem; }
+.field { width: 100%; font-size: 18px; font-family: inherit; padding: 10px 12px; margin-bottom: 8px; border-radius: var(--border-radius-md); border: 1px solid var(--color-border-secondary); background: var(--color-background-primary); color: var(--color-text-primary); outline: none; }
+.field:focus { border-color: #3a3480; }
+.field::placeholder { color: var(--color-text-tertiary); }
+.form-error { font-size: 16px; color: var(--color-wrong); margin: 0.75rem 0; }
+
+/* saved question list */
+.saved { display: flex; flex-direction: column; gap: 6px; }
+.saved-empty { font-size: 16px; color: var(--color-text-tertiary); }
+.saved-row { display: flex; align-items: center; gap: 12px; font-size: 16px; padding: 8px 12px; background: var(--color-background-primary); border: 1px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); }
+.saved-text { flex: 1; color: var(--color-text-secondary); }
+.saved-type { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-tertiary); white-space: nowrap; }
+.saved-del { font-size: 18px; line-height: 1; color: var(--color-text-tertiary); background: none; border: none; cursor: pointer; padding: 0 2px; font-family: inherit; }
+.saved-del:hover { color: var(--color-wrong); }
 
 /* game HUD */
 .hud { display: flex; gap: 10px; margin-bottom: 1.25rem; }
@@ -58,13 +76,21 @@ h1 { font-size: 34px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 
 .timebar-track { height: 6px; background: var(--color-border-tertiary); border-radius: 99px; overflow: hidden; margin-bottom: 1.5rem; }
 .timebar-fill { height: 100%; width: 100%; background: #26215C; transition: width 0.25s linear; }
 
-/* prompt */
-.prompt { text-align: center; margin-bottom: 1.5rem; }
-.prompt-verb { font-size: 40px; font-weight: 700; font-family: var(--font-mono); letter-spacing: -0.01em; }
-.prompt-ask { font-size: 18px; color: var(--color-text-secondary); margin-top: 0.5rem; }
-.prompt-ask b { color: #CECBF6; font-weight: 600; }
+/* question being asked */
+.question-tag { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-tertiary); margin-bottom: 0.6rem; }
+.question-text { font-size: 24px; line-height: 1.5; margin-bottom: 1.5rem; }
+.question-text .blank { font-family: var(--font-mono); color: #CECBF6; }
 
-/* answer input */
+/* multiple-choice options */
+.options { display: flex; flex-direction: column; gap: 10px; }
+.option { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; font-size: 19px; font-family: inherit; color: var(--color-text-primary); background: var(--color-background-primary); border: 1px solid var(--color-border-secondary); border-radius: var(--border-radius-md); padding: 12px 14px; cursor: pointer; }
+.option:hover:not(:disabled) { border-color: #3a3480; background: #17171c; }
+.option:disabled { cursor: default; }
+.option-key { font-family: var(--font-mono); font-size: 15px; color: var(--color-text-tertiary); border: 1px solid var(--color-border-tertiary); border-radius: 4px; padding: 1px 7px; }
+.option.correct { border-color: var(--color-correct); background: var(--color-correct-bg); }
+.option.wrong { border-color: var(--color-wrong); background: var(--color-wrong-bg); }
+
+/* typed answer input */
 .answer { width: 100%; font-size: 24px; font-family: var(--font-mono); text-align: center; padding: 12px 14px; border-radius: var(--border-radius-md); border: 1px solid var(--color-border-secondary); background: var(--color-background-primary); color: var(--color-text-primary); outline: none; }
 .answer:focus { border-color: #3a3480; }
 .answer.correct { border-color: var(--color-correct); background: var(--color-correct-bg); }
@@ -79,11 +105,11 @@ h1 { font-size: 34px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 
 /* end screen */
 .final-score { font-size: 52px; font-weight: 700; font-family: var(--font-mono); text-align: center; }
 .final-sub { text-align: center; color: var(--color-text-secondary); font-size: 18px; margin-bottom: 1.5rem; }
-.summary-label { font-size: 14px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-text-tertiary); margin: 1.5rem 0 0.6rem; }
+.summary-label { font-size: 14px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-text-tertiary); margin: 1.75rem 0 0.6rem; }
 .missed { display: flex; flex-direction: column; gap: 6px; }
-.missed-row { display: flex; justify-content: space-between; font-size: 16px; padding: 7px 12px; background: var(--color-background-primary); border: 1px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); }
+.missed-row { display: flex; justify-content: space-between; gap: 12px; font-size: 16px; padding: 7px 12px; background: var(--color-background-primary); border: 1px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); }
 .missed-q { color: var(--color-text-secondary); }
-.missed-a { font-family: var(--font-mono); color: var(--color-correct); }
+.missed-a { font-family: var(--font-mono); color: var(--color-correct); white-space: nowrap; }
 .center { text-align: center; margin-top: 1.5rem; }
 
 .hidden { display: none; }
@@ -96,43 +122,77 @@ h1 { font-size: 34px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 
     <a href="../../skillset.html">← skillset</a>
   </nav>
 
-  <h1>English Conjugation</h1>
-  <p class="tagline">A timed drill for English verb forms. Conjugate as many as you can before the clock runs out.</p>
+  <h1>English Questions</h1>
+  <p class="tagline">Write your own English questions, then drill them against the clock.</p>
 
-  <!-- START SCREEN -->
-  <div id="startScreen" class="card">
+  <!-- EDITOR SCREEN: write questions and start a round -->
+  <div id="editorScreen" class="card">
     <div class="how">
-      How to play:
+      How it works:
       <ul>
-        <li>You get <b>60 seconds</b>. Each verb shows a base form and the tense to produce.</li>
-        <li>Type the conjugation and press <b>Enter</b>.</li>
-        <li>Right answers score points and build a streak; the streak adds a bonus.</li>
+        <li>Mark the gap with <b>___</b>, or just write a plain question.</li>
+        <li>Answer by <b>multiple choice</b> or by <b>typing</b> — chosen per question.</li>
+        <li>Questions are saved in this browser, so they survive a reload.</li>
+        <li>A round lasts <b>90 seconds</b>; the streak adds a points bonus.</li>
       </ul>
     </div>
-    <div class="level-label">Choose a level</div>
-    <div class="levels">
-      <button class="btn" onclick="startGame('regular')">Regular verbs</button>
-      <button class="btn" onclick="startGame('irregular')">Irregular verbs</button>
-      <button class="btn btn-primary" onclick="startGame('all')">All mixed</button>
+
+    <div class="field-label">Question</div>
+    <input type="text" id="customText" class="field" autocomplete="off"
+           placeholder="She ___ in London since 2019." />
+
+    <div class="field-label">How is it answered?</div>
+    <div class="btn-row">
+      <button class="btn selected" id="choiceTypeBtn" onclick="setAnswerType('choice')">Multiple choice</button>
+      <button class="btn" id="typedTypeBtn" onclick="setAnswerType('typed')">Type the answer</button>
+    </div>
+
+    <!-- multiple-choice fields -->
+    <div id="choiceFields">
+      <div class="field-label">Correct answer</div>
+      <input type="text" id="customCorrect" class="field" autocomplete="off" placeholder="has lived" />
+      <div class="field-label">Wrong options — at least one</div>
+      <input type="text" id="customWrong1" class="field" autocomplete="off" placeholder="lives" />
+      <input type="text" id="customWrong2" class="field" autocomplete="off" placeholder="is living" />
+      <input type="text" id="customWrong3" class="field" autocomplete="off" placeholder="lived" />
+    </div>
+
+    <!-- typed-answer fields -->
+    <div id="typedFields" class="hidden">
+      <div class="field-label">Accepted answers, separated by commas</div>
+      <input type="text" id="customAnswers" class="field" autocomplete="off"
+             placeholder="has lived, has been living" />
+    </div>
+
+    <div class="form-error hidden" id="formError"></div>
+
+    <div class="btn-row">
+      <button class="btn" onclick="addQuestion()">Add question</button>
+    </div>
+
+    <div class="summary-label">Saved questions (<span id="savedCount">0</span>)</div>
+    <div class="saved" id="savedList"></div>
+
+    <div class="center">
+      <button class="btn btn-primary" onclick="startRound()">Start the drill</button>
     </div>
   </div>
 
   <!-- GAME SCREEN -->
   <div id="gameScreen" class="hidden">
     <div class="hud">
-      <div class="stat"><div class="stat-label">Time</div><div class="stat-value" id="timeValue">60</div></div>
+      <div class="stat"><div class="stat-label">Time</div><div class="stat-value" id="timeValue">90</div></div>
       <div class="stat"><div class="stat-label">Score</div><div class="stat-value" id="scoreValue">0</div></div>
       <div class="stat"><div class="stat-label">Streak</div><div class="stat-value" id="streakValue">0</div></div>
     </div>
     <div class="timebar-track"><div class="timebar-fill" id="timebarFill"></div></div>
 
     <div class="card">
-      <div class="prompt">
-        <div class="prompt-verb" id="promptVerb">—</div>
-        <div class="prompt-ask" id="promptAsk"></div>
-      </div>
-      <input type="text" id="answer" class="answer" autocomplete="off" autocapitalize="off"
-             autocorrect="off" spellcheck="false" placeholder="type the form…" />
+      <div class="question-tag" id="questionTag"></div>
+      <div class="question-text" id="questionText">—</div>
+      <div class="options" id="options"></div>
+      <input type="text" id="answer" class="answer hidden" autocomplete="off" autocapitalize="off"
+             autocorrect="off" spellcheck="false" placeholder="type the answer…" />
       <div class="feedback" id="feedback"></div>
     </div>
   </div>
@@ -146,121 +206,167 @@ h1 { font-size: 34px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 
       <div class="missed" id="missedList"></div>
     </div>
     <div class="center">
-      <button class="btn btn-primary" onclick="backToStart()">Play again</button>
+      <button class="btn btn-primary" onclick="backToEditor()">Back to my questions</button>
     </div>
   </div>
 
 </div>
 
 <script>
-// ---- Verb data --------------------------------------------------------------
-// Each verb lists its four target forms. Where more than one answer is accepted
-// (e.g. "got" / "gotten"), the forms are joined with "|"; the first is canonical.
-// irr = true marks irregular verbs so levels can filter by verb type.
-const VERBS = [
-  // Regular verbs
-  {base:"work",  third:"works",   past:"worked",  pp:"worked",  ing:"working",  irr:false},
-  {base:"play",  third:"plays",   past:"played",  pp:"played",  ing:"playing",  irr:false},
-  {base:"watch", third:"watches", past:"watched", pp:"watched", ing:"watching", irr:false},
-  {base:"study", third:"studies", past:"studied", pp:"studied", ing:"studying", irr:false},
-  {base:"try",   third:"tries",   past:"tried",   pp:"tried",   ing:"trying",   irr:false},
-  {base:"stop",  third:"stops",   past:"stopped", pp:"stopped", ing:"stopping", irr:false},
-  {base:"plan",  third:"plans",   past:"planned", pp:"planned", ing:"planning", irr:false},
-  {base:"live",  third:"lives",   past:"lived",   pp:"lived",   ing:"living",   irr:false},
-  {base:"use",   third:"uses",    past:"used",    pp:"used",    ing:"using",    irr:false},
-  {base:"like",  third:"likes",   past:"liked",   pp:"liked",   ing:"liking",   irr:false},
-  {base:"want",  third:"wants",   past:"wanted",  pp:"wanted",  ing:"wanting",  irr:false},
-  {base:"need",  third:"needs",   past:"needed",  pp:"needed",  ing:"needing",  irr:false},
-  {base:"help",  third:"helps",   past:"helped",  pp:"helped",  ing:"helping",  irr:false},
-  {base:"call",  third:"calls",   past:"called",  pp:"called",  ing:"calling",  irr:false},
-  {base:"walk",  third:"walks",   past:"walked",  pp:"walked",  ing:"walking",  irr:false},
-  {base:"open",  third:"opens",   past:"opened",  pp:"opened",  ing:"opening",  irr:false},
-  {base:"close", third:"closes",  past:"closed",  pp:"closed",  ing:"closing",  irr:false},
-  {base:"start", third:"starts",  past:"started", pp:"started", ing:"starting", irr:false},
-  // Irregular verbs
-  {base:"go",    third:"goes",    past:"went",    pp:"gone",       ing:"going",       irr:true},
-  {base:"have",  third:"has",     past:"had",     pp:"had",        ing:"having",      irr:true},
-  {base:"do",    third:"does",    past:"did",     pp:"done",       ing:"doing",       irr:true},
-  {base:"make",  third:"makes",   past:"made",    pp:"made",       ing:"making",      irr:true},
-  {base:"take",  third:"takes",   past:"took",    pp:"taken",      ing:"taking",      irr:true},
-  {base:"come",  third:"comes",   past:"came",    pp:"come",       ing:"coming",      irr:true},
-  {base:"see",   third:"sees",    past:"saw",     pp:"seen",       ing:"seeing",      irr:true},
-  {base:"get",   third:"gets",    past:"got",     pp:"gotten|got", ing:"getting",     irr:true},
-  {base:"give",  third:"gives",   past:"gave",    pp:"given",      ing:"giving",      irr:true},
-  {base:"eat",   third:"eats",    past:"ate",     pp:"eaten",      ing:"eating",      irr:true},
-  {base:"write", third:"writes",  past:"wrote",   pp:"written",    ing:"writing",     irr:true},
-  {base:"run",   third:"runs",    past:"ran",     pp:"run",        ing:"running",     irr:true},
-  {base:"speak", third:"speaks",  past:"spoke",   pp:"spoken",     ing:"speaking",    irr:true},
-  {base:"read",  third:"reads",   past:"read",    pp:"read",       ing:"reading",     irr:true},
-  {base:"know",  third:"knows",   past:"knew",    pp:"known",      ing:"knowing",     irr:true},
-  {base:"think", third:"thinks",  past:"thought", pp:"thought",    ing:"thinking",    irr:true},
-  {base:"find",  third:"finds",   past:"found",   pp:"found",      ing:"finding",     irr:true},
-  {base:"begin", third:"begins",  past:"began",   pp:"begun",      ing:"beginning",   irr:true},
-  {base:"drive", third:"drives",  past:"drove",   pp:"driven",     ing:"driving",     irr:true},
-  {base:"swim",  third:"swims",   past:"swam",    pp:"swum",       ing:"swimming",    irr:true},
-  {base:"sing",  third:"sings",   past:"sang",    pp:"sung",       ing:"singing",     irr:true},
-  {base:"drink", third:"drinks",  past:"drank",   pp:"drunk",      ing:"drinking",    irr:true},
-  {base:"buy",   third:"buys",    past:"bought",  pp:"bought",     ing:"buying",      irr:true},
-  {base:"bring", third:"brings",  past:"brought", pp:"brought",    ing:"bringing",    irr:true},
-  {base:"teach", third:"teaches", past:"taught",  pp:"taught",     ing:"teaching",    irr:true},
-  {base:"catch", third:"catches", past:"caught",  pp:"caught",     ing:"catching",    irr:true},
-  {base:"build", third:"builds",  past:"built",   pp:"built",      ing:"building",    irr:true},
-  {base:"send",  third:"sends",   past:"sent",    pp:"sent",       ing:"sending",     irr:true},
-  {base:"leave", third:"leaves",  past:"left",    pp:"left",       ing:"leaving",     irr:true},
-  {base:"feel",  third:"feels",   past:"felt",    pp:"felt",       ing:"feeling",     irr:true},
-  {base:"keep",  third:"keeps",   past:"kept",    pp:"kept",       ing:"keeping",     irr:true},
-  {base:"meet",  third:"meets",   past:"met",     pp:"met",        ing:"meeting",     irr:true},
-  {base:"pay",   third:"pays",    past:"paid",    pp:"paid",       ing:"paying",      irr:true},
-  {base:"sit",   third:"sits",    past:"sat",     pp:"sat",        ing:"sitting",     irr:true},
-  {base:"stand", third:"stands",  past:"stood",   pp:"stood",      ing:"standing",    irr:true},
-  {base:"win",   third:"wins",    past:"won",     pp:"won",        ing:"winning",     irr:true},
-  {base:"tell",  third:"tells",   past:"told",    pp:"told",       ing:"telling",     irr:true},
-  {base:"fall",  third:"falls",   past:"fell",    pp:"fallen",     ing:"falling",     irr:true},
-];
+// Saved questions live in this browser only, under this key.
+// Stored shape, one object per question:
+//   {text, type:"choice", opts:[correct, ...wrong]}   opts[0] is always the answer
+//   {text, type:"typed",  answers:[...]}              any accepted spelling
+const STORAGE_KEY = "english.myQuestions";
 
-// The four tenses drilled, with the label shown to the player.
-const FORMS = [
-  {key:"third", ask:"third person singular (he/she/it)"},
-  {key:"past",  ask:"past simple"},
-  {key:"pp",    ask:"past participle (have …)"},
-  {key:"ing",   ask:"present participle (-ing)"},
-];
-
-const ROUND_SECONDS = 60;   // total time for one game
+const ROUND_SECONDS = 90;   // total time for one round
 const BASE_POINTS = 10;     // points per correct answer, before streak bonus
+const OPTION_KEYS = ["1", "2", "3", "4"];   // keyboard shortcut per option
 
-// ---- Game state -------------------------------------------------------------
-let pool = [];         // verbs available for the chosen level
-let current = null;    // {verb, form} being asked
-let timeLeft = 0;      // seconds remaining
-let timerId = null;    // setInterval handle
+// ---- State ------------------------------------------------------------------
+let questions = loadQuestions();   // the saved bank
+let answerType = "choice";         // which answer style the editor form is set to
+let queue = [];                    // shuffled questions still to ask this round
+let current = null;                // {question, shownOptions, solution} being asked
+let timeLeft = 0;                  // seconds remaining
+let timerId = null;                // setInterval handle
 let score = 0;
 let streak = 0;
 let bestStreak = 0;
-let answered = 0;      // total questions shown
-let correctCount = 0;  // total answered correctly
-let missed = [];       // {prompt, solution} for the end-of-game review
-let locked = false;    // true briefly after a wrong answer while feedback shows
+let answered = 0;                  // total questions answered
+let correctCount = 0;              // total answered correctly
+let missed = [];                   // {prompt, solution} for the end-of-round review
+let locked = false;                // true while feedback is showing, blocks answers
 
 // Cached elements
 const el = (id) => document.getElementById(id);
 
-// Pick a random element from an array.
-function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+// Return a shuffled copy of an array (Fisher-Yates).
+function shuffled(arr) {
+  const copy = arr.slice();
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
 
-// The list of accepted answers for a form value ("got|gotten" -> ["got","gotten"]).
-function accepted(value) { return value.split("|"); }
+// Make user-written text safe to drop into innerHTML.
+function escapeHtml(text) {
+  return text.replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
 
-// Start a new game at the given level: 'regular', 'irregular', or 'all'.
-function startGame(level) {
-  if (level === "regular")   pool = VERBS.filter(v => !v.irr);
-  else if (level === "irregular") pool = VERBS.filter(v => v.irr);
-  else pool = VERBS.slice();
+// ---- Storage ----------------------------------------------------------------
 
+// Read the saved bank, treating missing or unreadable storage as empty.
+function loadQuestions() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    return Array.isArray(stored) ? stored : [];
+  } catch {
+    return [];
+  }
+}
+
+// Persist the bank. Storage can be blocked (private mode), so failure is ignored.
+function saveQuestions() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(questions));
+  } catch {
+    // The round still works from memory; only persistence is lost.
+  }
+}
+
+// ---- Editor -----------------------------------------------------------------
+
+// Switch the form between the multiple-choice and typed-answer fields.
+function setAnswerType(type) {
+  answerType = type;
+  el("choiceTypeBtn").classList.toggle("selected", type === "choice");
+  el("typedTypeBtn").classList.toggle("selected", type === "typed");
+  el("choiceFields").classList.toggle("hidden", type !== "choice");
+  el("typedFields").classList.toggle("hidden", type !== "typed");
+  showFormError("");
+}
+
+// Show a validation message under the form, or clear it when passed "".
+function showFormError(message) {
+  const box = el("formError");
+  box.textContent = message;
+  box.classList.toggle("hidden", !message);
+}
+
+// Read the form, validate it, and append the question to the bank.
+function addQuestion() {
+  const text = el("customText").value.trim();
+  if (!text) return showFormError("Write the question first.");
+
+  if (answerType === "choice") {
+    const correct = el("customCorrect").value.trim();
+    // Wrong options are optional individually; at least one must be filled in.
+    const wrong = ["customWrong1", "customWrong2", "customWrong3"]
+      .map(id => el(id).value.trim())
+      .filter(value => value);
+    if (!correct) return showFormError("Fill in the correct answer.");
+    if (!wrong.length) return showFormError("Add at least one wrong option.");
+    questions.push({ text, type: "choice", opts: [correct, ...wrong] });
+  } else {
+    const answers = el("customAnswers").value.split(",")
+      .map(value => value.trim())
+      .filter(value => value);
+    if (!answers.length) return showFormError("Add at least one accepted answer.");
+    questions.push({ text, type: "typed", answers });
+  }
+
+  saveQuestions();
+  renderSavedList();
+  clearForm();
+  showFormError("");
+}
+
+// Empty the form fields, ready for the next question.
+function clearForm() {
+  ["customText", "customCorrect", "customWrong1", "customWrong2", "customWrong3", "customAnswers"]
+    .forEach(id => { el(id).value = ""; });
+  el("customText").focus();
+}
+
+// Drop one question from the bank.
+function deleteQuestion(index) {
+  questions.splice(index, 1);
+  saveQuestions();
+  renderSavedList();
+}
+
+// Draw the saved bank with a delete button per row.
+function renderSavedList() {
+  el("savedCount").textContent = questions.length;
+  const list = el("savedList");
+  if (!questions.length) {
+    list.innerHTML = '<div class="saved-empty">No questions yet — add your first one above.</div>';
+    return;
+  }
+  list.innerHTML = questions.map((q, i) =>
+    '<div class="saved-row">' +
+      '<span class="saved-text">' + escapeHtml(q.text) + '</span>' +
+      '<span class="saved-type">' + (q.type === "typed" ? "typed" : "choice") + '</span>' +
+      '<button class="saved-del" title="Delete" onclick="deleteQuestion(' + i + ')">×</button>' +
+    '</div>'
+  ).join("");
+}
+
+// ---- Round ------------------------------------------------------------------
+
+// Start a timed round over the saved bank.
+function startRound() {
+  if (!questions.length) return showFormError("Add at least one question before starting.");
+
+  queue = shuffled(questions);
   score = 0; streak = 0; bestStreak = 0; answered = 0; correctCount = 0;
   missed = []; locked = false; timeLeft = ROUND_SECONDS;
 
-  el("startScreen").classList.add("hidden");
+  el("editorScreen").classList.add("hidden");
   el("endScreen").classList.add("hidden");
   el("gameScreen").classList.remove("hidden");
 
@@ -268,14 +374,13 @@ function startGame(level) {
   nextQuestion();
 
   timerId = setInterval(tick, 1000);
-  el("answer").focus();
 }
 
-// Advance the countdown once per second and end the game at zero.
+// Advance the countdown once per second and end the round at zero.
 function tick() {
   timeLeft--;
   updateHud();
-  if (timeLeft <= 0) endGame();
+  if (timeLeft <= 0) endRound();
 }
 
 // Show the numbers and time bar for the current state.
@@ -287,58 +392,109 @@ function updateHud() {
   el("timebarFill").style.width = (timeLeft / ROUND_SECONDS * 100) + "%";
 }
 
-// Choose a fresh verb + tense and render the prompt.
+// Take the next question from the queue, refilling it when the bank runs out.
 function nextQuestion() {
-  const verb = pick(pool);
-  const form = pick(FORMS);
-  current = { verb, form };
-  el("promptVerb").textContent = verb.base;
-  el("promptAsk").innerHTML = "Give the <b>" + form.ask + "</b>";
-  const input = el("answer");
-  input.value = "";
-  input.className = "answer";
-  input.focus();
+  if (!queue.length) queue = shuffled(questions);
+  const question = queue.pop();
+  const isChoice = question.type === "choice";
+  // opts[0] is the correct answer as stored; remember it before shuffling.
+  const solution = isChoice ? question.opts[0] : question.answers[0];
+  const shownOptions = isChoice ? shuffled(question.opts) : [];
+  current = { question, shownOptions, solution };
+
+  el("feedback").textContent = "";
+  el("feedback").className = "feedback";
+  el("questionTag").textContent = isChoice ? "Multiple choice" : "Type the answer";
+  el("questionText").innerHTML =
+    escapeHtml(question.text).replace("___", '<span class="blank">_____</span>');
+
+  el("options").classList.toggle("hidden", !isChoice);
+  el("answer").classList.toggle("hidden", isChoice);
+  if (isChoice) {
+    el("options").innerHTML = shownOptions.map((text, i) =>
+      '<button class="option" onclick="submitOption(' + i + ')">' +
+      '<span class="option-key">' + OPTION_KEYS[i] + '</span>' +
+      '<span>' + escapeHtml(text) + '</span></button>'
+    ).join("");
+  } else {
+    const input = el("answer");
+    input.value = "";
+    input.className = "answer";
+    input.focus();
+  }
 }
 
-// Grade the typed answer, update score/streak, and queue the next question.
-function submitAnswer() {
-  if (locked || !current) return;
+// Grade a chosen multiple-choice option.
+function submitOption(index) {
+  if (locked || !current || current.question.type !== "choice") return;
+  locked = true;
+  answered++;
+
+  const buttons = el("options").querySelectorAll(".option");
+  const isCorrect = current.shownOptions[index] === current.solution;
+  const solutionIndex = current.shownOptions.indexOf(current.solution);
+
+  // Freeze the choices and mark the right answer, plus the wrong one if picked.
+  buttons.forEach(b => { b.disabled = true; });
+  buttons[solutionIndex].classList.add("correct");
+  if (!isCorrect) buttons[index].classList.add("wrong");
+
+  if (isCorrect) registerCorrect();
+  else registerWrong(current.question.text, current.solution);
+
+  updateHud();
+  scheduleNext(isCorrect ? 450 : 1300);
+}
+
+// Grade a typed answer against every accepted spelling.
+function submitTyped() {
+  if (locked || !current || current.question.type !== "typed") return;
   const input = el("answer");
   const guess = input.value.trim().toLowerCase();
   if (!guess) return;
 
   answered++;
-  const solutionValue = current.verb[current.form.key];
-  const solutions = accepted(solutionValue);
-  const isCorrect = solutions.includes(guess);
+  const isCorrect = current.question.answers.some(a => a.trim().toLowerCase() === guess);
+  input.classList.add(isCorrect ? "correct" : "wrong");
 
   if (isCorrect) {
-    correctCount++;
-    streak++;
-    bestStreak = Math.max(bestStreak, streak);
-    // Streak bonus: +1 point per prior consecutive correct answer.
-    score += BASE_POINTS + (streak - 1);
-    input.classList.add("correct");
-    showFeedback(true, "");
-    updateHud();
-    // Brief pause so the green state is visible, then continue.
-    setTimeout(() => { if (timeLeft > 0) nextQuestion(); }, 250);
+    registerCorrect();
   } else {
-    streak = 0;
-    input.classList.add("wrong");
-    showFeedback(false, solutions[0]);
-    missed.push({
-      prompt: current.verb.base + " — " + current.form.ask,
-      solution: solutions[0],
-    });
-    updateHud();
-    // Hold the correct answer on screen briefly before the next verb.
+    registerWrong(current.question.text, current.solution);
+    // Hold the correct answer on screen before the next question.
     locked = true;
-    setTimeout(() => { locked = false; if (timeLeft > 0) nextQuestion(); }, 1100);
   }
+
+  updateHud();
+  scheduleNext(isCorrect ? 300 : 1300);
 }
 
-// Render the feedback line under the input.
+// Score a correct answer and show the tick.
+function registerCorrect() {
+  correctCount++;
+  streak++;
+  bestStreak = Math.max(bestStreak, streak);
+  // Streak bonus: +1 point per prior consecutive correct answer.
+  score += BASE_POINTS + (streak - 1);
+  showFeedback(true, "");
+}
+
+// Break the streak, reveal the solution, and record it for the review list.
+function registerWrong(prompt, solution) {
+  streak = 0;
+  showFeedback(false, solution);
+  missed.push({ prompt, solution });
+}
+
+// Unlock and move on after the feedback pause, unless time has run out.
+function scheduleNext(pauseMs) {
+  setTimeout(() => {
+    locked = false;
+    if (timeLeft > 0) nextQuestion();
+  }, pauseMs);
+}
+
+// Render the feedback line under the answer area.
 function showFeedback(ok, solution) {
   const fb = el("feedback");
   if (ok) {
@@ -346,12 +502,12 @@ function showFeedback(ok, solution) {
     fb.textContent = "✓ Correct";
   } else {
     fb.className = "feedback no";
-    fb.innerHTML = "✗ Answer: <span class=\"sol\">" + solution + "</span>";
+    fb.innerHTML = '✗ Answer: <span class="sol">' + escapeHtml(solution) + "</span>";
   }
 }
 
 // Stop the clock and show the results screen.
-function endGame() {
+function endRound() {
   clearInterval(timerId);
   timerId = null;
   el("gameScreen").classList.add("hidden");
@@ -362,15 +518,15 @@ function endGame() {
   el("finalSub").textContent =
     correctCount + "/" + answered + " correct · " + accuracy + "% accuracy · best streak " + bestStreak;
 
-  // Show a review list of unique missed conjugations, if any.
+  // Show a review list of unique missed questions, if any.
   const wrap = el("missedWrap");
   if (missed.length) {
-    // Keep only the first occurrence of each prompt.
+    // Keep only the first occurrence of each question.
     const seen = new Set();
     const unique = missed.filter(m => !seen.has(m.prompt) && seen.add(m.prompt));
     el("missedList").innerHTML = unique.map(m =>
-      '<div class="missed-row"><span class="missed-q">' + m.prompt +
-      '</span><span class="missed-a">' + m.solution + '</span></div>'
+      '<div class="missed-row"><span class="missed-q">' + escapeHtml(m.prompt) +
+      '</span><span class="missed-a">' + escapeHtml(m.solution) + '</span></div>'
     ).join("");
     wrap.classList.remove("hidden");
   } else {
@@ -378,16 +534,27 @@ function endGame() {
   }
 }
 
-// Return to the level-select screen.
-function backToStart() {
+// Return to the editor, where another round can be started.
+function backToEditor() {
+  current = null;
   el("endScreen").classList.add("hidden");
-  el("startScreen").classList.remove("hidden");
+  el("editorScreen").classList.remove("hidden");
+  showFormError("");
 }
 
-// Enter submits the current answer.
+// Enter submits a typed answer.
 el("answer").addEventListener("keydown", (e) => {
-  if (e.key === "Enter") submitAnswer();
+  if (e.key === "Enter") submitTyped();
 });
+
+// Keys 1-4 pick the matching option while a multiple-choice question is on screen.
+document.addEventListener("keydown", (e) => {
+  if (timerId === null || !current || current.question.type !== "choice") return;
+  const index = OPTION_KEYS.indexOf(e.key);
+  if (index !== -1 && index < current.shownOptions.length) submitOption(index);
+});
+
+renderSavedList();
 </script>
 </body>
 </html>
