@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Type-safe null elimination</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Type-safe null elimination</h1>
+  <p class="desc">A null reference makes every type secretly mean "or nothing", so the compiler cannot tell you where absence is possible — Tony Hoare called it his billion-dollar mistake. The fix is to put absence <strong>in the type</strong>: <code>User</code> means there is one, <code>Optional&lt;User&gt;</code> means there might not be.<br>
+  <code>Optional</code> (Java 8+), <code>Option&lt;T&gt;</code> (Rust, Scala), <code>Maybe</code> (Haskell), <code>T?</code> and <code>?.</code> (Kotlin). This is a runnable Maven project; see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
+
+  <p class="desc">The return type states that the lookup can fail, and <code>ofNullable</code> converts null once at the boundary so nothing downstream sees one:</p>
+  <pre><code class="language-java">public Optional&lt;User&gt; find(String name) {
+  return Optional.ofNullable(usersByName.get(name));   // null stops here
+}</code></pre>
+
+  <p class="desc">Steps that can each come up empty then compose flat — <code>flatMap</code> skips the empty case rather than testing for it, so the null checks are gone, not relocated:</p>
+  <pre><code class="language-java">public Optional&lt;String&gt; grandManagerOf(String name) {
+  return find(name)
+      .flatMap(User::managerName)
+      .flatMap(this::find)
+      .flatMap(User::managerName);
+}
+
+directory.grandManagerOf("carla").orElse("none");   // "ana", or "none" at any dead end</code></pre>
+
+  <p class="desc"><strong>The caveat:</strong> in Java this is a library type, not a language one. <code>Optional</code> is not sealed, so no exhaustive <code>switch</code> forces you to handle empty, and <code>get()</code> on an empty one throws — moving an NPE rather than removing it. Kotlin's <code>T?</code> and Rust's <code>Option&lt;T&gt;</code> are checked by the compiler; <code>Optional</code> is a discipline the API encourages. Use it for return types, not fields or parameters.</p>
+
+  <p class="desc">Run the tests and the demo yourself with the Maven project — see the <code>README.md</code> in this concept's folder in the cloned repository.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
