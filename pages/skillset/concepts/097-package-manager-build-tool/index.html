@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Package manager / build tool</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Package manager / build tool</h1>
+  <p class="desc">You declare <em>what</em> you depend on; the tool resolves the graph, fetches it, and compiles in the right order. The hard part is never the download — it is that your dependencies have dependencies, and two of them will eventually want different versions of the same thing.</p>
+
+  <p class="desc">Maven / Gradle (Java, Scala), sbt (Scala), Cargo (Rust), npm (JavaScript), pip (Python), go mod (Go).</p>
+
+  <p class="desc">A coordinate is <code>groupId:artifactId:version</code> — the namespace that keeps two <code>Parser</code> jars apart — and <code>scope</code> keeps test-only code out of what you ship:</p>
+  <pre><code class="language-xml">&lt;dependency&gt;
+  &lt;groupId&gt;org.junit.jupiter&lt;/groupId&gt;
+  &lt;artifactId&gt;junit-jupiter&lt;/artifactId&gt;
+  &lt;version&gt;5.10.2&lt;/version&gt;
+  &lt;scope&gt;test&lt;/scope&gt;      &lt;!-- on the test classpath only --&gt;
+&lt;/dependency&gt;</code></pre>
+
+  <p class="desc">Transitive dependencies arrive uninvited, so the real question is which version won:</p>
+  <pre><code class="language-bash">mvn dependency:tree
+
+[INFO] com.example:app:jar:1.0
+[INFO] +- org.apache.httpcomponents:httpclient:jar:4.5.14:compile
+[INFO] |  \- commons-codec:commons-codec:jar:1.11:compile   # you never asked for this
+[INFO] \- org.junit.jupiter:junit-jupiter:jar:5.10.2:test</code></pre>
+
+  <p class="desc"><strong>The conflict:</strong> SemVer says <code>1.11</code> and <code>1.15</code> are compatible, but one classloader can hold only one <code>commons-codec</code>. Maven picks the version nearest the root of the tree — shortest path wins, not highest number — which is why an unrelated upgrade can silently downgrade a transitive dependency. Cargo sidesteps it by linking both copies; on the JVM you pin the winner with <code>&lt;dependencyManagement&gt;</code> or shade the jar.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
