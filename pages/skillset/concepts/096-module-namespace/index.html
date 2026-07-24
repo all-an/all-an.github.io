@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Module / namespace</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Module / namespace</h1>
+  <p class="desc">A module does two jobs at once: it gives names a scope so <code>util.Parser</code> and <code>http.Parser</code> can coexist, and it decides what the outside world is allowed to see. Parnas (1972) argued the second is the point — a module should hide the decision most likely to change, exposing only an interface that survives it.</p>
+
+  <p class="desc"><code>package</code> (Java, Go, Python, Scala), <code>mod</code> (Rust), <code>namespace</code> (C++, C#), <code>ns</code> (Clojure).</p>
+
+  <p class="desc">In Java the <code>package</code> line creates the scope, and the missing modifier creates the interface — unmarked members are package-private, visible to neighbours but not to callers:</p>
+  <pre><code class="language-java">package http;
+
+public class Parser { }    // the interface: visible everywhere
+class Buffer { }           // package-private: an internal decision, free to change
+
+// elsewhere
+import http.Parser;        // import the name, not the whole path</code></pre>
+
+  <p class="desc">JPMS adds a second layer on top: a package is invisible to other jars unless the module <code>exports</code> it, so <code>public</code> stops meaning "public to the world":</p>
+  <pre><code class="language-java">module com.example.http {
+    exports http;          // http.Parser is reachable
+                           // http.internal stays hidden, public or not
+}</code></pre>
+
+  <p class="desc"><strong>The trade-off:</strong> a namespace only prevents collisions, while encapsulation prevents coupling — and languages that give you the first for free (Python's <code>_private</code> convention, C++ headers) leave the second to discipline. If everything is public, you have folders, not modules.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
