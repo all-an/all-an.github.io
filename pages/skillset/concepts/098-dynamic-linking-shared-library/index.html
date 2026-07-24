@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dynamic linking / shared library</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Dynamic linking / shared library</h1>
+  <p class="desc">Static linking copies the library into your binary at build time. Dynamic linking leaves a hole and a name, and the loader fills it when the program starts — so one copy of <code>libssl</code> in memory serves every process, and patching it does not mean rebuilding them. The cost is that the dependency is no longer inside the artifact you tested.</p>
+
+  <p class="desc"><code>.so</code> (Linux), <code>.dylib</code> (macOS), <code>.dll</code> (Windows); <code>dlopen</code> (C, Rust), <code>System.loadLibrary</code> (Java), <code>ctypes</code> (Python).</p>
+
+  <p class="desc">In Java the load is explicit and deferred to a static initializer — the JVM searches <code>java.library.path</code> for <code>libimaging.so</code> and binds the <code>native</code> methods only when the class is first used:</p>
+  <pre><code class="language-java">public class Imaging {
+
+    static {
+        System.loadLibrary("imaging");   // libimaging.so / .dylib / imaging.dll
+    }
+
+    private static native long openImage(String path);   // no body: it lives in the library
+}</code></pre>
+
+  <p class="desc">Nothing verifies the library is there until that moment, so a missing or mismatched file is a runtime failure, never a compile-time one:</p>
+  <pre><code class="language-bash">java -Djava.library.path=/opt/imaging/lib -jar app.jar
+
+Exception in thread "main" java.lang.UnsatisfiedLinkError: no imaging in java.library.path</code></pre>
+
+  <p class="desc"><strong>The trade-off:</strong> shared libraries only stay shareable while the ABI holds — struct layouts, symbol names and calling conventions are the contract, not the source. Change a field's order and every caller compiled against the old header reads garbage, which is why libraries carry a soname (<code>libssl.so.3</code>) and why "DLL hell" is a versioning problem, not a linking one. Static linking trades disk and patchability for knowing exactly what you shipped — the reason Go and GraalVM native images default to it.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
