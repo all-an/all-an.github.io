@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Open / Closed Principle (OCP)</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Open / Closed Principle (OCP)</h1>
+  <p class="desc">Open for extension, closed for modification: adding a case should mean adding code, not editing working code. The test is the diff — if every new payment method reopens the same file, the file is not closed, and each edit re-risks the cases that already worked.</p>
+
+  <p class="desc">Abstract class or interface (Java, C#, Kotlin), <code>trait</code> (Rust, Scala, PHP), the strategy pattern, a plugin or extension point (<code>ServiceLoader</code>, MEF), sealed types plus pattern matching (Kotlin, Scala 3, Java 21).</p>
+
+  <p class="desc">A switch that grows forever. Every new method edits this method, and a forgotten branch is a runtime failure:</p>
+  <pre><code class="language-java">Money fee(Payment p) {
+    switch (p.type()) {                        // reopened for every new type
+        case CARD: return p.amount().times(0.029);
+        case PIX:  return Money.ZERO;
+        default:   throw new IllegalArgumentException();
+    }
+}</code></pre>
+
+  <p class="desc">Behind an interface, the new case is a new file and the caller never changes:</p>
+  <pre><code class="language-java">interface Payment { Money fee(); }                                 // closed
+
+record Card(Money amount) implements Payment {
+    public Money fee() { return amount.times(0.029); }
+}
+record Boleto(Money amount) implements Payment {                   // added, nothing edited
+    public Money fee() { return Money.of(3.50); }
+}</code></pre>
+
+  <p class="desc"><strong>The cost:</strong> closure is directional, and you only get it where you guessed right. Abstract over the wrong axis and every change still cuts across every implementation — now with indirection on top. It also trades one safety for another: an interface makes new <em>types</em> cheap and new <em>operations</em> expensive, since adding a method touches every implementor, while the switch is the reverse. When the set of cases is genuinely fixed, a sealed hierarchy with exhaustive pattern matching is the better answer — the compiler names every branch you missed.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interface Segregation Principle (ISP)</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Interface Segregation Principle (ISP)</h1>
+  <p class="desc">No client should depend on methods it does not use. A wide interface couples every implementor to every caller's needs: a class that wants one method must supply all of them, and usually supplies the rest by throwing. Splitting by role is what stops a stub from being a lie.</p>
+
+  <p class="desc">Small focused interfaces (Java, C#, Go), a protocol per role (Swift, Objective-C), trait composition (Rust, Scala, PHP), role interfaces (DDD).</p>
+
+  <p class="desc">One interface for everything a machine might do. The printer is forced to declare methods it has no hardware for, and the only way to satisfy them is to fail at runtime:</p>
+  <pre><code class="language-java">interface Machine {
+    void print(Doc d);
+    void scan(Doc d);
+    void fax(Doc d);
+}
+
+class SimplePrinter implements Machine {
+    public void print(Doc d) { ... }
+    public void scan(Doc d) { throw new UnsupportedOperationException(); }   // forced, and a lie
+    public void fax(Doc d)  { throw new UnsupportedOperationException(); }
+}</code></pre>
+
+  <p class="desc">Split per role and each class implements only what it can actually do. The multifunction device composes the roles; the caller asks for the narrowest one it needs:</p>
+  <pre><code class="language-java">interface Printer { void print(Doc d); }
+interface Scanner { void scan(Doc d); }
+
+class SimplePrinter implements Printer { public void print(Doc d) { ... } }
+class OfficeDevice  implements Printer, Scanner { ... }
+
+void archive(Scanner scanner) { ... }   // depends on one method, not three</code></pre>
+
+  <p class="desc"><strong>The cost:</strong> pushed too far it yields a swarm of single-method interfaces and implementors with long <code>implements</code> lists, which is coupling moved rather than removed. The boundary is the caller: an interface should be as wide as one client's job, so let the call sites tell you where the roles are instead of splitting method by method. Go inverts the problem usefully — interfaces are satisfied implicitly, so the consumer declares the narrow one it wants and no implementor has to know.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

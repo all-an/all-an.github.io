@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Composition</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Composition</h1>
+  <p class="desc">The strong whole-part relationship: the whole creates its parts, is the only thing that references them, and takes them down with it. A part belongs to exactly one whole and has no meaning outside it — an order line without its order is nothing, so its lifetime is not a separate question.</p>
+
+  <p class="desc">Owned lifecycle (Java, C#, C++), a filled diamond in UML notation, <em>owns-a</em> in general OOP, <code>unique_ptr&lt;T&gt;</code> / <code>Box&lt;T&gt;</code> (C++, Rust) — the part dies with the whole.</p>
+
+  <p class="desc">The parts are built inside, from plain data. No caller ever holds a reference to one, so no caller can outlive the whole while pointing into it:</p>
+  <pre><code class="language-java">class Order {
+    private final List&lt;OrderLine&gt; lines = new ArrayList&lt;&gt;();   // Order ◆──> OrderLine
+
+    void add(Product product, int quantity) {
+        lines.add(new OrderLine(product, quantity));            // created here, never passed in
+    }
+}</code></pre>
+
+  <p class="desc">C++ and Rust make the claim in the type: a <code>unique_ptr</code> member cannot be copied out, and destroying the whole runs the part's destructor:</p>
+  <pre><code class="language-cpp">class Engine;
+
+class Car {
+    std::unique_ptr&lt;Engine&gt; engine;   // sole owner
+public:
+    Car() : engine(std::make_unique&lt;Engine&gt;()) {}
+};                                    // ~Car() destroys the Engine — nothing else can hold it</code></pre>
+
+  <p class="desc"><strong>The cost:</strong> the invariant only holds while the part stays private. Return the internal list or the part itself and you have quietly turned composition into aggregation — the caller now holds something whose lifetime you claimed to control. So expose copies or read-only views, and keep the part's construction inside the whole; the moment a part is passed in from outside, its lifetime belongs to whoever created it.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

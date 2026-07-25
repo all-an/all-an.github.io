@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dependency</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Dependency</h1>
+  <p class="desc">The weakest relationship of the four: one class mentions another without keeping it. No field, no lifetime, nothing to maintain between calls — the reference exists for the duration of a method and then is gone. It is still a coupling, because changing the other class's signature breaks this one, but it is coupling to a name rather than to an object.</p>
+
+  <p class="desc">A constructor or method parameter (Java, C#, Python), a local variable, a return type, a thrown exception, a static call — a dashed arrow in UML notation.</p>
+
+  <p class="desc"><code>Invoice</code> depends on <code>TaxRate</code> and <code>Money</code>, but stores neither. Both are gone when the method returns:</p>
+  <pre><code class="language-java">class Invoice {
+    Money total(TaxRate rate) {          // Invoice ┄┄> TaxRate (parameter)
+        Money net = sumOfLines();        // Invoice ┄┄> Money (local + return)
+        return net.plus(rate.applyTo(net));
+    }
+}</code></pre>
+
+  <p class="desc">Which is why the dependency can be aimed at an abstraction and swapped per call — the same method works against anything satisfying the interface:</p>
+  <pre><code class="language-java">void print(Report report, Formatter formatter) {   // depends on the interface, not a class
+    System.out.println(formatter.format(report));
+}
+
+print(report, new JsonFormatter());
+print(report, new CsvFormatter());</code></pre>
+
+  <p class="desc"><strong>The cost:</strong> it is invisible in a field list, so it accumulates unnoticed — a class with three fields can still name twenty types across its method signatures, and every one of them is a reason to recompile and a thing a test must supply. Static calls and <code>new</code> inside a method are the same coupling with no seam to substitute at. Keep parameter dependencies pointed at interfaces, and count them: a long parameter list is usually a missing object.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

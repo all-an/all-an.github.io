@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dependency Inversion Principle (DIP)</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Dependency Inversion Principle (DIP)</h1>
+  <p class="desc">High-level policy should not depend on low-level detail; both should depend on an abstraction. The inversion is about who owns that abstraction — the business rules declare the interface they need, and the database adapter implements it, so the arrow between the layers points against the direction of the calls.</p>
+
+  <p class="desc">Depend on abstractions (general OOP), constructor injection (Spring, Dagger, ASP.NET Core DI), an IoC container (Spring IoC, Guice, Autofac), the Reader monad (Haskell, Scala Cats), <code>ZLayer</code> (Scala ZIO).</p>
+
+  <p class="desc">Here the policy reaches for a detail. <code>OrderService</code> names a Postgres class and builds it itself, so it cannot compile without the driver and cannot be tested without a database:</p>
+  <pre><code class="language-java">class OrderService {
+    private final PostgresOrderRepo repo = new PostgresOrderRepo();   // policy → detail
+
+    void place(Order order) { repo.save(order); }
+}</code></pre>
+
+  <p class="desc">Invert it: the interface lives with the policy that needs it, and the adapter depends inward. The service now takes what it needs and never mentions Postgres:</p>
+  <pre><code class="language-java">interface OrderRepo { void save(Order o); }        // declared by the domain, not by the driver
+
+class OrderService {
+    private final OrderRepo repo;
+    OrderService(OrderRepo repo) { this.repo = repo; }   // constructor injection
+
+    void place(Order order) { repo.save(order); }
+}
+
+class PostgresOrderRepo implements OrderRepo { ... }     // detail → abstraction</code></pre>
+
+  <p class="desc"><strong>The cost:</strong> the dependencies have to be built somewhere, and that somewhere becomes a wiring layer — a <code>main</code> that assembles the graph, or a container that does it reflectively and turns a missing binding into a startup failure instead of a compile error. It also tempts you to put an interface in front of everything: an abstraction with exactly one implementor that changes whenever that implementor does is indirection without inversion. Invert where the detail is genuinely volatile or genuinely needs faking — not on principle.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

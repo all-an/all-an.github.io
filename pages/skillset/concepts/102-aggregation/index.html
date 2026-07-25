@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aggregation</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Aggregation</h1>
+  <p class="desc">An association that adds a whole-part reading, but a weak one: the whole groups the parts without owning them. The part is created elsewhere, can belong to several wholes at once, and survives the whole's destruction — a team has players, but deleting the team does not delete the people.</p>
+
+  <p class="desc">A held reference with weak ownership (Java, C#, C++), a hollow diamond in UML notation, <em>has-a (weak)</em> in general OOP — the part's lifecycle is independent.</p>
+
+  <p class="desc">The parts arrive from outside, already alive. The team stores what it was given and claims nothing about how long they live:</p>
+  <pre><code class="language-java">class Team {
+    private final List&lt;Player&gt; players;   // Team ◇──> Player
+
+    Team(List&lt;Player&gt; players) { this.players = players; }   // passed in, not created here
+}</code></pre>
+
+  <p class="desc">Which means the same part can sit in two wholes, and outlives both:</p>
+  <pre><code class="language-java">Player ana = new Player("Ana");
+Team club    = new Team(List.of(ana));
+Team country = new Team(List.of(ana));   // same object, two wholes
+
+club = null;                             // ana is untouched</code></pre>
+
+  <p class="desc"><strong>The cost:</strong> shared parts mean shared mutation. Store the caller's list and they can still modify it behind your back; hand yours out and they can too — so copy the collection on the way in and wrap it on the way out. The distinction from composition is also a design claim, not something the compiler checks: in Java both look like a field, and only C++'s <code>T*</code> versus <code>unique_ptr&lt;T&gt;</code> makes it explicit.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

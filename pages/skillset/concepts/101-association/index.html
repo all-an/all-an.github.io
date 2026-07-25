@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Association</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Association</h1>
+  <p class="desc">The weakest <em>structural</em> link between two classes: one keeps a reference to the other. No ownership, no lifecycle claim — but the reference is a field, so it survives between calls, which is what separates this from a dependency and its parameter that vanishes when the method returns. It is the base case of the structural relationships; aggregation and composition are associations that also say something about who owns what.</p>
+
+  <p class="desc">A field reference (Java, C#, Python), a solid line in UML notation, <em>uses-a</em> in general OOP, unidirectional or bidirectional.</p>
+
+  <p class="desc">Unidirectional: the order knows its customer, the customer knows nothing about orders. One arrow, one field, one direction of navigation:</p>
+  <pre><code class="language-java">class Order {
+    private final Customer customer;   // Order ──> Customer
+
+    Order(Customer customer) { this.customer = customer; }
+}</code></pre>
+
+  <p class="desc">Bidirectional means both ends navigate — and both ends must now be kept in step, which is why one side has to own the update:</p>
+  <pre><code class="language-java">class Customer {
+    private final List&lt;Order&gt; orders = new ArrayList&lt;&gt;();
+
+    void addOrder(Order order) {       // single point that maintains both ends
+        orders.add(order);
+        order.setCustomer(this);
+    }
+}</code></pre>
+
+  <p class="desc"><strong>The cost:</strong> a bidirectional association is two facts that can disagree. Set one side directly and the graph is inconsistent — an order pointing at a customer whose list does not contain it. It also creates a cycle: naive serialization loops forever, and <code>equals</code>/<code>hashCode</code> that follow both ends recurse. Prefer unidirectional, and add the back-reference only when a real query needs it.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Liskov Substitution Principle (LSP)</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Liskov Substitution Principle (LSP)</h1>
+  <p class="desc">Barbara Liskov's rule (1987): anywhere the program expects a type, any subtype must work without the caller noticing. Compiling is not enough — the subtype has to keep the promises, not just the signatures. A subclass may accept more and guarantee more, never the reverse.</p>
+
+  <p class="desc">Subtype substitutability (all OOP languages), covariant return (Java, C#, Kotlin), contravariant parameters (Kotlin, Scala, TypeScript), sealed hierarchies (Kotlin, Java 17+, Scala 3).</p>
+
+  <p class="desc">The classic break. <code>Rectangle</code> promises that width and height move independently; <code>Square</code> cannot keep that promise, because its invariant forces the other side to follow:</p>
+  <pre><code class="language-java">class Rectangle {
+    protected int width, height;
+    void setWidth(int w)  { this.width = w; }
+    void setHeight(int h) { this.height = h; }
+    int area() { return width * height; }
+}
+
+class Square extends Rectangle {
+    void setWidth(int w)  { this.width = w; this.height = w; }   // keeps the sides equal
+    void setHeight(int h) { this.width = h; this.height = h; }   // — and silently breaks the base promise
+}</code></pre>
+
+  <p class="desc">The caller was written against <code>Rectangle</code> and knows nothing about squares. It passes for the base type and fails for the subtype — <code>setHeight(4)</code> has quietly reset the width to 4:</p>
+  <pre><code class="language-java">void resize(Rectangle r) {
+    r.setWidth(5);
+    r.setHeight(4);
+    assert r.area() == 20;   // Rectangle: 5 × 4 = 20 ✓   Square: 4 × 4 = 16 ✗
+}</code></pre>
+
+  <p class="desc">The fix is to stop inheriting a promise you cannot keep. Share only what both types actually agree on — an area — and drop the mutators that caused the conflict, so there is no independent width to contradict:</p>
+  <pre><code class="language-java">sealed interface Shape permits Rectangle, Square {
+    int area();
+}
+
+record Rectangle(int width, int height) implements Shape {
+    public int area() { return width * height; }
+}
+record Square(int side) implements Shape {     // no longer a Rectangle — nothing to violate
+    public int area() { return side * side; }
+}</code></pre>
+
+  <p class="desc">Resizing becomes a function that returns a new value, and each type states its own rule. The caller gets back what it asked for, whichever type it held:</p>
+  <pre><code class="language-java">Shape resized = switch (shape) {
+    case Rectangle r -&gt; new Rectangle(5, 4);   // 20
+    case Square s    -&gt; new Square(4);         // 16, and the caller was told it is a square
+};</code></pre>
+
+  <p class="desc">The other two breaks are the same rule from either side — refusing input the base accepts, or throwing where the base returns:</p>
+  <pre><code class="language-java">class Base    { void put(Object o) { ... } }
+class Strict extends Base {
+    void put(Object o) {
+        if (!(o instanceof String)) throw new IllegalArgumentException();   // narrowed the input
+    }
+}
+
+class ReadOnlyList extends ArrayList&lt;String&gt; {
+    public boolean add(String s) { throw new UnsupportedOperationException(); }   // withdrew a promise
+}</code></pre>
+
+  <p class="desc"><strong>The cost:</strong> nothing checks this. The compiler verifies types; preconditions, postconditions and invariants live in prose, so a violation shows up as a caller failing on a subtype it never heard of. The practical guard is to run the base type's tests against every subtype, and to treat an <code>instanceof</code> check in a caller as the diagnosis: if code must ask which subtype it holds, substitution has already failed. When behaviour genuinely differs, prefer composition or a sealed hierarchy over inheritance.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

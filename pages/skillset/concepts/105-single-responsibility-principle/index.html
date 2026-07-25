@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Single Responsibility Principle (SRP)</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Single Responsibility Principle (SRP)</h1>
+  <p class="desc">The S in SOLID: a class should have one reason to change. Not "do one thing" — the test is about people, not verbs. If the finance team and the ops team can both send you back to the same file for unrelated reasons, that file is answering to two masters and their changes will collide in it.</p>
+
+  <p class="desc">One reason to change in class design, a class per concern (Java, C#, Python, TypeScript), a focused module (Go, Rust), a service per role (DDD, microservices).</p>
+
+  <p class="desc">Three responsibilities in one class — the tax rules, the wire format, and the database. Each belongs to a different team, and each edit risks the other two:</p>
+  <pre><code class="language-java">class Invoice {
+    Money total() { ... }               // finance changes the tax rules
+    String toJson() { ... }             // the API team changes the wire format
+    void save(Connection c) { ... }     // the DBA changes the schema
+}</code></pre>
+
+  <p class="desc">Split by who asks for the change, and each class has one caller to answer to:</p>
+  <pre><code class="language-java">class Invoice        { Money total() { ... } }          // finance
+class InvoiceJson    { String format(Invoice i) { ... } }   // API
+class InvoiceRepo    { void save(Invoice i) { ... } }       // persistence</code></pre>
+
+  <p class="desc"><strong>The cost:</strong> "one reason" is a judgement, and applied too literally it produces a class per method — a graph of one-line collaborators where the logic is real but no single file explains it. The useful signal is empirical: which files keep appearing together in unrelated commits, and which class do two teams keep editing in the same week. Split on that evidence, not on a count of methods.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

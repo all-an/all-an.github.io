@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Plugin / extension system</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">← back</a>
+  <h1>Plugin / extension system</h1>
+  <p class="desc">Dynamic linking loads a library you named; a plugin system loads implementations you never named. The host publishes an interface and a discovery rule, and anything on the path that satisfies both becomes part of the program at startup — new behaviour without recompiling the host, which is the open/closed principle enforced by late binding.</p>
+
+  <p class="desc"><code>ServiceLoader</code> (Java), MEF (C#), trait objects behind <code>dlopen</code> (Rust), compiler plugins (Scala), gems (Ruby).</p>
+
+  <p class="desc">The host depends only on the contract. It never mentions a concrete class, so adding a codec means adding a jar, not editing this file:</p>
+  <pre><code class="language-java">public interface Codec {           // the extension point
+    String name();
+    byte[] encode(String input);
+}
+
+for (Codec codec : ServiceLoader.load(Codec.class)) {   // whoever is on the classpath
+    System.out.println(codec.name());
+}</code></pre>
+
+  <p class="desc">A provider declares itself in metadata — <code>module-info.java</code>, or <code>META-INF/services/Codec</code> on the classpath — and the runtime does the wiring:</p>
+  <pre><code class="language-java">module gzip.codec {
+    requires codec.api;
+    provides Codec with com.example.GzipCodec;   // discovered, never imported by the host
+}</code></pre>
+
+  <p class="desc"><strong>The cost:</strong> the compiler stops checking that anything is there. A missing provider is an empty iterator at runtime, not a build error; a bad one runs with the host's full permissions, in the host's process, and can hang or crash it. And the interface becomes a public API — once plugins exist, changing it breaks code you do not own. Version the extension point, isolate providers if you do not trust them, and keep the contract small enough that you can live with it.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
