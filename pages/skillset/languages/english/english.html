@@ -129,9 +129,14 @@ a.btn { display: inline-block; text-decoration: none; }
         <li>Mark the gap with <b>___</b>, or just write a plain question.</li>
         <li>Answer by <b>multiple choice</b> or by <b>typing</b> — chosen per question.</li>
         <li>Questions are saved in this browser, so they survive a reload.</li>
-        <li>A round lasts <b>90 seconds</b>; the streak adds a points bonus.</li>
+        <li>A built-in <b>vocabulary bank</b> is drilled alongside your own questions —
+            pick which words under <b>Vocabulary</b>.</li>
+        <li>Set how long a round lasts below; the streak adds a points bonus.</li>
       </ul>
     </div>
+
+    <div class="field-label">Round time in seconds</div>
+    <input type="number" id="roundSeconds" class="field" min="10" max="600" step="10" value="90" />
 
     <div class="field-label">Question</div>
     <input type="text" id="customText" class="field" autocomplete="off"
@@ -166,6 +171,7 @@ a.btn { display: inline-block; text-decoration: none; }
     <div class="btn-row">
       <button class="btn" onclick="addQuestion()">Add question</button>
       <a class="btn" href="my-questions.html">My questions</a>
+      <a class="btn" href="vocabulary.html">Vocabulary</a>
       <button class="btn btn-primary" onclick="startRound()">Start the drill</button>
     </div>
   </div>
@@ -204,20 +210,27 @@ a.btn { display: inline-block; text-decoration: none; }
 
 </div>
 
+<script src="vocabulary.js"></script>
 <script>
 // Saved questions live in this browser only, under this key.
 // Stored shape, one object per question:
 //   {text, type:"choice", opts:[correct, ...wrong]}   opts[0] is always the answer
 //   {text, type:"typed",  answers:[...]}              any accepted spelling
 const STORAGE_KEY = "english.myQuestions";
+const ROUND_SECONDS_KEY = "english.roundSeconds";   // chosen round length, in seconds
 
-const ROUND_SECONDS = 90;   // total time for one round
+const DEFAULT_ROUND_SECONDS = 90;   // round length used until one is chosen
+const MIN_ROUND_SECONDS = 10;       // shortest round the form accepts
+const MAX_ROUND_SECONDS = 600;      // longest round the form accepts
 const BASE_POINTS = 10;     // points per correct answer, before streak bonus
 const OPTION_KEYS = ["1", "2", "3", "4"];   // keyboard shortcut per option
+const VOCABULARY_WRONG_OPTIONS = 3;         // wrong options per vocabulary question
 
 // ---- State ------------------------------------------------------------------
 let questions = loadQuestions();   // the saved bank
+let roundSeconds = loadRoundSeconds();   // how long the next round lasts
 let answerType = "choice";         // which answer style the editor form is set to
+let roundBank = [];                // vocabulary plus saved questions, for this round
 let queue = [];                    // shuffled questions still to ask this round
 let current = null;                // {question, shownOptions, solution} being asked
 let timeLeft = 0;                  // seconds remaining
@@ -268,6 +281,30 @@ function saveQuestions() {
   } catch {
     // The round still works from memory; only persistence is lost.
   }
+}
+
+// Read the chosen round length, falling back to the default when unset or invalid.
+function loadRoundSeconds() {
+  try {
+    const stored = Number(localStorage.getItem(ROUND_SECONDS_KEY));
+    return stored ? clampRoundSeconds(stored) : DEFAULT_ROUND_SECONDS;
+  } catch {
+    return DEFAULT_ROUND_SECONDS;
+  }
+}
+
+// Persist the chosen round length, ignoring blocked storage as above.
+function saveRoundSeconds() {
+  try {
+    localStorage.setItem(ROUND_SECONDS_KEY, String(roundSeconds));
+  } catch {
+    // The chosen time still applies to this session.
+  }
+}
+
+// Keep a typed time inside the range the form advertises.
+function clampRoundSeconds(seconds) {
+  return Math.min(MAX_ROUND_SECONDS, Math.max(MIN_ROUND_SECONDS, Math.round(seconds)));
 }
 
 // ---- Editor -----------------------------------------------------------------
@@ -342,13 +379,46 @@ function setBackTarget(inRound) {
   link.href = inRound ? "#" : "../../skillset.html";
 }
 
-// Start a timed round over the saved bank.
-function startRound() {
-  if (!questions.length) return showFormError("Add at least one question before starting.");
+// Turn the words picked on the vocabulary page into drill questions: one question
+// on the meaning of each word, plus one on its synonyms. Wrong options are borrowed
+// from the whole bank, so they read as real answers without ever being right too.
+function vocabularyQuestions() {
+  const built = [];
+  selectedVocabulary().forEach((entry) => {
+    const others = VOCABULARY.filter(other => other.word !== entry.word);
 
-  queue = shuffled(questions);
+    const wrongMeanings = shuffled(others).slice(0, VOCABULARY_WRONG_OPTIONS).map(o => o.meaning);
+    built.push({
+      text: "What does “" + entry.word + "” mean?",
+      type: "choice",
+      opts: [entry.meaning, ...wrongMeanings],
+    });
+
+    const synonym = shuffled(entry.synonyms)[0];
+    // A word listed as a synonym here would also be a correct answer, so drop it.
+    const wrongWords = shuffled(others.map(o => o.word).filter(w => !entry.synonyms.includes(w)))
+      .slice(0, VOCABULARY_WRONG_OPTIONS);
+    built.push({
+      text: "Which word means the same as “" + entry.word + "”?",
+      type: "choice",
+      opts: [synonym, ...wrongWords],
+    });
+  });
+  return built;
+}
+
+// Start a timed round over the vocabulary bank and the saved questions.
+function startRound() {
+  roundSeconds = clampRoundSeconds(Number(el("roundSeconds").value) || DEFAULT_ROUND_SECONDS);
+  el("roundSeconds").value = roundSeconds;
+  saveRoundSeconds();
+
+  roundBank = vocabularyQuestions().concat(questions);
+  if (!roundBank.length) return showFormError("Pick some vocabulary words or add a question first.");
+
+  queue = shuffled(roundBank);
   score = 0; streak = 0; bestStreak = 0; answered = 0; correctCount = 0;
-  missed = []; locked = false; timeLeft = ROUND_SECONDS;
+  missed = []; locked = false; timeLeft = roundSeconds;
 
   el("editorScreen").classList.add("hidden");
   el("endScreen").classList.add("hidden");
@@ -374,12 +444,12 @@ function updateHud() {
   el("scoreValue").textContent = score;
   el("streakValue").textContent = streak;
   el("timeValue").classList.toggle("low", timeLeft <= 10);
-  el("timebarFill").style.width = (timeLeft / ROUND_SECONDS * 100) + "%";
+  el("timebarFill").style.width = (timeLeft / roundSeconds * 100) + "%";
 }
 
 // Take the next question from the queue, refilling it when the bank runs out.
 function nextQuestion() {
-  if (!queue.length) queue = shuffled(questions);
+  if (!queue.length) queue = shuffled(roundBank);
   const question = queue.pop();
   const isChoice = question.type === "choice";
   // opts[0] is the correct answer as stored; remember it before shuffling.
@@ -531,6 +601,9 @@ function backToEditor() {
   showFormError("");
   showFormNote("");
 }
+
+// Open the form on the round length chosen last time.
+el("roundSeconds").value = roundSeconds;
 
 // Enter submits a typed answer.
 el("answer").addEventListener("keydown", (e) => {

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vocabulary Bank — Allan Pereira Abrahão</title>
+<style>
+:root {
+  --color-background-primary:   #111113;
+  --color-background-secondary: #1a1a1e;
+  --color-text-primary:         #e8e8ea;
+  --color-text-secondary:       #9898a0;
+  --color-text-tertiary:        #5e5e66;
+  --color-border-secondary:     #2e2e33;
+  --color-border-tertiary:      #232328;
+  --color-correct:              #9FE1CB;
+  --border-radius-md:           7px;
+  --font-mono:                  'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--color-background-primary); color: var(--color-text-primary); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+.wrap { max-width: 640px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
+
+/* nav */
+.nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem; }
+.nav a { font-size: 18px; color: var(--color-text-secondary); text-decoration: none; }
+.nav a:hover { color: var(--color-text-primary); }
+
+/* header */
+h1 { font-size: 34px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.4rem; }
+.tagline { font-size: 20px; color: var(--color-text-secondary); margin-bottom: 2rem; line-height: 1.5; }
+
+/* buttons */
+.btn { font-size: 17px; color: var(--color-text-primary); background: var(--color-background-secondary); border: 1px solid var(--color-border-secondary); border-radius: var(--border-radius-md); padding: 10px 18px; cursor: pointer; font-family: inherit; }
+.btn:hover { border-color: #3a3a44; background: #202027; }
+.btn-primary { background: #26215C; border-color: #3a3480; color: #CECBF6; }
+.btn-primary:hover { background: #302a72; }
+a.btn { display: inline-block; text-decoration: none; }
+
+/* controls above the list */
+.controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 1rem; }
+.search { flex: 1; min-width: 200px; font-size: 18px; font-family: inherit; padding: 10px 12px; border-radius: var(--border-radius-md); border: 1px solid var(--color-border-secondary); background: var(--color-background-secondary); color: var(--color-text-primary); outline: none; }
+.search:focus { border-color: #3a3480; }
+.search::placeholder { color: var(--color-text-tertiary); }
+.count { font-size: 15px; color: var(--color-text-tertiary); margin-bottom: 1rem; }
+
+/* word list */
+.list { display: flex; flex-direction: column; gap: 10px; }
+.row { display: flex; align-items: flex-start; gap: 14px; background: var(--color-background-secondary); border: 1px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 14px 16px; cursor: pointer; }
+.row:hover { border-color: #3a3a44; }
+.row.picked { border-color: #3a3480; }
+.row input { width: 20px; height: 20px; margin-top: 3px; accent-color: #6c62d6; cursor: pointer; flex-shrink: 0; }
+.row-body { flex: 1; min-width: 0; }
+.row-word { font-size: 19px; font-weight: 600; }
+.row-meaning { font-size: 16px; color: var(--color-text-secondary); margin-top: 0.3rem; line-height: 1.5; }
+.row-synonyms { font-family: var(--font-mono); font-size: 14px; color: var(--color-correct); margin-top: 0.4rem; word-wrap: break-word; }
+
+/* empty state */
+.empty { font-size: 18px; color: var(--color-text-secondary); line-height: 1.6; background: var(--color-background-secondary); border: 1px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 1.75rem; }
+
+/* footer actions */
+.actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 2rem; }
+
+/* narrow screens: stack the rows and let the controls fill the width */
+@media (max-width: 520px) {
+  .wrap { padding: 2rem 1.1rem 3rem; }
+  h1 { font-size: 28px; }
+  .tagline { font-size: 18px; }
+  .row { padding: 12px 13px; gap: 10px; }
+  .row-word { font-size: 17px; }
+  .row-meaning { font-size: 15px; }
+  .controls .btn { flex: 1; }
+  .actions .btn { flex: 1; text-align: center; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <nav class="nav">
+    <a href="english.html">← back</a>
+  </nav>
+
+  <h1>Vocabulary Bank</h1>
+  <p class="tagline">Tick the words the drill should ask you about.</p>
+
+  <div class="controls">
+    <input type="text" id="search" class="search" autocomplete="off"
+           placeholder="Search a word, meaning or synonym…" />
+    <button class="btn" onclick="pickAll(true)">Select all</button>
+    <button class="btn" onclick="pickAll(false)">Clear all</button>
+  </div>
+
+  <div class="count" id="count"></div>
+  <div class="list" id="list"></div>
+
+  <div class="actions">
+    <a class="btn btn-primary" href="english.html">Start the drill</a>
+  </div>
+
+</div>
+
+<script src="vocabulary.js"></script>
+<script>
+// Words currently in the drill. Starts from what was saved, or the whole bank on
+// a first visit, and is written back to storage on every change.
+let picked = new Set(selectedVocabulary().map(entry => entry.word));
+
+// Cached elements
+const el = (id) => document.getElementById(id);
+
+// Make bank text safe to drop into innerHTML.
+function escapeHtml(text) {
+  return text.replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+// Store the picks in bank order, so the saved list reads the same as the page.
+function savePicks() {
+  saveVocabularySelection(VOCABULARY.filter(entry => picked.has(entry.word)).map(entry => entry.word));
+}
+
+// The entries matching the search box, which searches word, meaning and synonyms.
+function shownEntries() {
+  const query = el("search").value.trim().toLowerCase();
+  if (!query) return VOCABULARY;
+  return VOCABULARY.filter(entry =>
+    (entry.word + " " + entry.meaning + " " + entry.synonyms.join(" ")).toLowerCase().includes(query));
+}
+
+// Add or remove one word, then redraw so the counter and row state follow.
+function togglePick(word) {
+  if (picked.has(word)) picked.delete(word);
+  else picked.add(word);
+  savePicks();
+  render();
+}
+
+// Put every word in the drill, or take them all out.
+function pickAll(inDrill) {
+  picked = inDrill ? new Set(VOCABULARY.map(entry => entry.word)) : new Set();
+  savePicks();
+  render();
+}
+
+// Draw the counter and the rows matching the search.
+function render() {
+  el("count").textContent = picked.size + " of " + VOCABULARY.length + " words in the drill";
+
+  const shown = shownEntries();
+  if (!shown.length) {
+    el("list").innerHTML = '<div class="empty">No word matches that search.</div>';
+    return;
+  }
+
+  el("list").innerHTML = shown.map(entry => {
+    const isPicked = picked.has(entry.word);
+    return '<label class="row' + (isPicked ? " picked" : "") + '">' +
+        '<input type="checkbox"' + (isPicked ? " checked" : "") +
+          ' onchange="togglePick(\'' + entry.word + '\')" />' +
+        '<div class="row-body">' +
+          '<div class="row-word">' + escapeHtml(entry.word) + "</div>" +
+          '<div class="row-meaning">' + escapeHtml(entry.meaning) + "</div>" +
+          '<div class="row-synonyms">' + escapeHtml(entry.synonyms.join(" · ")) + "</div>" +
+        "</div>" +
+      "</label>";
+  }).join("");
+}
+
+el("search").addEventListener("input", render);
+render();
+</script>
+</body>
+</html>
