@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>G1: Multiple Languages in One Source File</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>G1: Multiple Languages in One Source File</h1>
+  <p class="desc">A source file should speak <em>one</em> language. When a Java file also carries SQL, HTML and a snippet of JavaScript, the reader changes syntax and mental model line by line.<br>
+  Each embedded language also loses its tooling: the compiler sees only a string, so a typo inside a quoted <code>&lt;script&gt;</code> builds fine and a concatenated <code>SELECT</code> invites injection.<br>
+  The fix is to give every language its own file — markup in a template, SQL behind a repository — and leave the source file speaking only Java.</p>
+
+  <div class="example-label avoid">Avoid — Java, SQL, HTML and JavaScript in the same file</div>
+  <pre><code class="language-java">// Java
+public class UserPage extends HttpServlet {
+
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String sql = "SELECT name FROM users WHERE id = " + request.getParameter("id");
+        String name = jdbc.queryForObject(sql, String.class);
+
+        response.getWriter().println(
+            "&lt;div class='user'&gt;" + name + "&lt;/div&gt;" +
+            "&lt;script&gt;document.querySelector('.user').classList.add('loaded')&lt;/script&gt;");
+    }
+}</code></pre>
+
+  <div class="example-label prefer">Prefer — one language per file, each with its own tooling</div>
+  <pre><code class="language-java">// Java
+public class UserPage extends HttpServlet {
+
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        // The query lives in UserRepository, the markup and script in user.html.
+        String name = users.nameById(request.getParameter("id"));
+
+        response.getWriter().println(templates.render("user.html", Map.of("name", name)));
+    }
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
