@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>G5: Duplication</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>G5: Duplication</h1>
+  <p class="desc">This is the most important rule in the book — <em>DRY</em>: Don't Repeat Yourself. Every time the same idea appears twice, it is a missed abstraction, and a fix applied in one copy silently leaves the other one wrong.<br>
+  Duplication wears several disguises: identical lines copied around, the same <code>switch</code> on a type repeated in many methods, or modules with different code that solve the same problem. Each has its own cure — extract a method, replace the switch with polymorphism, hide the difference behind a common interface.<br>
+  Collapse the repetition and the idea gets a name, one home, and one place to change.</p>
+
+  <div class="example-label avoid">Avoid — the same rule is written out once per caller</div>
+  <pre><code class="language-java">// Java
+public BigDecimal invoiceTotal(Order order) {
+    BigDecimal net = order.subtotal().subtract(order.discount());
+    return net.add(net.multiply(new BigDecimal("0.21")));
+}
+
+public BigDecimal receiptTotal(Order order) {
+    // The very same rule again; a VAT change has to be found in both places.
+    BigDecimal net = order.subtotal().subtract(order.discount());
+    return net.add(net.multiply(new BigDecimal("0.21")));
+}</code></pre>
+
+  <div class="example-label prefer">Prefer — the rule is named once and reused</div>
+  <pre><code class="language-java">// Java
+private static final BigDecimal VAT_RATE = new BigDecimal("0.21"); // 21% standard rate
+
+// The single definition of what a customer owes for an order.
+private BigDecimal grossTotal(Order order) {
+    BigDecimal net = order.subtotal().subtract(order.discount());
+    return net.add(net.multiply(VAT_RATE));
+}
+
+public BigDecimal invoiceTotal(Order order) { return grossTotal(order); }
+
+public BigDecimal receiptTotal(Order order) { return grossTotal(order); }</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>G2: Obvious Behavior Is Unimplemented</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>G2: Obvious Behavior Is Unimplemented</h1>
+  <p class="desc">Following <em>The Principle of Least Surprise</em>, a function should do what its name leads any reader to expect. A <code>dayNameToNumber</code> that handles <code>"Monday"</code> but not <code>"monday"</code> or <code>"Mon"</code> implements only part of the behavior its name promises.<br>
+  When the obvious case is missing, readers stop trusting the name and start reading the body — and every caller has to guard against the gap.<br>
+  Implement what the name announces, so callers can rely on it without checking.</p>
+
+  <div class="example-label avoid">Avoid — the name promises more than the body delivers</div>
+  <pre><code class="language-java">// Java
+public int dayNameToNumber(String dayName) {
+    // Only the exact full name works; "mon", "Mon" and " Monday" all blow up.
+    switch (dayName) {
+        case "Monday": return 1;
+        case "Tuesday": return 2;
+        default: throw new IllegalArgumentException(dayName);
+    }
+}</code></pre>
+
+  <div class="example-label prefer">Prefer — every form a reader would expect is handled</div>
+  <pre><code class="language-java">// Java
+public int dayNameToNumber(String dayName) {
+    // Case and surrounding spaces are noise, and the three-letter abbreviation
+    // is as much a "day name" as the full word.
+    String name = dayName.trim().toLowerCase();
+
+    switch (name) {
+        case "monday":  case "mon": return 1;
+        case "tuesday": case "tue": return 2;
+        default: throw new IllegalArgumentException(dayName);
+    }
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

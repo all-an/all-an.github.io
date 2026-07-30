@@ -127,10 +127,10 @@ const DATA = [
 
   // General (G)
   {code:"G1", p:"Multiple Languages in One Source File", cat:"general", cl:"General", url:"012-multiple-languages-in-one-source-file/"},
-  {code:"G2", p:"Obvious Behavior Is Unimplemented", cat:"general", cl:"General"},
-  {code:"G3", p:"Incorrect Behavior at the Boundaries", cat:"general", cl:"General"},
-  {code:"G4", p:"Overridden Safeties", cat:"general", cl:"General"},
-  {code:"G5", p:"Duplication", cat:"general", cl:"General"},
+  {code:"G2", p:"Obvious Behavior Is Unimplemented", cat:"general", cl:"General", url:"013-obvious-behavior-is-unimplemented/"},
+  {code:"G3", p:"Incorrect Behavior at the Boundaries", cat:"general", cl:"General", url:"014-incorrect-behavior-at-the-boundaries/"},
+  {code:"G4", p:"Overridden Safeties", cat:"general", cl:"General", url:"015-overridden-safeties/"},
+  {code:"G5", p:"Duplication", cat:"general", cl:"General", url:"016-duplication/"},
   {code:"G6", p:"Code at Wrong Level of Abstraction", cat:"general", cl:"General"},
   {code:"G7", p:"Base Classes Depending on Their Derivatives", cat:"general", cl:"General"},
   {code:"G8", p:"Too Much Information", cat:"general", cl:"General"},
@@ -192,8 +192,38 @@ const DATA = [
 // Maps a category key to its chip color class.
 const catClass = {comments:"cat-comments", environment:"cat-environment", functions:"cat-functions", general:"cat-general", java:"cat-java", names:"cat-names", tests:"cat-tests"};
 
+// Where the search box, category and scroll position are parked while a detail page is open.
+const STATE_KEY = 'clean-code-index-state';
+
+// Remembers the current filters and scroll position before leaving for a detail page.
+function saveIndexState() {
+  sessionStorage.setItem(STATE_KEY, JSON.stringify({
+    search: document.getElementById('search').value,
+    category: document.getElementById('catFilter').value,
+    scrollY: window.scrollY,
+    pendingRestore: true,
+  }));
+}
+
+// Reads the saved state once and clears it, so a fresh visit starts at the top.
+function consumeIndexState() {
+  const raw = sessionStorage.getItem(STATE_KEY);
+  if (!raw) return null;
+
+  try {
+    const state = JSON.parse(raw);
+    if (!state.pendingRestore) return null;
+    sessionStorage.removeItem(STATE_KEY);
+    return state;
+  } catch {
+    sessionStorage.removeItem(STATE_KEY);
+    return null;
+  }
+}
+
 // Navigates to a principle's detail page.
 function openPrinciple(url) {
+  saveIndexState();
   location.href = url;
 }
 
@@ -210,15 +240,32 @@ function render() {
     <tr${d.url ? ` class="clickable" onclick="openPrinciple('${d.url}')"` : ''}>
       <td><span class="idx">${i + 1}</span></td>
       <td><span class="code">${d.code}</span></td>
-      <td><div class="principle">${d.url ? `<a href="${d.url}" onclick="event.stopPropagation()">${d.p}</a>` : d.p}</div></td>
+      <td><div class="principle">${d.url ? `<a href="${d.url}" onclick="event.stopPropagation(); saveIndexState();">${d.p}</a>` : d.p}</div></td>
       <td><span class="cat ${catClass[d.cat]}">${d.cl}</span></td>
     </tr>`).join('');
+}
+
+// The scroll position is restored by hand below, after the table is painted.
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+
+// Coming back from a detail page: put the filters back before the first render.
+const savedState = consumeIndexState();
+if (savedState) {
+  document.getElementById('search').value = savedState.search || '';
+  document.getElementById('catFilter').value = savedState.category || '';
 }
 
 // Re-render on every search keystroke or category change.
 document.getElementById('search').addEventListener('input', render);
 document.getElementById('catFilter').addEventListener('change', render);
 render();
+
+// The rows now exist, so the page is tall enough to scroll back to where it was.
+if (savedState) {
+  requestAnimationFrame(() => {
+    window.scrollTo({ top: savedState.scrollY || 0, behavior: 'auto' });
+  });
+}
 </script>
 </body>
 </html>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>G4: Overridden Safeties</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>G4: Overridden Safeties</h1>
+  <p class="desc">Turning off a compiler warning, disabling a failing test or swallowing an exception buys a green build and hands the risk to production. Chernobyl started with an operator overriding a safety.<br>
+  Every silenced check was a mechanism telling you something. Muting it does not make the problem go away — it makes the next reader believe there was never a problem at all.<br>
+  Fix what the safety is pointing at; only then does the noise legitimately disappear.</p>
+
+  <div class="example-label avoid">Avoid — the safeties are switched off so the build stays green</div>
+  <pre><code class="language-java">// Java
+@SuppressWarnings("unchecked") // silences the real problem: an unchecked cast
+@Ignore("fails on CI, look into it later")
+public void transfer(Account from, Account to, BigDecimal amount) {
+    try {
+        from.withdraw(amount);
+        to.deposit(amount);
+    } catch (InsufficientFundsException e) {
+        // swallowed: the caller is told the transfer succeeded
+    }
+}</code></pre>
+
+  <div class="example-label prefer">Prefer — the safeties stay on and the cause is fixed</div>
+  <pre><code class="language-java">// Java
+public void transfer(Account from, Account to, BigDecimal amount) {
+    // The caller decides what an overdrawn account means; this method only reports it.
+    from.withdraw(amount);
+    to.deposit(amount);
+}
+
+@Test
+public void rejectsATransferLargerThanTheBalance() {
+    assertThrows(InsufficientFundsException.class, () -&gt; transfer(emptyAccount, other, TEN));
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

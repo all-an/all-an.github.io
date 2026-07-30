@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>G3: Incorrect Behavior at the Boundaries</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>G3: Incorrect Behavior at the Boundaries</h1>
+  <p class="desc">Code almost always works for the middle of the range. The bugs live at the edges: the empty list, the single element, the value exactly on the limit, the overflow.<br>
+  Intuition is not a substitute for proof here — "it obviously works" is how off-by-one errors ship. Every boundary condition deserves a test that pins it down.<br>
+  Write the edge cases first, then the implementation has nowhere to hide.</p>
+
+  <div class="example-label avoid">Avoid — only the happy middle was considered</div>
+  <pre><code class="language-java">// Java
+public double averageOf(List&lt;Integer&gt; values) {
+    int sum = 0;
+    for (int value : values) {
+        sum += value;
+    }
+    // Empty list divides by zero; a long list of large ints silently overflows.
+    return sum / values.size();
+}
+
+@Test
+public void averagesThreeNumbers() {
+    assertEquals(2.0, averageOf(List.of(1, 2, 3)));
+}</code></pre>
+
+  <div class="example-label prefer">Prefer — the edges are handled and nailed down by tests</div>
+  <pre><code class="language-java">// Java
+public double averageOf(List&lt;Integer&gt; values) {
+    // An average of nothing is undefined — say so instead of dividing by zero.
+    if (values.isEmpty()) {
+        throw new IllegalArgumentException("averageOf requires at least one value");
+    }
+
+    long sum = 0; // long, so a list of large ints cannot overflow the total
+    for (int value : values) {
+        sum += value;
+    }
+    return (double) sum / values.size();
+}
+
+@Test
+public void averagesThreeNumbers() {
+    assertEquals(2.0, averageOf(List.of(1, 2, 3)));
+}
+
+@Test
+public void rejectsAnEmptyList() {
+    assertThrows(IllegalArgumentException.class, () -&gt; averageOf(List.of()));
+}
+
+@Test
+public void averagesASingleValue() {
+    assertEquals(7.0, averageOf(List.of(7)));
+}
+
+@Test
+public void doesNotOverflowOnLargeValues() {
+    assertEquals((double) Integer.MAX_VALUE, averageOf(List.of(Integer.MAX_VALUE, Integer.MAX_VALUE)));
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
