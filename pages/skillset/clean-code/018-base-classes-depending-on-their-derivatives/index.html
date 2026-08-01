@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>G7: Base Classes Depending on Their Derivatives</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>G7: Base Classes Depending on Their Derivatives</h1>
+  <p class="desc">The whole point of splitting a base class from its derivatives is that the base can be understood, tested and deployed without knowing the derivatives exist. The moment the base mentions a subclass by name, that independence is gone.<br>
+  The usual symptom is a chain of <code>instanceof</code> checks or a <code>switch</code> on a type name inside the parent: every new subclass forces an edit to the class it was supposed to extend, and the base has to be redeployed along with it. It is inheritance pointed backwards.<br>
+  Push the varying behaviour into an abstract method the derivatives override. The base then depends only on the abstraction it declared, and a new subclass is a new file rather than a change to an old one.</p>
+
+  <div class="example-label avoid">Avoid — the base class knows every subclass by name</div>
+  <pre><code class="language-java">// Java
+public abstract class Employee {
+    private static final BigDecimal MONTHS_PER_YEAR = BigDecimal.valueOf(12);
+
+    public BigDecimal monthlyPay() {
+        // Every new employee type means editing — and redeploying — this base class.
+        if (this instanceof SalariedEmployee salaried) {
+            return salaried.annualSalary().divide(MONTHS_PER_YEAR, RoundingMode.HALF_UP);
+        }
+        if (this instanceof HourlyEmployee hourly) {
+            return hourly.hourlyRate().multiply(BigDecimal.valueOf(hourly.hoursWorked()));
+        }
+        throw new IllegalStateException("Unknown employee type: " + getClass());
+    }
+}</code></pre>
+
+  <div class="example-label prefer">Prefer — the base declares the abstraction and knows nothing else</div>
+  <pre><code class="language-java">// Java
+public abstract class Employee {
+    // What every employee must answer; how it is answered is the derivative's business.
+    public abstract BigDecimal monthlyPay();
+}
+
+public class SalariedEmployee extends Employee {
+    private static final BigDecimal MONTHS_PER_YEAR = BigDecimal.valueOf(12);
+
+    @Override
+    public BigDecimal monthlyPay() {
+        return annualSalary.divide(MONTHS_PER_YEAR, RoundingMode.HALF_UP);
+    }
+}
+
+public class HourlyEmployee extends Employee {
+    @Override
+    public BigDecimal monthlyPay() {
+        return hourlyRate.multiply(BigDecimal.valueOf(hoursWorked));
+    }
+}
+
+// A commissioned employee is now a new file, with no edit to Employee at all.</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

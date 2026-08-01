@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>G6: Code at Wrong Level of Abstraction</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>G6: Code at Wrong Level of Abstraction</h1>
+  <p class="desc">Abstractions need a clean separation: high-level concepts belong in the base class or interface, and every low-level detail belongs in the derivatives. The two must never be mixed.<br>
+  The tell is a general-purpose type that leaks a specific one — a <code>Stack</code> interface exposing <code>percentFull()</code>, a payment abstraction with a <code>swipeMagneticStripe()</code> method, a constant that only one implementation could ever care about. A reader of the abstraction is forced to learn about a detail that has nothing to do with the idea being modelled.<br>
+  The fix is not to hide the detail; the detail is real. Move it down to the concrete type that actually owns it, so the abstraction states only what is true for <em>all</em> of its implementations.</p>
+
+  <div class="example-label avoid">Avoid — the interface leaks a detail only one implementation has</div>
+  <pre><code class="language-java">// Java
+public interface Stack&lt;T&gt; {
+    void push(T item);
+    T pop();
+    boolean isEmpty();
+
+    // Only a fixed-size stack has a capacity — an unbounded one has no answer for this.
+    double percentFull();
+}
+
+public class LinkedStack&lt;T&gt; implements Stack&lt;T&gt; {
+    // ... push, pop and isEmpty are honest implementations ...
+
+    @Override
+    public double percentFull() {
+        // Forced to implement a concept this stack does not have.
+        return 0.0;
+    }
+}</code></pre>
+
+  <div class="example-label prefer">Prefer — the abstraction holds only what every stack does</div>
+  <pre><code class="language-java">// Java
+public interface Stack&lt;T&gt; {
+    void push(T item);
+    T pop();
+    boolean isEmpty();
+}
+
+// Capacity is a property of a bounded stack, so it lives with the bounded stack.
+public class BoundedStack&lt;T&gt; implements Stack&lt;T&gt; {
+    private final int capacity;
+    private int size;
+
+    // ... push, pop and isEmpty ...
+
+    public double percentFull() {
+        return 100.0 * size / capacity; // percent, 0–100
+    }
+}
+
+public class LinkedStack&lt;T&gt; implements Stack&lt;T&gt; {
+    // ... push, pop and isEmpty, with no meaningless method to fake ...
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
