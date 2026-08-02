@@ -12,7 +12,7 @@
   <a class="back" href="../clean-code.html">← back</a>
   <h1>G3: Incorrect Behavior at the Boundaries</h1>
   <p class="desc">Code almost always works for the middle of the range. The bugs live at the edges: the empty list, the single element, the value exactly on the limit, the overflow.<br>
-  Intuition is not a substitute for proof here — "it obviously works" is how off-by-one errors ship. Every boundary condition deserves a test that pins it down.<br>
+  Intuition is not a substitute for proof here — "it obviously works" is how off-by-one errors ship. The only proof is a test, so every boundary condition gets one of its own: the empty case, the single-element case, the value one below the limit, the value exactly on it, the value one above.<br>
   Write the edge cases first, then the implementation has nowhere to hide.</p>
 
   <div class="example-label avoid">Avoid — only the happy middle was considered</div>

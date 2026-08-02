@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>G8: Too Much Information</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>G8: Too Much Information</h1>
+  <p class="desc">A well-defined module has a very small interface that lets you do a lot. A poorly defined one has a wide, sprawling interface that forces you to learn a great deal just to get one thing done.<br>
+  Good software hides information. Every public method, field and constant is a promise you have to keep and a coupling a caller can lean on — the more of them there are, the more of your class's insides leak into everybody else's code. The tell is a class where the helpers, the buffers and the intermediate state are all public, or an interface with a dozen methods where two would do.<br>
+  Keep the interface tight: expose the intent, hide the mechanics. Fewer public members means fewer things to understand, fewer things that can be misused, and far more freedom to change what is underneath.</p>
+
+  <div class="example-label avoid">Avoid — every step of the mechanism is public</div>
+  <pre><code class="language-java">// Java
+public class CsvReportExporter {
+    public StringBuilder buffer = new StringBuilder();     // internal scratch space
+    public List&lt;String&gt; pendingRows = new ArrayList&lt;&gt;();  // internal scratch space
+    public char delimiter = ',';
+
+    public String escapeField(String field) { /* ... */ }
+    public String joinRow(List&lt;String&gt; fields) { /* ... */ }
+    public void appendHeader(Report report) { /* ... */ }
+    public void appendRows(Report report) { /* ... */ }
+    public void flushBuffer() { /* ... */ }
+
+    // A caller has to know this exact order to get a valid file out.
+    public String result() { return buffer.toString(); }
+}</code></pre>
+
+  <div class="example-label prefer">Prefer — one method to call, everything else hidden</div>
+  <pre><code class="language-java">// Java
+public class CsvReportExporter {
+    private static final char DELIMITER = ',';
+
+    private final StringBuilder buffer = new StringBuilder();
+
+    // The whole interface: hand over a report, get CSV back.
+    public String export(Report report) {
+        appendHeader(report);
+        appendRows(report);
+        return buffer.toString();
+    }
+
+    private void appendHeader(Report report) { /* ... */ }
+
+    private void appendRows(Report report) { /* ... */ }
+
+    private String escapeField(String field) { /* ... */ }
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

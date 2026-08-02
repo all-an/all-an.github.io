@@ -69,7 +69,7 @@ th:nth-child(4) { width: 20%; }
   <div style="display:flex; flex-direction:column; gap:6px;">
     <div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
       <h1 style="margin-bottom:0;">Clean Code Principles</h1>
-      <span style="font-size:16px; color:var(--color-text-secondary); font-style:italic;">66 smells &amp; heuristics from <em>Clean Code</em> (Robert C. Martin).</span>
+      <span style="font-size:16px; color:var(--color-text-secondary); font-style:italic;">59 smells &amp; heuristics from <em>Clean Code</em> (Robert C. Martin).</span>
     </div>
     <span style="font-size:16px; color:var(--color-text-secondary); font-style:italic;">Click a principle to learn more.</span>
   </div>
@@ -113,39 +113,39 @@ const DATA = [
   {code:"C2", p:"Obsolete Comment", cat:"comments", cl:"Comments", url:"002-obsolete-comment/"},
   {code:"C3", p:"Redundant Comment", cat:"comments", cl:"Comments", url:"003-redundant-comment/"},
   {code:"C4", p:"Poorly Written Comment", cat:"comments", cl:"Comments", url:"004-poorly-written-comment/"},
-  {code:"C5", p:"Commented-Out Code", cat:"comments", cl:"Comments", url:"005-commented-out-code/"},
 
   // Environment (E)
-  {code:"E1", p:"Build Requires More Than One Step", cat:"environment", cl:"Environment", url:"006-build-requires-more-than-one-step/"},
-  {code:"E2", p:"Tests Require More Than One Step", cat:"environment", cl:"Environment", url:"007-tests-require-more-than-one-step/"},
+  // E2 "Tests Require More Than One Step" is folded in here: one command for the build, one for the suite.
+  {code:"E1", p:"Build and Tests Require More Than One Step", cat:"environment", cl:"Environment", url:"005-build-and-tests-require-more-than-one-step/"},
 
   // Functions (F)
-  {code:"F1", p:"Too Many Arguments", cat:"functions", cl:"Functions", url:"008-too-many-arguments/"},
-  {code:"F2", p:"Output Arguments", cat:"functions", cl:"Functions", url:"009-output-arguments/"},
-  {code:"F3", p:"Flag Arguments", cat:"functions", cl:"Functions", url:"010-flag-arguments/"},
-  {code:"F4", p:"Dead Function", cat:"functions", cl:"Functions", url:"011-dead-function/"},
+  {code:"F1", p:"Too Many Arguments", cat:"functions", cl:"Functions", url:"006-too-many-arguments/"},
+  {code:"F2", p:"Output Arguments", cat:"functions", cl:"Functions", url:"007-output-arguments/"},
+  // G15 "Selector Arguments" is folded in here: a flag is the boolean case of a selector.
+  {code:"F3", p:"Flag and Selector Arguments", cat:"functions", cl:"Functions", url:"008-flag-and-selector-arguments/"},
 
   // General (G)
-  {code:"G1", p:"Multiple Languages in One Source File", cat:"general", cl:"General", url:"012-multiple-languages-in-one-source-file/"},
-  {code:"G2", p:"Obvious Behavior Is Unimplemented", cat:"general", cl:"General", url:"013-obvious-behavior-is-unimplemented/"},
-  {code:"G3", p:"Incorrect Behavior at the Boundaries", cat:"general", cl:"General", url:"014-incorrect-behavior-at-the-boundaries/"},
-  {code:"G4", p:"Overridden Safeties", cat:"general", cl:"General", url:"015-overridden-safeties/"},
-  {code:"G5", p:"Duplication", cat:"general", cl:"General", url:"016-duplication/"},
-  {code:"G6", p:"Code at Wrong Level of Abstraction", cat:"general", cl:"General", url:"017-code-at-wrong-level-of-abstraction/"},
-  {code:"G7", p:"Base Classes Depending on Their Derivatives", cat:"general", cl:"General", url:"018-base-classes-depending-on-their-derivatives/"},
-  {code:"G8", p:"Too Much Information", cat:"general", cl:"General"},
-  {code:"G9", p:"Dead Code", cat:"general", cl:"General"},
-  {code:"G10", p:"Vertical Separation", cat:"general", cl:"General"},
+  {code:"G1", p:"Multiple Languages in One Source File", cat:"general", cl:"General", url:"009-multiple-languages-in-one-source-file/"},
+  {code:"G2", p:"Obvious Behavior Is Unimplemented", cat:"general", cl:"General", url:"010-obvious-behavior-is-unimplemented/"},
+  // T5 "Test Boundary Conditions" is folded in here: the boundaries are proved by testing them.
+  {code:"G3", p:"Incorrect Behavior at the Boundaries", cat:"general", cl:"General", url:"011-incorrect-behavior-at-the-boundaries/"},
+  {code:"G4", p:"Overridden Safeties", cat:"general", cl:"General", url:"012-overridden-safeties/"},
+  {code:"G5", p:"Duplication", cat:"general", cl:"General", url:"013-duplication/"},
+  {code:"G6", p:"Code at Wrong Level of Abstraction", cat:"general", cl:"General", url:"014-code-at-wrong-level-of-abstraction/"},
+  {code:"G7", p:"Base Classes Depending on Their Derivatives", cat:"general", cl:"General", url:"015-base-classes-depending-on-their-derivatives/"},
+  {code:"G8", p:"Too Much Information", cat:"general", cl:"General", url:"016-too-much-information/"},
+  // C5 "Commented-Out Code", F4 "Dead Function" and G12 "Clutter" are folded in here: none of it ever runs.
+  {code:"G9", p:"Dead Code", cat:"general", cl:"General", url:"017-dead-code/"},
+  {code:"G10", p:"Vertical Separation", cat:"general", cl:"General", url:"018-vertical-separation/"},
   {code:"G11", p:"Inconsistency", cat:"general", cl:"General"},
-  {code:"G12", p:"Clutter", cat:"general", cl:"General"},
   {code:"G13", p:"Artificial Coupling", cat:"general", cl:"General"},
   {code:"G14", p:"Feature Envy", cat:"general", cl:"General"},
-  {code:"G15", p:"Selector Arguments", cat:"general", cl:"General"},
   {code:"G16", p:"Obscured Intent", cat:"general", cl:"General"},
   {code:"G17", p:"Misplaced Responsibility", cat:"general", cl:"General"},
   {code:"G18", p:"Inappropriate Static", cat:"general", cl:"General"},
   {code:"G19", p:"Use Explanatory Variables", cat:"general", cl:"General"},
-  {code:"G20", p:"Function Names Should Say What They Do", cat:"general", cl:"General"},
+  // N7 "Names Should Describe Side Effects" is folded in here: a side effect is part of what a function does.
+  {code:"G20", p:"Function Names Should Say What They Do, Side Effects Included", cat:"general", cl:"General"},
   {code:"G21", p:"Understand the Algorithm", cat:"general", cl:"General"},
   {code:"G22", p:"Make Logical Dependencies Physical", cat:"general", cl:"General"},
   {code:"G23", p:"Prefer Polymorphism to If/Else or Switch/Case", cat:"general", cl:"General"},
@@ -175,14 +175,12 @@ const DATA = [
   {code:"N4", p:"Unambiguous Names", cat:"names", cl:"Names"},
   {code:"N5", p:"Use Long Names for Long Scopes", cat:"names", cl:"Names"},
   {code:"N6", p:"Avoid Encodings", cat:"names", cl:"Names"},
-  {code:"N7", p:"Names Should Describe Side Effects", cat:"names", cl:"Names"},
 
   // Tests (T)
   {code:"T1", p:"Insufficient Tests", cat:"tests", cl:"Tests"},
   {code:"T2", p:"Use a Coverage Tool", cat:"tests", cl:"Tests"},
   {code:"T3", p:"Don't Skip Trivial Tests", cat:"tests", cl:"Tests"},
   {code:"T4", p:"An Ignored Test Is a Question about an Ambiguity", cat:"tests", cl:"Tests"},
-  {code:"T5", p:"Test Boundary Conditions", cat:"tests", cl:"Tests"},
   {code:"T6", p:"Exhaustively Test Near Bugs", cat:"tests", cl:"Tests"},
   {code:"T7", p:"Patterns of Failure Are Revealing", cat:"tests", cl:"Tests"},
   {code:"T8", p:"Test Coverage Patterns Can Be Revealing", cat:"tests", cl:"Tests"},

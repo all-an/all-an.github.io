@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>G10: Vertical Separation</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>G10: Vertical Separation</h1>
+  <p class="desc">Distance on the page is distance in the reader's head. Variables and functions should be defined close to where they are used: a local variable declared just above its first use, a private function defined just below the one that calls it.<br>
+  The old habit of hoisting every declaration to the top of the method is a leftover from languages that demanded it. Today it only means the reader meets a list of names with no idea what they are for, then has to hold all of them in mind while scrolling to find out. The same goes for a helper parked hundreds of lines away from its only caller — following the code becomes a hunt through the file.<br>
+  Keep the definition and the use within one screen of each other, and reading the code becomes a straight line down the page rather than a search.</p>
+
+  <div class="example-label avoid">Avoid — declarations hoisted far from where they matter</div>
+  <pre><code class="language-java">// Java
+public Report buildReport(Query query) {
+    // A wall of names, none of which mean anything yet.
+    List&lt;Row&gt; rows;
+    BigDecimal total;
+    String title;
+    LocalDate generatedOn;
+
+    rows = database.fetch(query);
+
+    title = query.name() + " — " + rows.size() + " results";
+
+    total = rows.stream()
+        .map(Row::amount)
+        .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+    generatedOn = clock.today();
+
+    return new Report(title, rows, total, generatedOn);
+}
+
+// ... four hundred lines of unrelated code ...
+
+// The only caller is buildReport(), far above and out of sight.
+private String formatTitle(Query query, int rowCount) { /* ... */ }</code></pre>
+
+  <div class="example-label prefer">Prefer — each name introduced where it is first needed</div>
+  <pre><code class="language-java">// Java
+public Report buildReport(Query query) {
+    List&lt;Row&gt; rows = database.fetch(query);
+
+    String title = formatTitle(query, rows.size());
+
+    BigDecimal total = rows.stream()
+        .map(Row::amount)
+        .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+    LocalDate generatedOn = clock.today();
+
+    return new Report(title, rows, total, generatedOn);
+}
+
+// Defined directly below its caller, so reading continues straight down the page.
+private String formatTitle(Query query, int rowCount) {
+    return query.name() + " — " + rowCount + " results";
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
