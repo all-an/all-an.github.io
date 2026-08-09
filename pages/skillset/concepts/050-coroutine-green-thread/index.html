@@ -11,33 +11,78 @@
 <div class="wrap">
   <a class="back" href="../index.html">← back</a>
   <h1>Coroutine / green thread</h1>
-  <p class="desc">A coroutine or green thread is a lightweight execution unit that can suspend and resume without the cost of a full platform thread.<br>
-  In modern Java, Project Loom gives this style through <code>virtual threads</code>, which let blocking code scale much more like coroutine-based systems.<br>
-  The idea is still sequential code per task, but the runtime can manage a very large number of those tasks efficiently.</p>
+  <p class="desc">A <strong>coroutine</strong> is a function that can <em>pause in the middle</em> and later resume exactly where it left off, with its local variables intact. At a <strong>suspension point</strong> the runtime saves the task's frames and locals — its <em>continuation</em> — onto the heap, releases the thread it was using, and restores them on resume, often on a different thread. That is the whole trick: a paused task costs a heap object instead of a blocked OS thread.<br>
+  Suspension is <strong>cooperative</strong>, never preemptive: a task yields only at those points, so a tight CPU loop with no suspension point keeps its thread until it returns. JavaScript spells the points <code>yield</code> and <code>await</code> and Kotlin marks them with <code>suspend</code>; Java's virtual threads make <em>every blocking call</em> one, which is why Loom code can stay plain and sequential while still yielding.<br>
+  <strong>This page is the mechanism inside one task.</strong> Its counterpart, <a href="../042-fiber-green-thread/">Fiber / green thread</a>, is the same runtime seen from the scheduler's side: how many of these paused tasks fit onto how few OS threads.</p>
+
   <pre><code class="language-java">// Java
-Thread request1 = Thread.startVirtualThread(() -> {
-  // This task can block in a direct style without consuming a dedicated OS thread forever.
-  System.out.println("request 1 started");
-  try {
-    Thread.sleep(100);
-  } catch (InterruptedException ignored) {
+// Reads the carrier OS thread that is currently running this virtual thread.
+String carrier() {
+  String label = Thread.currentThread().toString(); // "VirtualThread[#25]/runnable@worker-2"
+  return label.substring(label.indexOf('@') + 1);
+}
+
+Thread task = Thread.startVirtualThread(() -> {
+  int total = 0;
+
+  for (int step = 1; step &lt;= 3; step++) {
+    // 'total' lives in this task's own stack, so it survives every suspension untouched.
+    total += step;
+    System.out.println("step " + step + " (total " + total + ") on " + carrier());
+
+    try {
+      // Suspension point: the frames are copied to the heap, the carrier thread is released
+      // to run other tasks, and this continuation is rescheduled 50 ms later.
+      Thread.sleep(50);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      return;
+    }
   }
-  System.out.println("request 1 finished");
+
+  System.out.println("finished with total " + total);
 });
 
-Thread request2 = Thread.startVirtualThread(() -> {
-  // A second lightweight task runs independently with the same direct coding style.
-  System.out.println("request 2 started");
-  try {
-    Thread.sleep(100);
-  } catch (InterruptedException ignored) {
-  }
-  System.out.println("request 2 finished");
-});
+task.join();
+// step 1 (total 1) on ForkJoinPool-1-worker-1
+// step 2 (total 3) on ForkJoinPool-1-worker-3   &lt;- same task, resumed on another carrier
+// step 3 (total 6) on ForkJoinPool-1-worker-3
+// finished with total 6</code></pre>
 
-// The main thread waits here so both virtual-thread tasks complete before exit.
-request1.join();
-request2.join();</code></pre>
+  <pre><code class="language-javascript">// JavaScript
+// A generator is a coroutine with the machinery exposed: yield suspends it, next() resumes
+// it, and everything between the two lives on in the generator object.
+function* countTo(name, steps) {
+  let total = 0; // an ordinary local, but it survives every suspension untouched
+
+  for (let step = 1; step &lt;= steps; step += 1) {
+    total += step;
+    console.log(`${name} step ${step} (total ${total})`);
+
+    // Suspension point: control returns to the caller right here, and resumes right here.
+    yield total;
+  }
+}
+
+const first = countTo("first", 3);
+const second = countTo("second", 3);
+
+// The caller is the scheduler: nothing preempts, each side runs until it yields by itself.
+let firstRunning = true;
+let secondRunning = true;
+while (firstRunning || secondRunning) {
+  if (firstRunning) firstRunning = !first.next().done;
+  if (secondRunning) secondRunning = !second.next().done;
+}
+// first step 1 (total 1)
+// second step 1 (total 1)
+// first step 2 (total 3)
+// second step 2 (total 3)
+// first step 3 (total 6)
+// second step 3 (total 6)
+
+// async / await is this same mechanism with the scheduler hidden: await is the yield, and
+// the event loop is the loop above, calling next() when the awaited promise settles.</code></pre>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <script>hljs.highlightAll();</script>

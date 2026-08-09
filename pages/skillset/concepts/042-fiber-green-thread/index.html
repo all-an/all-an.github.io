@@ -11,23 +11,77 @@
 <div class="wrap">
   <a class="back" href="../index.html">← back</a>
   <h1>Fiber / green thread</h1>
-  <p class="desc">A fiber or green thread is a lightweight unit of execution that is cheaper to create than a traditional operating-system thread.<br>
-  In modern Java, Project Loom provides this idea as <code>virtual threads</code>, so code can keep the direct thread-per-task style without paying the old platform-thread cost for every task.<br>
-  The main benefit is scale and simpler blocking code, not a different shared-memory model by itself.</p>
+  <p class="desc">A <strong>fiber</strong> (green thread) is a unit of execution scheduled by a <em>language runtime</em> instead of the operating system. The runtime multiplexes <strong>M fibers onto N carrier OS threads</strong> — that mapping is what <em>M:N scheduling</em> means, and <code>N</code> normally defaults to the CPU count. A fiber costs a few hundred bytes of heap, not the ~1 MB stack the kernel reserves for every <a href="../032-thread-unit-of-execution/">platform thread</a>, so one process can hold millions of them instead of thousands.<br>
+  In Java this is Project Loom's <code>virtual thread</code>; Go calls it a goroutine, Erlang a process, ZIO a fiber, Tokio a task. The payoff is that thread-per-task stops being expensive: you can write plain blocking code and still serve 100 000 concurrent connections, with no <a href="../041-thread-pool-executor/">pool sizing</a> and no callback rewriting.<br>
+  <strong>This page is about the mapping</strong> — how many tasks the runtime can hold at once. Its counterpart, <a href="../050-coroutine-green-thread/">Coroutine / green thread</a>, is about the mechanism <em>inside</em> a single task: how one of them pauses and resumes.</p>
+
   <pre><code class="language-java">// Java
-// Start two lightweight tasks; each gets its own virtual thread.
-Thread first = Thread.startVirtualThread(() -> {
-  System.out.println("first task");
-});
+import java.time.Duration;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
-Thread second = Thread.startVirtualThread(() -> {
-  System.out.println("second task");
-});
+// Each task records the carrier OS thread that ran it, which makes the M:N ratio visible.
+Set&lt;String&gt; carriers = ConcurrentHashMap.newKeySet();
+AtomicInteger finished = new AtomicInteger();
 
-// The main thread joins both so execution does not continue too early.
-first.join();
-second.join();
-System.out.println("all done");</code></pre>
+// One virtual thread per task: 10 000 tasks, each blocked on slow I/O for 200 ms.
+try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+  for (int task = 0; task &lt; 10_000; task++) {
+    executor.submit(() -> {
+      // A mounted virtual thread prints as "VirtualThread[#31]/runnable@&lt;carrier name&gt;".
+      String label = Thread.currentThread().toString();
+      carriers.add(label.substring(label.indexOf('@') + 1));
+
+      // Blocking here unmounts the fiber and hands its carrier to another waiting task.
+      Thread.sleep(Duration.ofMillis(200));
+
+      finished.incrementAndGet();
+      return null;
+    });
+  }
+} // close() blocks until every submitted task has completed
+
+System.out.println(finished.get() + " tasks ran on " + carriers.size() + " carrier threads");
+// 10000 tasks ran on 10 carrier threads   &lt;- M = 10 000, N = 10: that is the M:N ratio
+// Wall time stays near 200 ms, because the 10 000 waits overlap instead of queueing.
+
+// The same shape with platform threads asks the kernel for 10 000 stacks of about 1 MB each:
+// Executors.newFixedThreadPool(10_000) reserves gigabytes and usually ends in OutOfMemoryError.</code></pre>
+
+  <pre><code class="language-javascript">// JavaScript
+const TASK_COUNT = 10_000;
+
+// Sleeping without blocking: the timer resumes this task later, from the event-loop queue.
+const sleep = (milliseconds) => new Promise((resume) => setTimeout(resume, milliseconds));
+
+let finished = 0;
+
+// One unit of work, same as the Java task above: wait 200 ms, then count itself.
+async function slowTask() {
+  await sleep(200);
+  finished += 1;
+}
+
+async function main() {
+  const startedAt = Date.now();
+
+  // 10 000 tasks in flight at once, each a small heap object instead of an OS thread stack.
+  const tasks = [];
+  for (let task = 0; task &lt; TASK_COUNT; task += 1) {
+    tasks.push(slowTask());
+  }
+  await Promise.all(tasks);
+
+  console.log(`${finished} tasks ran on 1 event-loop thread in ${Date.now() - startedAt} ms`);
+}
+
+main();
+// 10000 tasks ran on 1 event-loop thread in 271 ms
+
+// JavaScript takes the same idea to its extreme: N = 1. Every wait still overlaps, but a
+// CPU-bound task has no second carrier to yield to, which is what Java's N > 1 buys you.</code></pre>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <script>hljs.highlightAll();</script>
