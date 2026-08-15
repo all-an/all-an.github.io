@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Text Adventure RPG in C — Courses</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top-links">
+    <a class="back" href="../c-programming.html">← C Programming Courses</a>
+    <a class="back" href="../bookmarks/">🔖 Bookmarks</a>
+  </div>
+
+  <h1>Text Adventure RPG in C</h1>
+  <div class="meta">
+    <span class="badge badge-cat">Concepts</span>
+    <span class="badge" id="statusBadge"></span>
+  </div>
+
+  <!-- lets the visitor override this course's status; the choice is saved to
+       localStorage so it persists and is picked up by the courses list -->
+  <div class="actions">
+    <button id="markDone">Mark done</button>
+    <button id="markPlanned">Mark planned</button>
+    <button id="markInProgress">Mark in progress</button>
+  </div>
+
+  <p class="desc">A step-by-step build of a text adventure RPG in C — every step introduces one more C feature, in the order you'll actually reach for it while writing the game.</p>
+
+  <!-- Step 1 — filled -->
+  <section class="step" id="step-1">
+    <div class="step-head">
+      <h2>Step 1 — Verify your toolchain (gcc &amp; gdb)</h2>
+      <button class="bookmark-btn" data-step="step-1" data-title="Verify your toolchain (gcc &amp; gdb)" title="Bookmark this step">☆</button>
+    </div>
+    <p>Before writing a single line of the game, confirm the compiler and debugger you'll use for the rest of this course are installed and on your PATH.</p>
+    <pre><code>gcc --version
+gdb --version</code></pre>
+    <p>You should see a version banner for each, for example <code>gcc (Ubuntu 13.2.0) 13.2.0</code> and <code>GNU gdb (Ubuntu 12.1) 12.1</code>. If either command isn't found, install the standard build tools for your platform first — <code>build-essential</code> on Debian/Ubuntu, Xcode Command Line Tools on macOS, or MinGW/WSL on Windows — then re-run both commands.</p>
+    <p>We'll use <code>gcc</code> to compile every step, and <code>gdb</code> very soon, when we start hunting real bugs in Step 3.</p>
+  </section>
+
+  <!-- Step 2 — filled -->
+  <section class="step" id="step-2">
+    <div class="step-head">
+      <h2>Step 2 — Hello, World in C</h2>
+      <button class="bookmark-btn" data-step="step-2" data-title="Hello, World in C" title="Bookmark this step">☆</button>
+    </div>
+    <p>Every C program starts the same way: an entry point named <code>main</code>. Create a file called <code>hello.c</code> with the following contents.</p>
+    <pre><code class="language-c">#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
+
+// Prints the game's opening greeting.
+void greet(void) {
+    printf("Hello, World!\n");
+}
+
+// Hand-rolled unit test for greet(). No framework, no separate file —
+// every step's tests live right next to the code they check, and run when
+// the program is launched with "test" as its first argument.
+void test_greet(void) {
+    printf("[test] greet()\n");
+    greet();
+    printf("[test] passed: the line above should read \"Hello, World!\"\n");
+}
+
+int main(int argc, char *argv[]) {
+    if (argc > 1 &amp;&amp; strcmp(argv[1], "test") == 0) {
+        test_greet();
+        return 0;
+    }
+    greet();
+    return 0;
+}</code></pre>
+    <p>Compile it with <code>gcc</code> and run the resulting binary:</p>
+    <pre><code>gcc hello.c -o hello
+./hello</code></pre>
+    <p>That prints the greeting. Run the test instead by passing <code>test</code> as an argument:</p>
+    <pre><code>./hello test</code></pre>
+    <p><code>#include &lt;stdio.h&gt;</code> pulls in the standard I/O library so <code>printf</code> is available, and <code>#include &lt;string.h&gt;</code> brings in <code>strcmp</code> for comparing the command-line argument. <code>main</code> is where execution begins; <code>argc</code> and <code>argv</code> carry the arguments the program was launched with, so checking <code>argv[1]</code> against <code>"test"</code> is how <code>./hello test</code> is told apart from a normal run. <code>return 0;</code> tells the operating system the program finished successfully.</p>
+    <p>From here on, every step keeps its game logic in small functions like <code>greet()</code>, each with a matching <code>test_&lt;name&gt;()</code> next to it — no external testing framework, just plain C checked by eye or by a later <code>assert()</code>, all reachable through that same <code>test</code> argument.</p>
+  </section>
+
+  <!-- Step 3 — moved up from its original slot at the end of the course, so
+       gdb is available early and can be reached for from any later step -->
+  <section class="step" id="step-3">
+    <div class="step-head">
+      <h2>Step 3 — Debugging with gdb</h2>
+      <button class="bookmark-btn" data-step="step-3" data-title="Debugging with gdb" title="Bookmark this step">☆</button>
+    </div>
+    <p class="step-teaser">Setting breakpoints, stepping through code and inspecting variables to hunt down a real bug.</p>
+  </section>
+
+  <!-- Steps 4-21 — titles only, filled in as the course is written -->
+  <section class="step" id="step-4">
+    <div class="step-head">
+      <h2>Step 4 — Variables, types &amp; printf formatting</h2>
+      <button class="bookmark-btn" data-step="step-4" data-title="Variables, types &amp; printf formatting" title="Bookmark this step">☆</button>
+    </div>
+    <p class="step-teaser">How C represents numbers, characters and text, and how printf turns them into readable output.</p>
+  </section>
+
+  <section class="step" id="step-5">
+    <div class="step-head">
+      <h2>Step 5 — Reading player input</h2>
+      <button class="bookmark-btn" data-step="step-5" data-title="Reading player input" title="Bookmark this step">☆</button>
+    </div>
+    <p class="step-teaser">Getting text and numbers from the keyboard with scanf and fgets, and why one of them is safer than the other.</p>
+  </section>
+
+  <section class="step" id="step-6">
+    <div class="step-head">
+      <h2>Step 6 — Conditionals: branching the story</h2>
+      <button class="bookmark-btn" data-step="step-6" data-title="Conditionals: branching the story" title="Bookmark this step">☆</button>
+    </div>
+    <p class="step-teaser">Using if, else and switch to send the player down different paths depending on what they choose.</p>
+  </section>
+
+  <section class="step" id="step-7">
+    <div class="step-head">
+      <h2>Step 7 — Loops: the main game loop</h2>
+      <button class="bookmark-btn" data-step="step-7" data-title="Loops: the main game loop" title="Bookmark this step">☆</button>
+    </div>
+    <p class="step-teaser">Wrapping the game in a loop that keeps reading commands until the player quits or the story ends.</p>
+  </section>
+
+  <section class="step" id="step-8">
+    <div class="step-head">
+      <h2>Step 8 — Functions: organizing game logic</h2>
+      <button class="bookmark-btn" data-step="step-8" data-title="Functions: organizing game logic" title="Bookmark this step">☆</button>
+    </div>
+    <p class="step-teaser">Splitting the growing game loop into small, named functions instead of one long main.</p>
+  </section>
+
+  <section class="step" id="step-9">
+    <div class="step-head">
+      <h2>Step 9 — Arrays: rooms and inventory slots</h2>
+      <button class="bookmark-btn" data-step="step-9" data-title="Arrays: rooms and inventory slots" title="Bookmark this step">☆</button>
+    </div>
+    <p class="step-teaser">Storing a fixed list of rooms and inventory items in arrays, and indexing into them safely.</p>
+  </section>
+
+  <section class="step" id="step-10">
+    <div class="step-head">
+      <h2>Step 10 — Strings: parsing player commands</h2>
+      <button class="bookmark-btn" data-step="step-10" data-title="Strings: parsing player commands" title="Bookmark this step">☆</button>
+    </div>
+    <p class="step-teaser">Working with C strings and string.h to turn raw input like "go north" into a verb and a noun.</p>
+  </section>
+
+  <section class="step" id="step-11">
+    <div class="step-head">
+      <h2>Step 11 — Structs: modeling the world</h2>
+      <button class="bookmark-btn" data-step="step-11" data-title="Structs: modeling the world" title="Bookmark this step">☆</button>
+    </div>
+    <p class="step-teaser">Grouping related data into structs to represent the player, rooms and items as single values.</p>
+  </section>
+
+  <section class="step" id="step-12">
+    <div class="step-head">
+      <h2>Step 12 — Pointers: passing game state by reference</h2>
+      <button class="bookmark-btn" data-step="step-12" data-title="Pointers: passing game state by reference" title="Bookmark this step">☆</button>
+    </div>
+    <p class="step-teaser">Why functions take a pointer to the player or room instead of a copy, and what that saves us.</p>
+  </section>
+
+  <section class="step" id="step-13">
+    <div class="step-head">
+      <h2>Step 13 — Dynamic memory: a world that grows</h2>
+      <button class="bookmark-btn" data-step="step-13" data-title="Dynamic memory: a world that grows" title="Bookmark this step">☆</button>
+    </div>
+    <p class="step-teaser">Using malloc and free to allocate rooms and items at runtime instead of hardcoding a fixed count.</p>
+  </section>
+
+  <section class="step" id="step-14">
+    <div class="step-head">
+      <h2>Step 14 — File I/O: saving and loading a game</h2>
+      <button class="bookmark-btn" data-step="step-14" data-title="File I/O: saving and loading a game" title="Bookmark this step">☆</button>
+    </div>
+    <p class="step-teaser">Writing the player's progress to a file and reading it back so a session can be resumed.</p>
+  </section>
+
+  <section class="step" id="step-15">
+    <div class="step-head">
+      <h2>Step 15 — Enums &amp; switch: game states and menus</h2>
+      <button class="bookmark-btn" data-step="step-15" data-title="Enums & switch: game states and menus" title="Bookmark this step">☆</button>
+    </div>
+    <p class="step-teaser">Replacing magic numbers with named enum states and driving the game's menus off a switch.</p>
+  </section>
+
+  <section class="step" id="step-16">
+    <div class="step-head">
+      <h2>Step 16 — Multi-file builds: headers &amp; a Makefile</h2>
+      <button class="bookmark-btn" data-step="step-16" data-title="Multi-file builds: headers & a Makefile" title="Bookmark this step">☆</button>
+    </div>
+    <p class="step-teaser">Splitting the single source file into headers and .c files, and building them with a Makefile.</p>
+  </section>
+
+  <section class="step" id="step-17">
+    <div class="step-head">
+      <h2>Step 17 — Linked lists: a dynamic inventory</h2>
+      <button class="bookmark-btn" data-step="step-17" data-title="Linked lists: a dynamic inventory" title="Bookmark this step">☆</button>
+    </div>
+    <p class="step-teaser">Replacing the fixed-size inventory array with a linked list that grows and shrinks as items are picked up.</p>
+  </section>
+
+  <section class="step" id="step-18">
+    <div class="step-head">
+      <h2>Step 18 — Function pointers: a command dispatch table</h2>
+      <button class="bookmark-btn" data-step="step-18" data-title="Function pointers: a command dispatch table" title="Bookmark this step">☆</button>
+    </div>
+    <p class="step-teaser">Mapping command strings to function pointers instead of a growing chain of if/else checks.</p>
+  </section>
+
+  <section class="step" id="step-19">
+    <div class="step-head">
+      <h2>Step 19 — Error handling &amp; defensive programming</h2>
+      <button class="bookmark-btn" data-step="step-19" data-title="Error handling & defensive programming" title="Bookmark this step">☆</button>
+    </div>
+    <p class="step-teaser">Checking return values, guarding against bad input, and failing gracefully instead of crashing.</p>
+  </section>
+
+  <section class="step" id="step-20">
+    <div class="step-head">
+      <h2>Step 20 — Randomness: rand() and combat</h2>
+      <button class="bookmark-btn" data-step="step-20" data-title="Randomness: rand() and combat" title="Bookmark this step">☆</button>
+    </div>
+    <p class="step-teaser">Seeding the random number generator and using it to drive combat rolls and random encounters.</p>
+  </section>
+
+  <section class="step" id="step-21">
+    <div class="step-head">
+      <h2>Step 21 — Ship it: the finished text adventure</h2>
+      <button class="bookmark-btn" data-step="step-21" data-title="Ship it: the finished text adventure" title="Bookmark this step">☆</button>
+    </div>
+    <p class="step-teaser">Pulling every earlier step together into the finished, playable game.</p>
+  </section>
+
+</div>
+<script src="c-highlight.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Java / Angular / AWS Courses</title>
+  <link rel="stylesheet" href="java-angular-aws.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <!-- header: title + subtitle, with a link back to the skillset page -->
+  <div class="header">
+    <div class="header-titles">
+      <h1>Java / Angular / AWS Courses</h1>
+      <span class="subtitle">Courses taken on Java, Angular and AWS.</span>
+    </div>
+    <a class="back" href="../../skillset.html">← skillset</a>
+  </div>
+
+  <!-- search box + category/status filters + result count -->
+  <div class="controls">
+    <input type="text" id="search" placeholder="Search courses, categories, status..." />
+    <select id="catFilter">
+      <option value="">All categories</option>
+      <option value="java">Java</option>
+      <option value="springboot">Spring Boot</option>
+      <option value="angular">Angular</option>
+      <option value="aws">AWS</option>
+      <option value="devops">DevOps & Testing</option>
+    </select>
+    <select id="statusFilter">
+      <option value="">All statuses</option>
+      <option value="completed">Completed</option>
+      <option value="inprogress">In progress</option>
+      <option value="planned">Planned</option>
+    </select>
+    <span class="count" id="count"></span>
+  </div>
+
+  <!-- the list of courses, filled in by java-angular-aws.js -->
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Course</th>
+          <th>Category</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+  <div class="no-results" id="noResults" style="display:none;">No courses match.</div>
+
+</div>
+
+<script src="java-angular-aws-data.js"></script>
+<script src="java-angular-aws.js"></script>
+</body>
+</html>
