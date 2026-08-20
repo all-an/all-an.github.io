@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>J2: Don't Inherit Constants</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>J2: Don't Inherit Constants</h1>
+  <p class="desc">Inheriting an interface just to use its constants leaks those constants into your public API — import them instead.</p>
+
+  <div class="example-label avoid">Avoid — Circle's public API now includes Constants' PI, whether it wants to or not</div>
+  <pre><code class="language-java">interface Constants { double PI = 3.14159; }
+class Circle implements Constants { /* ... */ }</code></pre>
+
+  <div class="example-label prefer">Prefer — imported explicitly, not inherited</div>
+  <pre><code class="language-java">import static physics.Constants.PI;
+
+class Circle { /* ... */ }</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>G34: Functions Should Descend Only One Level of Abstraction</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>G34: Functions Should Descend Only One Level of Abstraction</h1>
+  <p class="desc">Every line inside a function should sit one level of abstraction below the function's own name.</p>
+
+  <div class="example-label avoid">Avoid — high-level page building mixed with low-level I/O</div>
+  <pre><code class="language-java">void renderPage(Page page) {
+    StringBuilder html = new StringBuilder();
+    html.append("&lt;html&gt;");
+    for (Section s : page.sections) html.append(renderSection(s));
+    html.append("&lt;/html&gt;");
+    System.out.write(html.toString().getBytes());
+}</code></pre>
+
+  <div class="example-label prefer">Prefer — one level per function</div>
+  <pre><code class="language-java">void renderPage(Page page) {
+    String html = buildHtml(page);
+    writeToOutput(html);
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

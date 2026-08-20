@@ -5,7 +5,7 @@
   --color-text-secondary:       #9898a0;
   --color-text-tertiary:        #5e5e66;
   --color-border-tertiary:      #232328;
-  --color-accent:                #7EC8E3;
+  --color-accent:                #CECBF6;
   --border-radius-md:           7px;
   --font-mono:                  'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
 }
@@ -22,8 +22,8 @@ a.back:hover { color: var(--color-text-primary); }
 h1 { font-size: 36px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 0.75rem; }
 .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1.5rem; }
 .badge { display: inline-block; font-size: 14px; padding: 3px 10px; border-radius: 99px; white-space: nowrap; }
-.badge-cat { background:#3E0D3E; color:#E0A6E6; }               /* Concepts — purple, matches the courses list */
-.status-completed  { background:#173404; color:#C0DD97; }      /* matches the courses list palette */
+.badge-cat { background:#26215C; color:#CECBF6; }               /* OOP — matches the courses list */
+.status-completed  { background:#173404; color:#C0DD97; }
 .status-inprogress { background:#042C53; color:#B5D4F4; }
 .status-planned     { background:#2C2C2A; color:#D3D1C7; }
 
@@ -47,11 +47,18 @@ h1 { font-size: 36px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 
 .step pre { background: var(--color-background-secondary); border: 1px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 12px 14px; margin-bottom: 0.9rem; overflow-x: auto; }
 .step pre code { font-family: var(--font-mono); font-size: 16px; background: none; padding: 0; }
 
-/* line-number gutter added by line-numbers.js to multi-line code blocks:
-   the code element becomes a two-column flex row, numbers on the left */
-.has-line-numbers code { display: flex; }
-.line-numbers { flex: none; padding-right: 12px; margin-right: 12px; border-right: 1px solid var(--color-border-tertiary); text-align: right; color: var(--color-text-tertiary); user-select: none; white-space: pre; }
-.code-lines { flex: 1; min-width: 0; white-space: pre; }
+/* hand-rolled Java syntax highlighting (see java-highlight.js) — one colour per token kind */
+.tok-keyword    { color: #FF7B72; }              /* if/for/return/true/null/... */
+.tok-type       { color: #79C0FF; }              /* int/void/String/Player/... */
+.tok-func       { color: #D2A8FF; }              /* name immediately followed by ( */
+.tok-string     { color: #A5D6A7; }
+.tok-char       { color: #A5D6A7; }
+.tok-number     { color: #F2CC60; }
+.tok-comment    { color: #8B949E; font-style: italic; }
+.tok-annotation { color: #FFA657; }              /* @Override, ... */
+.tok-bracket    { color: #E3B341; }              /* ( ) { } [ ] */
+.tok-punct      { color: #C9D1D9; }              /* , ; */
+.tok-operator   { color: #56D4DD; }              /* = + - * / % < > ! & | ^ ~ ? : . */
 
 /* collapses one or more long explanatory paragraphs behind a titled toggle,
    so a wall of text doesn't dominate the step; closed by default. The
@@ -64,26 +71,12 @@ h1 { font-size: 36px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 
 .explain[open] summary { margin-bottom: 0.6rem; }
 .explain p:last-child { margin-bottom: 0; }
 
-/* a substep (e.g. 2.1) nests under its parent step: indented, no divider of
-   its own, title kept the same accent colour as a full step but a size
-   smaller so the hierarchy still reads at a glance */
-.step.substep { margin-left: 1.5rem; padding-left: 1rem; padding-top: 0; border-top: none; border-left: 2px solid var(--color-border-tertiary); }
-.step.substep h2 { font-size: 19px; }
-
 /* bookmark toggle: dim yellow hollow star when unmarked, full-bright yellow filled star when marked */
 .bookmark-btn { flex: none; font-size: 22px; line-height: 1; background: none; border: none; color: #7A7226; cursor: pointer; padding: 0 2px; }
 .bookmark-btn:hover { color: #B8AC33; }
 .bookmark-btn.bookmarked { color: #FFEE00; }
 
-/* hand-rolled C syntax highlighting (see c-highlight.js) — one colour per token kind */
-.tok-keyword  { color: #FF7B72; }              /* if/for/return/... */
-.tok-type     { color: #79C0FF; }              /* int/char/void/..._t */
-.tok-func     { color: #D2A8FF; }              /* name immediately followed by ( */
-.tok-string   { color: #A5D6A7; }
-.tok-char     { color: #A5D6A7; }
-.tok-number   { color: #F2CC60; }
-.tok-comment  { color: #8B949E; font-style: italic; }
-.tok-preproc  { color: #FFA657; }              /* #include / #define lines */
-.tok-bracket  { color: #E3B341; }              /* ( ) { } [ ] */
-.tok-punct    { color: #C9D1D9; }              /* , ; */
-.tok-operator { color: #56D4DD; }              /* = + - * / % < > ! & | ^ ~ ? : . */
+/* line-number gutter added by line-numbers.js to multi-line code blocks */
+.has-line-numbers code { display: flex; }
+.line-numbers { flex: none; padding-right: 12px; margin-right: 12px; border-right: 1px solid var(--color-border-tertiary); text-align: right; color: var(--color-text-tertiary); user-select: none; white-space: pre; }
+.code-lines { flex: 1; min-width: 0; white-space: pre; }

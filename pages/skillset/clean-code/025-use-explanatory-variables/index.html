@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>G19: Use Explanatory Variables</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>G19: Use Explanatory Variables</h1>
+  <p class="desc">Break a complex expression into named intermediate variables so each piece explains itself.</p>
+
+  <div class="example-label avoid">Avoid — the condition has to be parsed to be understood</div>
+  <pre><code class="language-java">if (a &gt; 0 &amp;&amp; b &lt; 100 &amp;&amp; (a + b) % 2 == 0) { /* ... */ }</code></pre>
+
+  <div class="example-label prefer">Prefer — each clause is named</div>
+  <pre><code class="language-java">boolean isPositive = a &gt; 0;
+boolean isBelowLimit = b &lt; 100;
+boolean isEvenSum = (a + b) % 2 == 0;
+if (isPositive &amp;&amp; isBelowLimit &amp;&amp; isEvenSum) { /* ... */ }</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

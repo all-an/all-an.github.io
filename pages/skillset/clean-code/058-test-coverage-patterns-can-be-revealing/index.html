@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>T8: Test Coverage Patterns Can Be Revealing</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>T8: Test Coverage Patterns Can Be Revealing</h1>
+  <p class="desc">Reading which lines a coverage report marks as covered can reveal dead code or an unreachable condition.</p>
+
+  <div class="example-label avoid">Avoid — a typo makes the second branch unreachable, unnoticed</div>
+  <pre><code class="language-java">if (status == OK || status == OK) { /* ... */ }</code></pre>
+
+  <div class="example-label prefer">Prefer — the coverage report flags the dead branch, exposing the typo</div>
+  <pre><code class="language-java">if (status == OK || status == RETRY) { /* ... */ }</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

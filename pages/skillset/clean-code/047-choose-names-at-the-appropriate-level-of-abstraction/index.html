@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>N2: Choose Names at the Appropriate Level of Abstraction</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>N2: Choose Names at the Appropriate Level of Abstraction</h1>
+  <p class="desc">A name should match the abstraction level of the code around it, not leak a lower-level implementation detail.</p>
+
+  <div class="example-label avoid">Avoid — "phoneNumber" leaks a physical-modem assumption</div>
+  <pre><code class="language-java">interface Modem {
+    void dial(String phoneNumber);
+}</code></pre>
+
+  <div class="example-label prefer">Prefer — works for a phone line, cable, or anything else</div>
+  <pre><code class="language-java">interface Modem {
+    void connect(String connectionLocator);
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

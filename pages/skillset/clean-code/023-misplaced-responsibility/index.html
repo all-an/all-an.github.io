@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>G17: Misplaced Responsibility</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>G17: Misplaced Responsibility</h1>
+  <p class="desc">Put code where a reader would naturally look for it, not wherever was convenient to write it.</p>
+
+  <div class="example-label avoid">Avoid — PI defined on a report class that happens to use it once</div>
+  <pre><code class="language-java">class ReportGenerator {
+    static double PI = 3.14159; // belongs on a Circle/Math abstraction, not here
+}</code></pre>
+
+  <div class="example-label prefer">Prefer — the constant lives on the concept it describes</div>
+  <pre><code class="language-java">class Circle {
+    static final double PI = 3.14159;
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

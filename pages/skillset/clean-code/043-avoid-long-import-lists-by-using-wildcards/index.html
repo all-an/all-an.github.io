@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>J1: Avoid Long Import Lists by Using Wildcards</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>J1: Avoid Long Import Lists by Using Wildcards</h1>
+  <p class="desc">A long block of single-class imports is noise — a wildcard import says the same thing in one line.</p>
+
+  <div class="example-label avoid">Avoid — five lines to say "we use java.util"</div>
+  <pre><code class="language-java">import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;</code></pre>
+
+  <div class="example-label prefer">Prefer — one line, same meaning</div>
+  <pre><code class="language-java">import java.util.*;</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

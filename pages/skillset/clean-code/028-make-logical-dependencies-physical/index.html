@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>G22: Make Logical Dependencies Physical</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>G22: Make Logical Dependencies Physical</h1>
+  <p class="desc">If one module's correctness depends on another's internals, express that dependency in code, not in a comment or assumption.</p>
+
+  <div class="example-label avoid">Avoid — relies on PageBuilder using the same page size, by assumption</div>
+  <pre><code class="language-java">class HourlyReport {
+    int getPageCount() {
+        return PAGE_SIZE; // assumes PageBuilder agrees, nothing enforces it
+    }
+}</code></pre>
+
+  <div class="example-label prefer">Prefer — the dependency is made physical</div>
+  <pre><code class="language-java">class HourlyReport {
+    int getPageCount() {
+        return PageBuilder.PAGE_SIZE;
+    }
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

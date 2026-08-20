@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>G35: Keep Configurable Data at High Levels</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>G35: Keep Configurable Data at High Levels</h1>
+  <p class="desc">A constant buried deep in the call stack is hard to find and hard to change — keep it near the top.</p>
+
+  <div class="example-label avoid">Avoid — 3 is buried inside a low-level loop</div>
+  <pre><code class="language-java">class RetryPolicy {
+    void run() {
+        for (int i = 0; i &lt; 3; i++) { /* ... */ }
+    }
+}</code></pre>
+
+  <div class="example-label prefer">Prefer — one named constant, easy to find and change</div>
+  <pre><code class="language-java">class RetryPolicy {
+    static final int MAX_RETRIES = 3;
+    void run() {
+        for (int i = 0; i &lt; MAX_RETRIES; i++) { /* ... */ }
+    }
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

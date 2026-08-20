@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>T9: Tests Should Be Fast</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>T9: Tests Should Be Fast</h1>
+  <p class="desc">A slow test suite gets run less often — keep tests fast so nothing discourages running them.</p>
+
+  <div class="example-label avoid">Avoid — a real network/database round trip on every run</div>
+  <pre><code class="language-java">@Test void savesUser() {
+    Thread.sleep(2000); // waits on a real database
+    repository.save(new User("Ada"));
+}</code></pre>
+
+  <div class="example-label prefer">Prefer — an in-memory fake keeps the same test near-instant</div>
+  <pre><code class="language-java">@Test void savesUser() {
+    InMemoryRepository repository = new InMemoryRepository();
+    repository.save(new User("Ada"));
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

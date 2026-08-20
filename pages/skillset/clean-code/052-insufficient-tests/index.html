@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>T1: Insufficient Tests</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>T1: Insufficient Tests</h1>
+  <p class="desc">If every condition and boundary the code can reach isn't tested, some of them are untested.</p>
+
+  <div class="example-label avoid">Avoid — only the happy path is covered</div>
+  <pre><code class="language-java">@Test void divides() { assertEquals(2, divide(4, 2)); }</code></pre>
+
+  <div class="example-label prefer">Prefer — every condition and boundary the code can reach gets a test</div>
+  <pre><code class="language-java">@Test void divides() { assertEquals(2, divide(4, 2)); }
+@Test void divideByZeroThrows() { assertThrows(ArithmeticException.class, () -&gt; divide(4, 0)); }
+@Test void negativeNumerator() { assertEquals(-2, divide(-4, 2)); }</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

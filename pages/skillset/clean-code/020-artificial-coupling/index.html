@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>G13: Artificial Coupling</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>G13: Artificial Coupling</h1>
+  <p class="desc">Don't couple two modules that don't actually depend on each other just because it's convenient right now.</p>
+
+  <div class="example-label avoid">Avoid — a general-purpose constant hidden inside an unrelated class</div>
+  <pre><code class="language-java">class DeliveryTruck {
+    static final int SECONDS_PER_DAY = 86_400; // used by scheduling code, not trucks
+}</code></pre>
+
+  <div class="example-label prefer">Prefer — the constant lives with the concept it belongs to</div>
+  <pre><code class="language-java">class TimeConstants {
+    static final int SECONDS_PER_DAY = 86_400;
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

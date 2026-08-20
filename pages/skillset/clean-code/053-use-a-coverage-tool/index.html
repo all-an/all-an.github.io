@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>T2: Use a Coverage Tool</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>T2: Use a Coverage Tool</h1>
+  <p class="desc">Coverage tools show exactly which lines and branches your tests never exercise — run one regularly.</p>
+
+  <div class="example-label avoid">Avoid — trusting a "looks well tested" feeling</div>
+  <pre><code class="language-java">mvn test</code></pre>
+
+  <div class="example-label prefer">Prefer — measure it, don't guess it</div>
+  <pre><code class="language-java">mvn test jacoco:report   # shows exactly which lines and branches were never run</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>G33: Encapsulate Boundary Conditions</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>G33: Encapsulate Boundary Conditions</h1>
+  <p class="desc">Boundary arithmetic like +1 and -1 scattered through the code invites off-by-one bugs — give it one name, one place.</p>
+
+  <div class="example-label avoid">Avoid — the same +1 computed twice, separately</div>
+  <pre><code class="language-java">if (level + 1 &lt; tank.capacity) { /* ... */ }
+level = level + 1;</code></pre>
+
+  <div class="example-label prefer">Prefer — computed once, used everywhere it's needed</div>
+  <pre><code class="language-java">int nextLevel = level + 1;
+if (nextLevel &lt; tank.capacity) { /* ... */ }
+level = nextLevel;</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

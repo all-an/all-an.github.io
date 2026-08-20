@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>T3: Don't Skip Trivial Tests</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>T3: Don't Skip Trivial Tests</h1>
+  <p class="desc">A trivial test is still cheap insurance and living documentation — write it anyway.</p>
+
+  <div class="example-label avoid">Avoid — "it's just a getter, not worth testing"</div>
+  <pre><code class="language-java">// skipped — felt too trivial to bother with</code></pre>
+
+  <div class="example-label prefer">Prefer — trivial tests are cheap, and they document intent</div>
+  <pre><code class="language-java">@Test void getName() { assertEquals("Ada", new User("Ada").getName()); }</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

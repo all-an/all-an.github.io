@@ -38,9 +38,20 @@
     </div>
     <p>Before writing a single line of the game, confirm the compiler and debugger you'll use for the rest of this course are installed and on your PATH.</p>
     <pre><code>gcc --version
-gdb --version</code></pre>
-    <p>You should see a version banner for each, for example <code>gcc (Ubuntu 13.2.0) 13.2.0</code> and <code>GNU gdb (Ubuntu 12.1) 12.1</code>. If either command isn't found, install the standard build tools for your platform first — <code>build-essential</code> on Debian/Ubuntu, Xcode Command Line Tools on macOS, or MinGW/WSL on Windows — then re-run both commands.</p>
-    <p>We'll use <code>gcc</code> to compile every step, and <code>gdb</code> very soon, when we start hunting real bugs in Step 3.</p>
+gdb --version
+lldb --version   # macOS: gdb usually isn't installed, lldb is</code></pre>
+    <p>You should see a version banner for each, for example <code>gcc (Ubuntu 13.2.0) 13.2.0</code> and <code>GNU gdb (Ubuntu 12.1) 12.1</code>. If <code>gcc</code> isn't found, install the standard build tools for your platform first — <code>build-essential</code> on Debian/Ubuntu, Xcode Command Line Tools on macOS, or MinGW/WSL on Windows — then re-run both commands. Neither of those bundles <code>gdb</code> itself, so if that one command is still missing, see the install steps below.</p>
+    <details class="explain">
+      <summary>Installing gdb on Linux, or using lldb on macOS</summary>
+      <p><strong>Linux</strong> — <code>gdb</code> is a normal package, separate from the compiler toolchain:</p>
+      <pre><code>sudo apt install gdb      # Debian / Ubuntu
+sudo dnf install gdb      # Fedora
+sudo pacman -S gdb        # Arch</code></pre>
+      <p><strong>macOS</strong> — check for <code>lldb</code> instead; Xcode Command Line Tools already ship it, so it's very likely already installed:</p>
+      <pre><code>lldb --version</code></pre>
+      <p>Use <code>lldb</code> in place of <code>gdb</code> for the rest of this course — it debugs the same binaries and its commands map closely onto gdb's (Step 4 covers both). Getting <code>gdb</code> itself running on macOS needs a Homebrew install plus a manual code-signing step to get past System Integrity Protection, so <code>lldb</code> is the path this course follows there.</p>
+    </details>
+    <p>We'll use <code>gcc</code> to compile every step, and <code>gdb</code> — or <code>lldb</code> on macOS — very soon, when we start hunting real bugs in Step 4.</p>
   </section>
 
   <!-- Step 2 — filled -->
@@ -49,154 +60,409 @@ gdb --version</code></pre>
       <h2>Step 2 — Hello, World in C</h2>
       <button class="bookmark-btn" data-step="step-2" data-title="Hello, World in C" title="Bookmark this step">☆</button>
     </div>
-    <p>Every C program starts the same way: an entry point named <code>main</code>. Create a file called <code>hello.c</code> with the following contents.</p>
+    <p>Every C program starts the same way: an entry point named <code>main</code>. Create a file called <code>main.c</code> with the following contents.</p>
     <pre><code class="language-c">#include &lt;stdio.h&gt;
 #include &lt;string.h&gt;
 
-// Prints the game's opening greeting.
-void greet(void) {
-    printf("Hello, World!\n");
+// Returns the game's opening greeting.
+const char *greet(void) {
+    return "Hello, World!";
 }
 
-// Hand-rolled unit test for greet(). No framework, no separate file —
-// every step's tests live right next to the code they check, and run when
-// the program is launched with "test" as its first argument.
+// Hand-rolled unit test for greet(). Compares the returned string against
+// what we expect, instead of just printing it and eyeballing the result.
 void test_greet(void) {
-    printf("[test] greet()\n");
-    greet();
-    printf("[test] passed: the line above should read \"Hello, World!\"\n");
+    const char *result = greet();
+    if (strcmp(result, "Hello, World!") == 0) {
+        printf("[pass] test_greet\n");
+    } else {
+        printf("[fail] test_greet: got \"%s\"\n", result);
+    }
+}
+
+// Runs every test in this file. Every later step adds its own test_*()
+// function here, so run_tests() grows alongside the game.
+void run_tests(void) {
+    test_greet();
 }
 
 int main(int argc, char *argv[]) {
     if (argc > 1 &amp;&amp; strcmp(argv[1], "test") == 0) {
-        test_greet();
+        run_tests();
         return 0;
     }
-    greet();
+    printf("%s\n", greet());
     return 0;
 }</code></pre>
     <p>Compile it with <code>gcc</code> and run the resulting binary:</p>
-    <pre><code>gcc hello.c -o hello
+    <pre><code>gcc main.c -o hello
 ./hello</code></pre>
-    <p>That prints the greeting. Run the test instead by passing <code>test</code> as an argument:</p>
+    <p>That prints the greeting. Run the tests instead by passing <code>test</code> as an argument:</p>
     <pre><code>./hello test</code></pre>
-    <p><code>#include &lt;stdio.h&gt;</code> pulls in the standard I/O library so <code>printf</code> is available, and <code>#include &lt;string.h&gt;</code> brings in <code>strcmp</code> for comparing the command-line argument. <code>main</code> is where execution begins; <code>argc</code> and <code>argv</code> carry the arguments the program was launched with, so checking <code>argv[1]</code> against <code>"test"</code> is how <code>./hello test</code> is told apart from a normal run. <code>return 0;</code> tells the operating system the program finished successfully.</p>
-    <p>From here on, every step keeps its game logic in small functions like <code>greet()</code>, each with a matching <code>test_&lt;name&gt;()</code> next to it — no external testing framework, just plain C checked by eye or by a later <code>assert()</code>, all reachable through that same <code>test</code> argument.</p>
+    <details class="explain">
+      <summary>Line-by-line walkthrough</summary>
+      <p><code>#include &lt;stdio.h&gt;</code> pulls in the standard I/O library so <code>printf</code> is available, and <code>#include &lt;string.h&gt;</code> brings in <code>strcmp</code> for comparing strings. <code>greet()</code> returns a <code>const char *</code> — a pointer to text it doesn't own — rather than printing directly, which is what makes it testable: <code>test_greet()</code> can call it and compare the result against the exact string we expect, instead of just printing something and eyeballing it. <code>main</code> is where execution begins; <code>argc</code> and <code>argv</code> carry the arguments the program was launched with, so checking <code>argv[1]</code> against <code>"test"</code> is how <code>./hello test</code> is told apart from a normal run. <code>return 0;</code> tells the operating system the program finished successfully.</p>
+    </details>
+    <details class="explain">
+      <summary>The testing pattern for the rest of this course</summary>
+      <p>From here on, every step keeps its game logic in small functions that return a value rather than print one, each with a matching <code>test_&lt;name&gt;()</code> that checks that value. Every test gets one line inside <code>run_tests()</code>, which lives outside <code>main</code> and is the single place all of this file's tests are collected — no external testing framework, all of it reachable through that same <code>test</code> argument.</p>
+    </details>
   </section>
 
-  <!-- Step 3 — moved up from its original slot at the end of the course, so
-       gdb is available early and can be reached for from any later step -->
+  <!-- Substep 2.1 — a closer look at the declaration `const char *greet(void)` -->
+  <section class="step substep" id="step-2-1">
+    <div class="step-head">
+      <h2>Step 2.1 — Anatomy of greet(): char, pointer &amp; void</h2>
+      <button class="bookmark-btn" data-step="step-2-1" data-title="Anatomy of greet(): char, pointer & void" title="Bookmark this step">☆</button>
+    </div>
+    <p><code>const char *greet(void)</code> packs three ideas into one line. Taken apart piece by piece:</p>
+    <details class="explain">
+      <summary>char — C's character type</summary>
+      <p>One <code>char</code> holds a single byte, typically one letter, digit or symbol. A piece of text like <code>"Hello, World!"</code> is stored in memory as a run of <code>char</code> values sitting next to each other, followed by a hidden zero byte (<code>'\0'</code>) that marks where the text ends. That whole run is what C calls a "string" — there's no separate string type.</p>
+    </details>
+    <details class="explain">
+      <summary>* — the pointer</summary>
+      <p>The <code>*</code> makes it a <strong>pointer</strong>: a variable that holds a memory address instead of holding a value directly. <code>char *</code> reads as "a pointer to a <code>char</code>" — in practice, the address of the first character of one of those runs described above. Reading the rest of the string just means walking forward through memory, one <code>char</code> at a time, until the zero byte is reached. That's why <code>greet()</code> can return the whole greeting as a single pointer instead of copying every character.</p>
+    </details>
+    <details class="explain">
+      <summary>const — the read-only promise</summary>
+      <p>The leading <code>const</code> is a promise about that pointer: whoever receives it agrees not to modify the characters it points to. It documents that <code>greet()</code> hands out a read-only view of its text, which matters here because the string literal <code>"Hello, World!"</code> lives in memory the program isn't allowed to write to anyway.</p>
+    </details>
+    <details class="explain">
+      <summary>void — two different meanings</summary>
+      <p><code>void</code> shows up twice in this file, meaning two different things depending on where it sits. Inside the parentheses — <code>greet(void)</code> — it means "takes no parameters." As a return type — <code>void test_greet(void)</code> — it means "returns nothing." <code>greet</code> uses the first sense but not the second, since it does return something: that <code>const char *</code>.</p>
+    </details>
+  </section>
+
+  <!-- Substep 2.2 — a closer look at test_greet() -->
+  <section class="step substep" id="step-2-2">
+    <div class="step-head">
+      <h2>Step 2.2 — Anatomy of test_greet()</h2>
+      <button class="bookmark-btn" data-step="step-2-2" data-title="Anatomy of test_greet()" title="Bookmark this step">☆</button>
+    </div>
+    <p><code>test_greet()</code> follows a shape every later test in this course repeats: call the function, compare what it returned against what's expected, and report pass or fail. Taken apart piece by piece:</p>
+    <details class="explain">
+      <summary>const char *result = greet(); — calling greet() and keeping its answer</summary>
+      <p>This calls <code>greet()</code> and stores what it returns — the pointer described in Step 2.1 — in a local variable named <code>result</code>. Nothing is printed yet; the point of a test is to check a value before anything is shown, rather than printing first and trusting your eyes to catch a mistake.</p>
+    </details>
+    <details class="explain">
+      <summary>strcmp(result, "Hello, World!") == 0 — comparing string content, not pointers</summary>
+      <p>You can't compare two C strings with <code>==</code> — that would compare the two pointers' addresses, not the characters they point to, and would almost always be false even for identical-looking text. <code>strcmp</code> walks both strings character by character instead, and returns <code>0</code> when every character matches (a nonzero result, positive or negative, means they differ). Comparing that return value against <code>0</code> is how C spells "these two strings are equal."</p>
+    </details>
+    <details class="explain">
+      <summary>if / else and %s — reporting pass or fail</summary>
+      <p>The <code>if</code> branch runs when the comparison matched, printing a fixed <code>"[pass] test_greet"</code> line — there's nothing more to say when the result was exactly right. The <code>else</code> branch runs when it didn't, and uses <code>%s</code> inside <code>printf</code> to splice the actual <code>result</code> string into the message, so a failure reads <code>[fail] test_greet: got "whatever greet() actually returned"</code> instead of just "it failed" — enough detail to debug without reaching for gdb or lldb.</p>
+    </details>
+  </section>
+
+  <!-- Substep 2.3 — a closer look at main() -->
+  <section class="step substep" id="step-2-3">
+    <div class="step-head">
+      <h2>Step 2.3 — Anatomy of the main function</h2>
+      <button class="bookmark-btn" data-step="step-2-3" data-title="Anatomy of the main function" title="Bookmark this step">☆</button>
+    </div>
+    <p><code>main</code> is the one function every C program must have — it's where the operating system hands control to your code — and this file's <code>main</code> does two different things depending on how it was launched. Taken apart piece by piece:</p>
+    <details class="explain">
+      <summary>int argc, char *argv[] — the arguments the program was started with</summary>
+      <p><code>argc</code> ("argument count") is how many command-line arguments were passed, always counting the program's own name as the first one. <code>argv</code> ("argument vector") is an array of C strings holding those arguments — <code>argv[0]</code> is the program name (<code>./hello</code>), and <code>argv[1]</code>, if it exists, is the first thing typed after it. Running <code>./hello test</code> means <code>argc</code> is <code>2</code> and <code>argv[1]</code> is the string <code>"test"</code>.</p>
+    </details>
+    <details class="explain">
+      <summary>argc &gt; 1 &amp;&amp; strcmp(argv[1], "test") == 0 — why the order of these two checks matters</summary>
+      <p>If no extra argument was given, <code>argv[1]</code> doesn't exist, and reading it would be a bug. C's <code>&amp;&amp;</code> is <strong>short-circuiting</strong>: if <code>argc &gt; 1</code> is false, the right-hand side is never evaluated at all, so <code>strcmp(argv[1], ...)</code> only runs once it's already known that <code>argv[1]</code> is safe to read. Swapping the order of the two checks would remove that guarantee.</p>
+    </details>
+    <details class="explain">
+      <summary>return 0; — telling the operating system it worked</summary>
+      <p>A C program's exit code is how it reports success or failure to whatever launched it — a shell, a script, a CI pipeline. <code>return 0;</code> from <code>main</code> is the universal convention for "no error," and it's what a shell checks when you run <code>echo $?</code> right after the program exits. Both branches of this <code>main</code> — the test path and the normal path — return <code>0</code>, since neither one has anything that can fail yet.</p>
+    </details>
+  </section>
+
+  <!-- Step 3 — merges the original "Variables, types & printf formatting"
+       step with an early first split into multiple .c files -->
   <section class="step" id="step-3">
     <div class="step-head">
-      <h2>Step 3 — Debugging with gdb</h2>
-      <button class="bookmark-btn" data-step="step-3" data-title="Debugging with gdb" title="Bookmark this step">☆</button>
+      <h2>Step 3 — Multi-file, Variables, types &amp; printf formatting</h2>
+      <button class="bookmark-btn" data-step="step-3" data-title="Multi-file, Variables, types & printf formatting" title="Bookmark this step">☆</button>
     </div>
-    <p class="step-teaser">Setting breakpoints, stepping through code and inspecting variables to hunt down a real bug.</p>
+    <p>So far the whole game has lived in one file. Before it grows any further, split it for the first time: move <code>greet()</code> and <code>test_greet()</code> out of <code>main.c</code> and into their own module, <code>greeting.h</code> and <code>greeting.c</code>. Along the way, <code>main.c</code> picks up a small intro banner that introduces a few C types and how <code>printf</code> formats each one.</p>
+    <p>Create <code>greeting.h</code> — a header, declaring what the module offers without defining any of it:</p>
+    <pre><code class="language-c">#ifndef GREETING_H
+#define GREETING_H
+
+// Returns the game's opening greeting.
+const char *greet(void);
+
+// Hand-rolled unit test for greet().
+void test_greet(void);
+
+#endif</code></pre>
+    <p>Create <code>greeting.c</code> — the definitions the header promised, moved here unchanged from Step 2:</p>
+    <pre><code class="language-c">#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
+#include "greeting.h"
+
+const char *greet(void) {
+    return "Hello, World!";
+}
+
+void test_greet(void) {
+    const char *result = greet();
+    if (strcmp(result, "Hello, World!") == 0) {
+        printf("[pass] test_greet\n");
+    } else {
+        printf("[fail] test_greet: got \"%s\"\n", result);
+    }
+}</code></pre>
+    <p>Update <code>main.c</code> to include the new header instead of defining <code>greet()</code> itself, and add <code>print_intro()</code> — the new banner, built from an <code>int</code>, a <code>float</code> and a <code>char</code>:</p>
+    <pre><code class="language-c">#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
+#include "greeting.h"
+
+// Prints the game's opening banner: the greeting plus a few values of
+// different C types, each shown with a matching printf format specifier.
+void print_intro(void) {
+    int version = 1;
+    float starting_gold = 10.5f;
+    char class_initial = 'W';
+
+    printf("%s\n", greet());
+    printf("Text Adventure RPG -- version %d\n", version);
+    printf("You start with %.1f gold as a %c-class hero.\n", starting_gold, class_initial);
+}
+
+// Runs every test in this file (and the modules it includes).
+void run_tests(void) {
+    test_greet();
+}
+
+int main(int argc, char *argv[]) {
+    if (argc > 1 &amp;&amp; strcmp(argv[1], "test") == 0) {
+        run_tests();
+        return 0;
+    }
+    print_intro();
+    return 0;
+}</code></pre>
+    <p>Every <code>.c</code> file that got compiled separately before now has to be listed on the same command line, so <code>gcc</code> can compile and link all of them into one binary:</p>
+    <pre><code>gcc main.c greeting.c -o hello
+./hello</code></pre>
+    <pre><code>./hello test</code></pre>
+    <details class="explain">
+      <summary>Why split into files, and what a .h file is for</summary>
+      <p>A <code>.c</code> file is where code is <strong>defined</strong> — the actual body of a function. A <code>.h</code> file is where code is <strong>declared</strong> — just the name, parameters and return type, a promise of what exists without saying how it works. <code>main.c</code> can now call <code>greet()</code> and <code>test_greet()</code> just by including <code>greeting.h</code>, without needing to see — or recompile — <code>greeting.c</code> itself. As the game grows, each new area (rooms, inventory, combat) gets its own <code>.h</code>/<code>.c</code> pair instead of one file growing without end.</p>
+    </details>
+    <details class="explain">
+      <summary>#ifndef / #define / #endif — the include guard</summary>
+      <p>If two different <code>.c</code> files both <code>#include "greeting.h"</code> — which <code>main.c</code> and <code>greeting.c</code> now both do — the compiler would see the declarations inside it twice and reject the file as a redefinition. The three lines wrapping the header are an <strong>include guard</strong>: the first time <code>greeting.h</code> is included, <code>GREETING_H</code> isn't defined yet, so its contents run and <code>#define GREETING_H</code> marks it as seen; any later <code>#include</code> of the same header finds <code>GREETING_H</code> already defined and skips straight to <code>#endif</code>, contents untouched. Every header this course writes from here on starts and ends the same way.</p>
+    </details>
+    <details class="explain">
+      <summary>int, float &amp; char — three more C types</summary>
+      <p><code>int</code> holds a whole number — no fractional part — and is the natural type for a version number or a room count. <code>float</code> holds a number with a fractional part, stored as an approximation rather than an exact value, which is normal for something like a gold amount that doesn't need bank-level precision. <code>char</code>, met already in Step 2.1 as half of a string, is just as often a single standalone character on its own, like <code>class_initial</code> here — C makes no distinction between "a character" and "a string of length one holding that character."</p>
+    </details>
+    <details class="explain">
+      <summary>%d, %.1f, %c — matching a format specifier to a type</summary>
+      <p>Each <code>%</code> placeholder in a <code>printf</code> format string consumes one of the arguments after it, in order, and has to match that argument's type or the output is garbage. <code>%d</code> prints an <code>int</code>. <code>%c</code> prints a single <code>char</code>. <code>%f</code> prints a <code>float</code> or <code>double</code>; the <code>.1</code> in <code>%.1f</code> is a precision — "round to one digit after the decimal point" — which is why <code>10.5f</code> prints as <code>10.5</code> rather than the longer decimal a <code>float</code> can actually hold internally. This is the same <code>%s</code> from Step 2 doing the same job for <code>greet()</code>'s <code>const char *</code>, just alongside two new specifiers for two new types.</p>
+    </details>
+    <p><code>print_intro()</code> doesn't get a <code>test_&lt;name&gt;()</code> of its own yet — it only prints, and there's nothing meaningful to <code>strcmp</code> or compare until later steps give it real game state to build the banner from. For now, run <code>./hello</code> without <code>test</code> and check the banner by eye; the testing pattern from Step 2 picks back up as soon as a function returns something worth asserting on.</p>
   </section>
 
-  <!-- Steps 4-21 — titles only, filled in as the course is written -->
+  <!-- Step 4 — filled; moved up from its original slot at the end of the
+       course, so gdb/lldb are available early and can be reached for from
+       any later step -->
   <section class="step" id="step-4">
     <div class="step-head">
-      <h2>Step 4 — Variables, types &amp; printf formatting</h2>
-      <button class="bookmark-btn" data-step="step-4" data-title="Variables, types &amp; printf formatting" title="Bookmark this step">☆</button>
+      <h2>Step 4 — Debugging with gdb/lldb</h2>
+      <button class="bookmark-btn" data-step="step-4" data-title="Debugging with gdb/lldb" title="Bookmark this step">☆</button>
     </div>
-    <p class="step-teaser">How C represents numbers, characters and text, and how printf turns them into readable output.</p>
+    <p>A debugger lets you pause a running program, look at its variables, and step through it one line at a time — instead of guessing from <code>printf</code> output. We'll use <code>test_greet()</code>, now living in <code>greeting.c</code> since Step 3's split, as the example: set a breakpoint on it, run <code>./hello test</code> under the debugger, and watch <code>result</code> get filled in by <code>greet()</code>.</p>
+    <p>Either debugger needs the binary built with debug symbols — the <code>-g</code> flag keeps the source line and variable information gdb/lldb read. With the project now split across files, every <code>.c</code> file goes on the same compile line, same as the plain build in Step 3:</p>
+    <pre><code>gcc -g main.c greeting.c -o hello</code></pre>
+    <p>Pick whichever debugger Step 1 found on your system.</p>
+    <details class="explain">
+      <summary>Debugging with gdb (Linux)</summary>
+      <pre><code>gdb ./hello
+(gdb) break test_greet
+(gdb) run test
+(gdb) next
+(gdb) next
+(gdb) print result
+(gdb) continue
+(gdb) quit</code></pre>
+      <p><code>break test_greet</code> sets a breakpoint at the start of that function. <code>run test</code> launches <code>./hello</code> with <code>test</code> as its argument — the same <code>argv[1]</code> check from Step 2 — and execution stops the moment it enters <code>test_greet</code>. Each <code>next</code> runs one source line without stepping into the functions it calls, so two of them land right after <code>const char *result = greet();</code> has executed. At that point <code>print result</code> shows the pointer <code>greet()</code> returned along with the string it points to — something like <code>$1 = 0x... "Hello, World!"</code> — confirming the value <code>test_greet</code>'s <code>strcmp</code> check is about to compare. <code>continue</code> lets the program run to completion, and <code>quit</code> exits gdb.</p>
+    </details>
+    <details class="explain">
+      <summary>Debugging with lldb (macOS)</summary>
+      <pre><code>lldb ./hello
+(lldb) breakpoint set --name test_greet
+(lldb) run test
+(lldb) next
+(lldb) next
+(lldb) print result
+(lldb) continue
+(lldb) quit</code></pre>
+      <p>The commands mirror gdb's almost exactly. <code>breakpoint set --name test_greet</code> stops execution at that function (<code>b test_greet</code> also works, as a shorthand). <code>run test</code> launches <code>./hello test</code>, and lldb halts as soon as it reaches <code>test_greet</code>. Two <code>next</code> commands step over <code>const char *result = greet();</code> the same way, and <code>print result</code> reports both the pointer and the string it points to — <code>(const char *) 0x... "Hello, World!"</code>. <code>continue</code> resumes the program to the end, and <code>quit</code> exits lldb.</p>
+    </details>
+    <p>In both sessions the payoff is the same: instead of trusting that <code>greet()</code> returned the right thing, you watched <code>result</code> hold the exact pointer and string it produced, right before <code>test_greet</code>'s own <code>strcmp</code> check made that same comparison. That's the whole point of a debugger — for a one-line function like <code>greet()</code> the test alone is enough, but as the game grows this is how you'll pin down which line actually broke.</p>
+    <details class="explain">
+      <summary>More debugging commands: step, finish, backtrace &amp; more</summary>
+      <p>The walkthroughs above cover enough to inspect one function. A few more commands come up constantly once the game has more than one function calling another:</p>
+      <pre><code># gdb
+(gdb) step               # or s — step INTO the next line, entering any function call on it
+(gdb) finish              # run until the current function returns, showing what it returned
+(gdb) backtrace           # or bt — show the full chain of calls that got you here
+(gdb) list                # or l — show source lines around where you're stopped
+(gdb) info breakpoints    # list every breakpoint and how many times each has been hit
+(gdb) delete 1            # remove breakpoint number 1
+
+# lldb
+(lldb) step               # or s — step INTO the next line, entering any function call on it
+(lldb) finish              # run until the current function returns, showing what it returned
+(lldb) bt                  # or thread backtrace — show the full chain of calls that got you here
+(lldb) list                # or l — show source lines around where you're stopped
+(lldb) breakpoint list     # list every breakpoint and how many times each has been hit
+(lldb) breakpoint delete 1 # remove breakpoint number 1</code></pre>
+      <p><code>step</code> is <code>next</code>'s opposite: instead of running over a function call, it follows execution into it — which is how the earlier walkthrough's two <code>next</code>s could have been a <code>step</code> into <code>greet()</code> instead, landing on its <code>return</code> line. Be careful pointing <code>step</code> at a call the debugger has no source for, like <code>strcmp()</code>: it'll still step in, just into raw disassembly with no code to read, and you'll want <code>finish</code> to get back out.</p>
+      <p><code>finish</code> runs the rest of the current function and stops the instant it returns — useful once you've stepped somewhere you didn't mean to, or once you've seen enough of a function's internals and just want its answer. For a function like <code>greet()</code> it prints that answer directly: something like <code>Return value: (const char *) $0 = 0x... "Hello, World!"</code>, the same pointer-and-string pairing <code>print result</code> showed earlier, just captured the moment it's handed back to the caller.</p>
+      <p><code>backtrace</code> lists every function call that's currently on the stack, innermost first — with a breakpoint on <code>test_greet</code>, that's already three deep: <code>test_greet</code>, called by <code>run_tests</code>, called by <code>main</code>. It's the fastest way to answer "how did execution even get here" once functions start calling functions several layers deep.</p>
+      <p><code>list</code> reprints the source around the current line without needing to step anywhere — handy after a <code>backtrace</code> jumps your attention to a frame you weren't just looking at.</p>
+      <p>Once more than one breakpoint is set, <code>info breakpoints</code> (gdb) / <code>breakpoint list</code> (lldb) shows all of them together with a hit count, and <code>delete &lt;N&gt;</code> (gdb) / <code>breakpoint delete &lt;N&gt;</code> (lldb) removes the one you no longer need — both take the number shown when the breakpoint was first set, like the <code>Breakpoint 1</code> from <code>break test_greet</code> earlier in this step.</p>
+    </details>
+    <details class="explain">
+      <summary>Debugging across multiple files</summary>
+      <p>Now that <code>greet()</code> and <code>test_greet()</code> live in <code>greeting.c</code> instead of <code>main.c</code>, breakpoints work exactly the same way — a function name alone is still enough as long as it's unique across every file compiled with <code>-g</code>, which is why <code>break test_greet</code> above didn't need to change at all. When a name isn't enough — a specific line rather than a whole function, or a static helper that exists in two files — name the file too. Here's a breakpoint on <code>greeting.c</code> line 6, the <code>return "Hello, World!";</code> inside <code>greet()</code> itself, rather than on <code>test_greet</code> which calls it:</p>
+      <pre><code># gdb
+(gdb) break greeting.c:6
+(gdb) run test
+
+# lldb
+(lldb) breakpoint set --file greeting.c --line 6
+(lldb) b greeting.c:6   # shorthand, works the same as gdb's
+(lldb) run test</code></pre>
+      <p>Execution now stops one function earlier than before — inside <code>greet()</code>, not <code>test_greet()</code> — which is the whole point of naming a line: <code>result</code> isn't in scope yet at this breakpoint, since it belongs to <code>test_greet</code>'s stack frame, not <code>greet</code>'s. Stepping behaves the same across file boundaries as it does within one: <code>step</code> (or <code>s</code>) follows execution into a function's definition no matter which file it lives in, while <code>next</code> runs over the call without entering it, regardless of file — so stepping out of <code>greet()</code> here with a couple of <code>step</code>s lands you right back in <code>test_greet</code>, in <code>greeting.c</code> the whole time. To see every source file the debugger currently knows about — useful for confirming a file actually got compiled with debug info — gdb has <code>info sources</code> and lldb has <code>target modules dump sources</code>.</p>
+    </details>
   </section>
 
   <section class="step" id="step-5">
     <div class="step-head">
-      <h2>Step 5 — Reading player input</h2>
-      <button class="bookmark-btn" data-step="step-5" data-title="Reading player input" title="Bookmark this step">☆</button>
+      <h2>Step 5 — Makefile</h2>
+      <button class="bookmark-btn" data-step="step-5" data-title="Makefile" title="Bookmark this step">☆</button>
     </div>
-    <p class="step-teaser">Getting text and numbers from the keyboard with scanf and fgets, and why one of them is safer than the other.</p>
+    <p>Typing the full <code>gcc</code> command by hand gets old fast. Create a file named exactly <code>Makefile</code> next to <code>main.c</code>:</p>
+    <pre><code>CC = gcc
+SRCS = main.c greeting.c
+BIN = hello
+
+all: $(BIN)
+
+$(BIN): $(SRCS)
+	$(CC) $(SRCS) -o $(BIN)
+
+debug: $(SRCS)
+	$(CC) -g $(SRCS) -o $(BIN)
+
+test: $(BIN)
+	./$(BIN) test
+
+clean:
+	rm -rf $(BIN) $(BIN).dSYM
+
+.PHONY: all debug test clean</code></pre>
+    <p>Now the whole project builds, tests and rebuilds for debugging with short, memorable commands:</p>
+    <pre><code>make          # build ./hello
+make test     # build, then run ./hello test
+make debug    # build with -g, for gdb/lldb (Step 4)
+make clean    # remove ./hello and its debug symbols</code></pre>
+    <details class="explain">
+      <summary>Reading a Makefile: targets, prerequisites, recipes</summary>
+      <p>Each block is <code>target: prerequisites</code> followed by an indented (tab, not spaces) <strong>recipe</strong> — the shell command that builds it. <code>make</code> only re-runs a recipe when its prerequisites are newer than the target, so an unchanged project rebuilds nothing. <code>CC</code>, <code>SRCS</code> and <code>BIN</code> are just variables, expanded with <code>$(...)</code>, so the file list and binary name are only written once. <code>.PHONY</code> marks targets that aren't real files — without it, a stray file named <code>test</code> or <code>clean</code> would stop those targets from running.</p>
+    </details>
   </section>
 
   <section class="step" id="step-6">
     <div class="step-head">
-      <h2>Step 6 — Conditionals: branching the story</h2>
-      <button class="bookmark-btn" data-step="step-6" data-title="Conditionals: branching the story" title="Bookmark this step">☆</button>
+      <h2>Step 6 — Reading player input</h2>
+      <button class="bookmark-btn" data-step="step-6" data-title="Reading player input" title="Bookmark this step">☆</button>
     </div>
-    <p class="step-teaser">Using if, else and switch to send the player down different paths depending on what they choose.</p>
+    <p class="step-teaser">Getting text and numbers from the keyboard with scanf and fgets, and why one of them is safer than the other.</p>
   </section>
 
   <section class="step" id="step-7">
     <div class="step-head">
-      <h2>Step 7 — Loops: the main game loop</h2>
-      <button class="bookmark-btn" data-step="step-7" data-title="Loops: the main game loop" title="Bookmark this step">☆</button>
+      <h2>Step 7 — Conditionals: branching the story</h2>
+      <button class="bookmark-btn" data-step="step-7" data-title="Conditionals: branching the story" title="Bookmark this step">☆</button>
     </div>
-    <p class="step-teaser">Wrapping the game in a loop that keeps reading commands until the player quits or the story ends.</p>
+    <p class="step-teaser">Using if, else and switch to send the player down different paths depending on what they choose.</p>
   </section>
 
   <section class="step" id="step-8">
     <div class="step-head">
-      <h2>Step 8 — Functions: organizing game logic</h2>
-      <button class="bookmark-btn" data-step="step-8" data-title="Functions: organizing game logic" title="Bookmark this step">☆</button>
+      <h2>Step 8 — Loops: the main game loop</h2>
+      <button class="bookmark-btn" data-step="step-8" data-title="Loops: the main game loop" title="Bookmark this step">☆</button>
     </div>
-    <p class="step-teaser">Splitting the growing game loop into small, named functions instead of one long main.</p>
+    <p class="step-teaser">Wrapping the game in a loop that keeps reading commands until the player quits or the story ends.</p>
   </section>
 
   <section class="step" id="step-9">
     <div class="step-head">
-      <h2>Step 9 — Arrays: rooms and inventory slots</h2>
-      <button class="bookmark-btn" data-step="step-9" data-title="Arrays: rooms and inventory slots" title="Bookmark this step">☆</button>
+      <h2>Step 9 — Functions: organizing game logic</h2>
+      <button class="bookmark-btn" data-step="step-9" data-title="Functions: organizing game logic" title="Bookmark this step">☆</button>
     </div>
-    <p class="step-teaser">Storing a fixed list of rooms and inventory items in arrays, and indexing into them safely.</p>
+    <p class="step-teaser">Splitting the growing game loop into small, named functions instead of one long main.</p>
   </section>
 
   <section class="step" id="step-10">
     <div class="step-head">
-      <h2>Step 10 — Strings: parsing player commands</h2>
-      <button class="bookmark-btn" data-step="step-10" data-title="Strings: parsing player commands" title="Bookmark this step">☆</button>
+      <h2>Step 10 — Arrays: rooms and inventory slots</h2>
+      <button class="bookmark-btn" data-step="step-10" data-title="Arrays: rooms and inventory slots" title="Bookmark this step">☆</button>
     </div>
-    <p class="step-teaser">Working with C strings and string.h to turn raw input like "go north" into a verb and a noun.</p>
+    <p class="step-teaser">Storing a fixed list of rooms and inventory items in arrays, and indexing into them safely.</p>
   </section>
 
   <section class="step" id="step-11">
     <div class="step-head">
-      <h2>Step 11 — Structs: modeling the world</h2>
-      <button class="bookmark-btn" data-step="step-11" data-title="Structs: modeling the world" title="Bookmark this step">☆</button>
+      <h2>Step 11 — Strings: parsing player commands</h2>
+      <button class="bookmark-btn" data-step="step-11" data-title="Strings: parsing player commands" title="Bookmark this step">☆</button>
     </div>
-    <p class="step-teaser">Grouping related data into structs to represent the player, rooms and items as single values.</p>
+    <p class="step-teaser">Working with C strings and string.h to turn raw input like "go north" into a verb and a noun.</p>
   </section>
 
   <section class="step" id="step-12">
     <div class="step-head">
-      <h2>Step 12 — Pointers: passing game state by reference</h2>
-      <button class="bookmark-btn" data-step="step-12" data-title="Pointers: passing game state by reference" title="Bookmark this step">☆</button>
+      <h2>Step 12 — Structs: modeling the world</h2>
+      <button class="bookmark-btn" data-step="step-12" data-title="Structs: modeling the world" title="Bookmark this step">☆</button>
     </div>
-    <p class="step-teaser">Why functions take a pointer to the player or room instead of a copy, and what that saves us.</p>
+    <p class="step-teaser">Grouping related data into structs to represent the player, rooms and items as single values.</p>
   </section>
 
   <section class="step" id="step-13">
     <div class="step-head">
-      <h2>Step 13 — Dynamic memory: a world that grows</h2>
-      <button class="bookmark-btn" data-step="step-13" data-title="Dynamic memory: a world that grows" title="Bookmark this step">☆</button>
+      <h2>Step 13 — Pointers: passing game state by reference</h2>
+      <button class="bookmark-btn" data-step="step-13" data-title="Pointers: passing game state by reference" title="Bookmark this step">☆</button>
     </div>
-    <p class="step-teaser">Using malloc and free to allocate rooms and items at runtime instead of hardcoding a fixed count.</p>
+    <p class="step-teaser">Why functions take a pointer to the player or room instead of a copy, and what that saves us.</p>
   </section>
 
   <section class="step" id="step-14">
     <div class="step-head">
-      <h2>Step 14 — File I/O: saving and loading a game</h2>
-      <button class="bookmark-btn" data-step="step-14" data-title="File I/O: saving and loading a game" title="Bookmark this step">☆</button>
+      <h2>Step 14 — Dynamic memory: a world that grows</h2>
+      <button class="bookmark-btn" data-step="step-14" data-title="Dynamic memory: a world that grows" title="Bookmark this step">☆</button>
     </div>
-    <p class="step-teaser">Writing the player's progress to a file and reading it back so a session can be resumed.</p>
+    <p class="step-teaser">Using malloc and free to allocate rooms and items at runtime instead of hardcoding a fixed count.</p>
   </section>
 
   <section class="step" id="step-15">
     <div class="step-head">
-      <h2>Step 15 — Enums &amp; switch: game states and menus</h2>
-      <button class="bookmark-btn" data-step="step-15" data-title="Enums & switch: game states and menus" title="Bookmark this step">☆</button>
+      <h2>Step 15 — File I/O: saving and loading a game</h2>
+      <button class="bookmark-btn" data-step="step-15" data-title="File I/O: saving and loading a game" title="Bookmark this step">☆</button>
     </div>
-    <p class="step-teaser">Replacing magic numbers with named enum states and driving the game's menus off a switch.</p>
+    <p class="step-teaser">Writing the player's progress to a file and reading it back so a session can be resumed.</p>
   </section>
 
   <section class="step" id="step-16">
     <div class="step-head">
-      <h2>Step 16 — Multi-file builds: headers &amp; a Makefile</h2>
-      <button class="bookmark-btn" data-step="step-16" data-title="Multi-file builds: headers & a Makefile" title="Bookmark this step">☆</button>
+      <h2>Step 16 — Enums &amp; switch: game states and menus</h2>
+      <button class="bookmark-btn" data-step="step-16" data-title="Enums & switch: game states and menus" title="Bookmark this step">☆</button>
     </div>
-    <p class="step-teaser">Splitting the single source file into headers and .c files, and building them with a Makefile.</p>
+    <p class="step-teaser">Replacing magic numbers with named enum states and driving the game's menus off a switch.</p>
   </section>
 
   <section class="step" id="step-17">
@@ -241,6 +507,7 @@ int main(int argc, char *argv[]) {
 
 </div>
 <script src="c-highlight.js"></script>
+<script src="line-numbers.js"></script>
 <script src="script.js"></script>
 </body>
 </html>

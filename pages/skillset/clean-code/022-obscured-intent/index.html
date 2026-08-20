@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>G16: Obscured Intent</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>G16: Obscured Intent</h1>
+  <p class="desc">Code should read as clearly as it's written — dense one-liners and magic constants hide what it's actually doing.</p>
+
+  <div class="example-label avoid">Avoid — packed bit-twiddling with no explanation</div>
+  <pre><code class="language-java">int r = (a &amp; 0xFF) &lt;&lt; 8 | b &amp; 0xFF;</code></pre>
+
+  <div class="example-label prefer">Prefer — each step named</div>
+  <pre><code class="language-java">int highByte = a &amp; 0xFF;
+int lowByte = b &amp; 0xFF;
+int combined = (highByte &lt;&lt; 8) | lowByte;</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

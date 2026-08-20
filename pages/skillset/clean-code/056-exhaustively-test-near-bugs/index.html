@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>T6: Exhaustively Test Near Bugs</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>T6: Exhaustively Test Near Bugs</h1>
+  <p class="desc">A bug found in one spot usually means its neighbors are under-tested too — cover them while you're there.</p>
+
+  <div class="example-label avoid">Avoid — one bug found, one test added, moving on</div>
+  <pre><code class="language-java">@Test void fixesOffByOneOnLastPage() { /* ... */ }</code></pre>
+
+  <div class="example-label prefer">Prefer — the whole neighborhood gets covered, not just the reported case</div>
+  <pre><code class="language-java">@Test void fixesOffByOneOnLastPage() { /* ... */ }
+@Test void firstPage() { /* ... */ }
+@Test void middlePage() { /* ... */ }
+@Test void emptyResultSet() { /* ... */ }</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

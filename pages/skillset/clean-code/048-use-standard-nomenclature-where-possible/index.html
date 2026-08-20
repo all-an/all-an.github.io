@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>N3: Use Standard Nomenclature Where Possible</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>N3: Use Standard Nomenclature Where Possible</h1>
+  <p class="desc">Reuse existing pattern and domain terminology instead of inventing a new name for a well-known concept.</p>
+
+  <div class="example-label avoid">Avoid — a made-up name for a well-known pattern</div>
+  <pre><code class="language-java">class AccountVisitorPatternThingy { /* ... */ }</code></pre>
+
+  <div class="example-label prefer">Prefer — the standard term other developers already know</div>
+  <pre><code class="language-java">class AccountVisitor { /* ... */ }</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

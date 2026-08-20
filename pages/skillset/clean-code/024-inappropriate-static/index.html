@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>G18: Inappropriate Static</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>G18: Inappropriate Static</h1>
+  <p class="desc">Make a function static only when it truly can't vary by instance — otherwise it can't be overridden or mocked.</p>
+
+  <div class="example-label avoid">Avoid — static hides a decision that different order types may need to vary</div>
+  <pre><code class="language-java">static double computeDiscount(Order order) { /* ... */ }</code></pre>
+
+  <div class="example-label prefer">Prefer — an instance method subclasses can override</div>
+  <pre><code class="language-java">double computeDiscount() { /* ... */ }</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>G11: Inconsistency</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>G11: Inconsistency</h1>
+  <p class="desc">If a codebase does something a certain way in one place, do all similar things the same way everywhere else. A reader learns the pattern from the first example they see and carries it forward as an assumption — a different verb, parameter order, or structure for the same kind of operation breaks that assumption and forces them to re-learn it case by case.<br>
+  This isn't about picking the "correct" convention; almost any consistent one works. It's the switching between conventions, inside the same codebase, that costs the reader time and invites mistakes.</p>
+
+  <div class="example-label avoid">Avoid — the same kind of lookup, named and shaped differently each time</div>
+  <pre><code class="language-java">// Java
+public User getUserById(String userId) { /* ... */ }
+public Order fetchOrder(String id) { /* ... */ }
+public Product retrieveProductWithId(int productId) { /* ... */ }</code></pre>
+
+  <div class="example-label prefer">Prefer — one verb, one parameter shape, applied everywhere</div>
+  <pre><code class="language-java">// Java
+public User getUserById(String userId) { /* ... */ }
+public Order getOrderById(String orderId) { /* ... */ }
+public Product getProductById(String productId) { /* ... */ }</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

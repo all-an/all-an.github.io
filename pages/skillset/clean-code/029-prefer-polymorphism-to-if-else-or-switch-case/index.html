@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>G23: Prefer Polymorphism to If/Else or Switch/Case</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>G23: Prefer Polymorphism to If/Else or Switch/Case</h1>
+  <p class="desc">A switch on type is a design smell — let polymorphism pick the right behavior instead.</p>
+
+  <div class="example-label avoid">Avoid — a switch that grows with every new shape</div>
+  <pre><code class="language-java">double areaOf(Shape s) {
+    switch (s.type) {
+        case CIRCLE: return Math.PI * s.radius * s.radius;
+        case SQUARE: return s.side * s.side;
+    }
+    throw new IllegalStateException();
+}</code></pre>
+
+  <div class="example-label prefer">Prefer — each shape knows its own area</div>
+  <pre><code class="language-java">interface Shape { double area(); }
+class Circle implements Shape { public double area() { return Math.PI * radius * radius; } }
+class Square implements Shape { public double area() { return side * side; } }</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

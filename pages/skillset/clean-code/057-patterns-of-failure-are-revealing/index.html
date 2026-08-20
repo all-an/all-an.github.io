@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>T7: Patterns of Failure Are Revealing</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>T7: Patterns of Failure Are Revealing</h1>
+  <p class="desc">When several tests fail together, look for what they share — that shared thing is usually where the real bug is.</p>
+
+  <div class="example-label avoid">Avoid — three unrelated-looking failures, each investigated on its own</div>
+  <pre><code class="language-java">test_saveToDisk     FAILED
+test_saveToNetwork  FAILED
+test_saveToCache    FAILED</code></pre>
+
+  <div class="example-label prefer">Prefer — noticing all three call the same serialize() reveals the one real bug</div>
+  <pre><code class="language-java">// All three failing tests share one thing: they all call serialize().
+// That's where the actual bug lives — not in three separate places.</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

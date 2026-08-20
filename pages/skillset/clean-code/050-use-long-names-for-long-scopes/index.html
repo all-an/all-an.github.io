@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>N5: Use Long Names for Long Scopes</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>N5: Use Long Names for Long Scopes</h1>
+  <p class="desc">A name's length should match its scope — short names for tight scopes, descriptive names for long-lived ones.</p>
+
+  <div class="example-label avoid">Avoid — i still means something fifty lines into the loop body</div>
+  <pre><code class="language-java">for (int i = 0; i &lt; 10; i++) {
+    // ... fifty lines later ...
+    doSomething(i); // what is i, again?
+}</code></pre>
+
+  <div class="example-label prefer">Prefer — the name still makes sense far from its declaration</div>
+  <pre><code class="language-java">for (int retryAttempt = 0; retryAttempt &lt; 10; retryAttempt++) {
+    // ... fifty lines later ...
+    doSomething(retryAttempt);
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>G24: Follow Standard Conventions</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>G24: Follow Standard Conventions</h1>
+  <p class="desc">Agree on a team convention and follow it everywhere, so the code reads as if one person wrote it.</p>
+
+  <div class="example-label avoid">Avoid — mixed casing and a non-standard prefix</div>
+  <pre><code class="language-java">public int Get_UserCount() { /* ... */ }</code></pre>
+
+  <div class="example-label prefer">Prefer — matches the team's agreed Java conventions</div>
+  <pre><code class="language-java">public int getUserCount() { /* ... */ }</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

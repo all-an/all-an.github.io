@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>N1: Choose Descriptive Names</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>N1: Choose Descriptive Names</h1>
+  <p class="desc">A name should say why something exists and what it does — not just save keystrokes.</p>
+
+  <div class="example-label avoid">Avoid — d could mean anything</div>
+  <pre><code class="language-java">int d; // elapsed time in days</code></pre>
+
+  <div class="example-label prefer">Prefer — the name carries the meaning, no comment needed</div>
+  <pre><code class="language-java">int elapsedTimeInDays;</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

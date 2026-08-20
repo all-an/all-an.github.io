@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>G25: Replace Magic Numbers with Named Constants</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>G25: Replace Magic Numbers with Named Constants</h1>
+  <p class="desc">A literal number in code hides its own meaning — give it a name instead.</p>
+
+  <div class="example-label avoid">Avoid — what is 65?</div>
+  <pre><code class="language-java">if (employee.age &gt; 65) { /* ... */ }</code></pre>
+
+  <div class="example-label prefer">Prefer — the number explains itself</div>
+  <pre><code class="language-java">static final int RETIREMENT_AGE = 65;
+if (employee.age &gt; RETIREMENT_AGE) { /* ... */ }</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

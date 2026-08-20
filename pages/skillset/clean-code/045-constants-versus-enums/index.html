@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>J3: Constants versus Enums</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>J3: Constants versus Enums</h1>
+  <p class="desc">A group of related integer constants is better expressed as an enum, which is type-safe and self-describing.</p>
+
+  <div class="example-label avoid">Avoid — plain ints: no type safety, nothing stops an invalid value</div>
+  <pre><code class="language-java">static final int SEASON_WINTER = 0;
+static final int SEASON_SPRING = 1;
+static final int SEASON_SUMMER = 2;</code></pre>
+
+  <div class="example-label prefer">Prefer — type-safe, self-describing, exhaustive in a switch</div>
+  <pre><code class="language-java">enum Season { WINTER, SPRING, SUMMER }</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

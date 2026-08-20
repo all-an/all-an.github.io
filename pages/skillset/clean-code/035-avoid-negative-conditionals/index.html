@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>G29: Avoid Negative Conditionals</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>G29: Avoid Negative Conditionals</h1>
+  <p class="desc">A positive condition reads faster than its negation — flip !isNotX to isX.</p>
+
+  <div class="example-label avoid">Avoid — a double negative</div>
+  <pre><code class="language-java">if (!isNotEligible(user)) { /* ... */ }</code></pre>
+
+  <div class="example-label prefer">Prefer — stated positively</div>
+  <pre><code class="language-java">if (isEligible(user)) { /* ... */ }</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

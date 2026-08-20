@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>N4: Unambiguous Names</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>N4: Unambiguous Names</h1>
+  <p class="desc">Pick a name specific enough that there's only one reasonable way to interpret what it means.</p>
+
+  <div class="example-label avoid">Avoid — handle doesn't say what happens</div>
+  <pre><code class="language-java">int handle(String[] records) { /* ... */ }</code></pre>
+
+  <div class="example-label prefer">Prefer — the name states the one thing it does</div>
+  <pre><code class="language-java">int deduplicateRecords(String[] records) { /* ... */ }</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

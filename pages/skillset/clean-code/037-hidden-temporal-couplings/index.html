@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>G31: Hidden Temporal Couplings</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>G31: Hidden Temporal Couplings</h1>
+  <p class="desc">If one call must happen before another, make that ordering visible in the code, not just in a comment.</p>
+
+  <div class="example-label avoid">Avoid — recordScore silently requires addStudent to run first</div>
+  <pre><code class="language-java">Gradebook gradebook = new Gradebook();
+gradebook.addStudent(student);
+gradebook.recordScore(student, 95);</code></pre>
+
+  <div class="example-label prefer">Prefer — the return value carries the dependency forward</div>
+  <pre><code class="language-java">Gradebook gradebook = new Gradebook();
+Enrollment enrollment = gradebook.addStudent(student);
+gradebook.recordScore(enrollment, 95); // impossible to call out of order</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

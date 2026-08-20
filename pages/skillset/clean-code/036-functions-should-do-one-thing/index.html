@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>G30: Functions Should Do One Thing</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>G30: Functions Should Do One Thing</h1>
+  <p class="desc">A function that does several things should be split into several functions, each doing one.</p>
+
+  <div class="example-label avoid">Avoid — validation, calculation and notification, all in one function</div>
+  <pre><code class="language-java">void processOrder(Order order) {
+    if (order.items.isEmpty()) throw new IllegalArgumentException();
+    double total = 0;
+    for (Item i : order.items) total += i.price;
+    order.total = total;
+    emailService.send(order.customer.email, "Your total is " + total);
+}</code></pre>
+
+  <div class="example-label prefer">Prefer — one function per responsibility, orchestrated by a fourth</div>
+  <pre><code class="language-java">void processOrder(Order order) {
+    validate(order);
+    order.total = calculateTotal(order);
+    notifyCustomer(order);
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

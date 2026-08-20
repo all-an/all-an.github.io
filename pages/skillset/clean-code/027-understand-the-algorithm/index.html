@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>G21: Understand the Algorithm</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>G21: Understand the Algorithm</h1>
+  <p class="desc">Passing tests isn't proof of correctness — walk through the algorithm by hand before trusting it.</p>
+
+  <div class="example-label avoid">Avoid — green tests hid an integer-division bug</div>
+  <pre><code class="language-java">double average(int[] xs) {
+    int sum = 0;
+    for (int x : xs) sum += x;
+    return sum / xs.length; // truncates silently for most real inputs
+}</code></pre>
+
+  <div class="example-label prefer">Prefer — the algorithm was actually worked through by hand</div>
+  <pre><code class="language-java">double average(int[] xs) {
+    int sum = 0;
+    for (int x : xs) sum += x;
+    return (double) sum / xs.length;
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

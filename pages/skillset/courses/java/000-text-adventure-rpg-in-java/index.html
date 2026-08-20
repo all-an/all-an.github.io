@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Text Adventure RPG in Java — Courses</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top-links">
+    <a class="back" href="../java.html">← Java Courses</a>
+    <a class="back" href="../bookmarks/">🔖 Bookmarks</a>
+  </div>
+
+  <h1>Text Adventure RPG in Java</h1>
+  <div class="meta">
+    <span class="badge badge-cat">OOP</span>
+    <span class="badge" id="statusBadge"></span>
+  </div>
+
+  <!-- lets the visitor override this course's status; the choice is saved to
+       localStorage so it persists and is picked up by the courses list -->
+  <div class="actions">
+    <button id="markDone">Mark done</button>
+    <button id="markPlanned">Mark planned</button>
+    <button id="markInProgress">Mark in progress</button>
+  </div>
+
+  <p class="desc">The same text adventure RPG as the C course, built the traditional Java way: plain <code>javac</code>/<code>java</code>, a real JVM, ordinary classes and objects, and <code>jdb</code> — the JDK's own command-line debugger — instead of an IDE.</p>
+
+  <!-- Step 1 — filled -->
+  <section class="step" id="step-1">
+    <div class="step-head">
+      <h2>Step 1 — Verify your toolchain (javac, java &amp; jdb)</h2>
+      <button class="bookmark-btn" data-step="step-1" data-title="Verify your toolchain (javac, java & jdb)" title="Bookmark this step">☆</button>
+    </div>
+    <p>Every step compiles with <code>javac</code> and runs with <code>java</code>, and Step 5 debugs with <code>jdb</code> — all three ship together in any standard JDK, so there's nothing extra to install beyond the JDK itself.</p>
+    <pre><code>javac -version
+java -version
+jdb -version</code></pre>
+    <p>Each should print a version banner, for example <code>javac 25.0.1</code>, <code>openjdk version "25.0.1" ...</code>, and <code>This is jdb version 25.0 (Java SE version 25.0.1)</code>. If none of them are found, install a JDK — <a href="https://sdkman.io/" target="_blank" rel="noopener">SDKMAN</a> (<code>sdk install java</code>) is the easiest cross-platform path; Linux package managers and the Windows/macOS installers from your JDK vendor of choice work too.</p>
+    <details class="explain">
+      <summary>jdb isn't a separate tool</summary>
+      <p>Unlike the C course's <code>gdb</code>/<code>lldb</code>, which are independent projects installed on their own, <code>jdb</code> is part of the JDK distribution itself — the same download that gives you <code>javac</code> and <code>java</code> gives you <code>jdb</code> too, in the same <code>bin/</code> directory. If <code>javac -version</code> and <code>java -version</code> both work, <code>jdb -version</code> almost certainly will too.</p>
+    </details>
+  </section>
+
+  <!-- Step 2 — filled -->
+  <section class="step" id="step-2">
+    <div class="step-head">
+      <h2>Step 2 — Hello World, compiled and run with javac/java</h2>
+      <button class="bookmark-btn" data-step="step-2" data-title="Hello World, compiled and run with javac/java" title="Bookmark this step">☆</button>
+    </div>
+    <p>Every step in this course lives in one file, <code>HelloWorld.java</code>, the same way the C course grew <code>main.c</code>. Start with the same greet / test / dispatch shape:</p>
+    <pre><code class="language-java">public class HelloWorld {
+    static String greet() {
+        return "Hello, World!";
+    }
+
+    static void testGreet() {
+        String result = greet();
+        if (result.equals("Hello, World!")) {
+            System.out.println("[pass] testGreet");
+        } else {
+            System.out.println("[fail] testGreet: got \"" + result + "\"");
+        }
+    }
+
+    static void runTests() {
+        testGreet();
+    }
+
+    public static void main(String[] args) {
+        if (args.length > 0 && args[0].equals("test")) {
+            runTests();
+            return;
+        }
+        System.out.println(greet());
+    }
+}</code></pre>
+    <p>Compile with <code>javac</code>, then run the class file it produces with <code>java</code> — no separate link step, no output binary to name:</p>
+    <pre><code>javac HelloWorld.java
+java HelloWorld
+java HelloWorld test</code></pre>
+    <details class="explain">
+      <summary>Why there's no "./hello" here</summary>
+      <p><code>javac</code> compiles <code>HelloWorld.java</code> into <code>HelloWorld.class</code> — JVM bytecode, not machine code — and <code>java HelloWorld</code> starts a JVM that loads and runs that bytecode. There's nothing to <code>chmod +x</code> or execute directly; <code>java</code> is always the thing actually running, with your class loaded inside it.</p>
+    </details>
+  </section>
+
+  <!-- Step 3 — filled -->
+  <section class="step" id="step-3">
+    <div class="step-head">
+      <h2>Step 3 — Classes &amp; objects: Player as a real Java class</h2>
+      <button class="bookmark-btn" data-step="step-3" data-title="Classes & objects: Player as a real Java class" title="Bookmark this step">☆</button>
+    </div>
+    <p>Add a second, non-public class to the same file — Java allows more than one top-level class per file, as long as only one is <code>public</code> and it matches the filename. <code>Player</code> starts as plain as a class gets: two fields, no behavior of its own yet:</p>
+    <pre><code class="language-java">// A plain Java class: two fields, no behavior of its own yet.
+class Player {
+    int health;
+    int gold;
+}</code></pre>
+    <p>Add a <code>demo()</code> that creates one and works with its fields directly, and call it from <code>main()</code>:</p>
+    <pre><code class="language-java">static void demo() {
+    Player player = new Player();
+    player.health = 100;
+    player.gold = 0;
+    player.gold = player.gold + 10;
+    System.out.println("Health: " + player.health + ", Gold: " + player.gold);
+}</code></pre>
+    <pre><code>javac HelloWorld.java
+java HelloWorld</code></pre>
+    <details class="explain">
+      <summary>new Player() — an object on the heap, not a struct in a byte count</summary>
+      <p><code>new Player()</code> allocates space for a <code>Player</code> on the regular JVM heap and hands back a reference to it — there's no <code>malloc</code>, no size to compute, no matching <code>free</code>. The garbage collector reclaims it automatically once nothing references it anymore. <code>player.health</code> and <code>player.gold</code> read and write the object's fields directly, the same way <code>player-&gt;health</code> would in C, just without a <code>-&gt;</code>.</p>
+    </details>
+    <p><code>demo()</code> doesn't get a <code>test&lt;Name&gt;()</code> of its own yet, for the same reason the earlier courses' first memory/struct demos didn't — it only prints, with nothing to assert on until later steps give it real game state. <code>runTests()</code> still just checks <code>testGreet()</code>.</p>
+  </section>
+
+  <!-- Step 4 — filled -->
+  <section class="step" id="step-4">
+    <div class="step-head">
+      <h2>Step 4 — Fields, constructors &amp; the this keyword</h2>
+      <button class="bookmark-btn" data-step="step-4" data-title="Fields, constructors & the this keyword" title="Bookmark this step">☆</button>
+    </div>
+    <p>Setting each field by hand after <code>new Player()</code> is easy to forget or get wrong. Give <code>Player</code> a constructor instead, so a <code>Player</code> can never exist half-initialized:</p>
+    <pre><code class="language-java">class Player {
+    int health;
+    int gold;
+
+    Player(int health, int gold) {
+        this.health = health;
+        this.gold = gold;
+    }
+}</code></pre>
+    <p><code>demo()</code> gets shorter — one call instead of three separate assignments:</p>
+    <pre><code class="language-java">static void demo() {
+    Player player = new Player(100, 0);
+    player.gold = player.gold + 10;
+    System.out.println("Health: " + player.health + ", Gold: " + player.gold);
+}</code></pre>
+    <pre><code>javac HelloWorld.java
+java HelloWorld</code></pre>
+    <details class="explain">
+      <summary>this.health vs health — why both names are needed</summary>
+      <p>The constructor's parameter is also named <code>health</code>, so inside the constructor's body, plain <code>health</code> refers to the parameter — it <strong>shadows</strong> the field of the same name. <code>this</code> refers to the object currently being constructed, so <code>this.health</code> reaches past the shadowing parameter to the field itself. <code>this.health = health;</code> reads as "this object's <code>health</code> field gets the value of the <code>health</code> parameter" — two different things that happen to share a name.</p>
+    </details>
+  </section>
+
+  <!-- Step 5 — filled -->
+  <section class="step" id="step-5">
+    <div class="step-head">
+      <h2>Step 5 — Debugging with jdb</h2>
+      <button class="bookmark-btn" data-step="step-5" data-title="Debugging with jdb" title="Bookmark this step">☆</button>
+    </div>
+    <p>Compile with <code>-g</code> so <code>jdb</code> has full source line and local-variable info to work with — without it, <code>print</code>/<code>locals</code> on a local variable can come back empty:</p>
+    <pre><code>javac -g HelloWorld.java</code></pre>
+    <p>Launch <code>jdb</code> the same way you'd run the program — the class name, then its arguments — and set a breakpoint on <code>testGreet()</code> from Step 2, the same target the other courses' debugging steps used:</p>
+    <pre><code>jdb HelloWorld test</code></pre>
+    <pre><code>&gt; stop in HelloWorld.testGreet
+Deferring breakpoint HelloWorld.testGreet.
+It will be set after the class is loaded.
+&gt; run
+...
+Breakpoint hit: "thread=main", HelloWorld.testGreet(), line=19 bci=0
+19            String result = greet();
+
+main[1] next
+Step completed: "thread=main", HelloWorld.testGreet(), line=20 bci=4
+20            if (result.equals("Hello, World!")) {
+
+main[1] next
+Step completed: "thread=main", HelloWorld.testGreet(), line=21 bci=13
+21                System.out.println("[pass] testGreet");
+
+main[1] print result
+ result = "Hello, World!"
+
+main[1] where
+  [1] HelloWorld.testGreet (HelloWorld.java:21)
+  [2] HelloWorld.runTests (HelloWorld.java:34)
+  [3] HelloWorld.main (HelloWorld.java:39)
+
+main[1] cont
+[pass] testGreet
+The application exited</code></pre>
+    <details class="explain">
+      <summary>stop in vs gdb's break</summary>
+      <p><code>jdb</code>'s breakpoint command is <code>stop in ClassName.methodName</code> — no line number needed, and no separate compile flag beyond <code>-g</code>. The "Deferring breakpoint" message just means the <code>HelloWorld</code> class hadn't been loaded into the JVM yet when the breakpoint was requested; jdb resolves it automatically the moment the class does load, right as <code>run</code> starts the program.</p>
+    </details>
+    <details class="explain">
+      <summary>next, print, where &amp; cont — the same shape as gdb/lldb</summary>
+      <p><code>next</code> steps over a line the same way it does in gdb/lldb. <code>print &lt;expr&gt;</code> shows a value — <code>result</code> reads <code>"Hello, World!"</code> right where the C course's <code>gdb</code>/<code>lldb</code> sessions found the equivalent pointer. <code>where</code> is <code>jdb</code>'s name for a backtrace, showing the exact same three-deep call chain — <code>testGreet</code> called by <code>runTests</code> called by <code>main</code> — that the other courses' debugging steps walked. <code>cont</code> resumes to the next breakpoint or the program's end, same as <code>continue</code>.</p>
+    </details>
+  </section>
+
+  <!-- Steps 6-18 — titles only, filled in as the course is written -->
+  <section class="step" id="step-6">
+    <div class="step-head">
+      <h2>Step 6 — Reading player input with Scanner</h2>
+      <button class="bookmark-btn" data-step="step-6" data-title="Reading player input with Scanner" title="Bookmark this step">☆</button>
+    </div>
+    <p class="step-teaser">java.util.Scanner as the standard way to read a line of text from the keyboard, and why it needs closing.</p>
+  </section>
+
+  <section class="step" id="step-7">
+    <div class="step-head">
+      <h2>Step 7 — Conditionals &amp; the game loop</h2>
+      <button class="bookmark-btn" data-step="step-7" data-title="Conditionals & the game loop" title="Bookmark this step">☆</button>
+    </div>
+    <p class="step-teaser">Wrapping the game in a while loop that keeps reading commands until the player quits or the story ends.</p>
+  </section>
+
+  <section class="step" id="step-8">
+    <div class="step-head">
+      <h2>Step 8 — Methods: organizing game logic</h2>
+      <button class="bookmark-btn" data-step="step-8" data-title="Methods: organizing game logic" title="Bookmark this step">☆</button>
+    </div>
+    <p class="step-teaser">Splitting the growing game loop into small, well-named methods instead of one long main.</p>
+  </section>
+
+  <section class="step" id="step-9">
+    <div class="step-head">
+      <h2>Step 9 — Arrays &amp; ArrayList: rooms and inventory</h2>
+      <button class="bookmark-btn" data-step="step-9" data-title="Arrays & ArrayList: rooms and inventory" title="Bookmark this step">☆</button>
+    </div>
+    <p class="step-teaser">Fixed-size arrays versus a growable ArrayList, and which one actually fits a player's inventory.</p>
+  </section>
+
+  <section class="step" id="step-10">
+    <div class="step-head">
+      <h2>Step 10 — Strings: parsing player commands</h2>
+      <button class="bookmark-btn" data-step="step-10" data-title="Strings: parsing player commands" title="Bookmark this step">☆</button>
+    </div>
+    <p class="step-teaser">Splitting raw input like "go north" into a verb and a noun with String's own built-in methods.</p>
+  </section>
+
+  <section class="step" id="step-11">
+    <div class="step-head">
+      <h2>Step 11 — Enums: game states and directions</h2>
+      <button class="bookmark-btn" data-step="step-11" data-title="Enums: game states and directions" title="Bookmark this step">☆</button>
+    </div>
+    <p class="step-teaser">Replacing string comparisons for "north"/"south"/"east"/"west" with a type-safe enum the compiler can check.</p>
+  </section>
+
+  <section class="step" id="step-12">
+    <div class="step-head">
+      <h2>Step 12 — Interfaces &amp; polymorphism: interchangeable room behaviors</h2>
+      <button class="bookmark-btn" data-step="step-12" data-title="Interfaces & polymorphism: interchangeable room behaviors" title="Bookmark this step">☆</button>
+    </div>
+    <p class="step-teaser">Giving different room types a shared interface so the game loop can treat them all the same way.</p>
+  </section>
+
+  <section class="step" id="step-13">
+    <div class="step-head">
+      <h2>Step 13 — Exceptions: handling bad input gracefully</h2>
+      <button class="bookmark-btn" data-step="step-13" data-title="Exceptions: handling bad input gracefully" title="Bookmark this step">☆</button>
+    </div>
+    <p class="step-teaser">try/catch around the risky parts, and why a caught exception beats a crashed game every time.</p>
+  </section>
+
+  <section class="step" id="step-14">
+    <div class="step-head">
+      <h2>Step 14 — File I/O: saving and loading a game</h2>
+      <button class="bookmark-btn" data-step="step-14" data-title="File I/O: saving and loading a game" title="Bookmark this step">☆</button>
+    </div>
+    <p class="step-teaser">Writing the player's progress to disk and reading it back with java.nio.file, so a session can be resumed.</p>
+  </section>
+
+  <section class="step" id="step-15">
+    <div class="step-head">
+      <h2>Step 15 — Collections: Map/Set for the world graph</h2>
+      <button class="bookmark-btn" data-step="step-15" data-title="Collections: Map/Set for the world graph" title="Bookmark this step">☆</button>
+    </div>
+    <p class="step-teaser">Modeling which rooms connect to which with a Map, instead of a wall of if/else room-by-room logic.</p>
+  </section>
+
+  <section class="step" id="step-16">
+    <div class="step-head">
+      <h2>Step 16 — Unit testing without a framework, then a peek at JUnit</h2>
+      <button class="bookmark-btn" data-step="step-16" data-title="Unit testing without a framework, then a peek at JUnit" title="Bookmark this step">☆</button>
+    </div>
+    <p class="step-teaser">Comparing this course's hand-rolled test&lt;Name&gt;() pattern against what a real framework like JUnit adds on top.</p>
+  </section>
+
+  <section class="step" id="step-17">
+    <div class="step-head">
+      <h2>Step 17 — Packaging: a runnable JAR with a manifest</h2>
+      <button class="bookmark-btn" data-step="step-17" data-title="Packaging: a runnable JAR with a manifest" title="Bookmark this step">☆</button>
+    </div>
+    <p class="step-teaser">Bundling every .class file into one jar a player can run with a single java -jar command.</p>
+  </section>
+
+  <section class="step" id="step-18">
+    <div class="step-head">
+      <h2>Step 18 — Ship it: the finished Java text adventure</h2>
+      <button class="bookmark-btn" data-step="step-18" data-title="Ship it: the finished Java text adventure" title="Bookmark this step">☆</button>
+    </div>
+    <p class="step-teaser">Pulling every earlier step together into one playable game, running on a plain JVM with no native compilation at all.</p>
+  </section>
+
+</div>
+<script src="java-highlight.js"></script>
+<script src="line-numbers.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

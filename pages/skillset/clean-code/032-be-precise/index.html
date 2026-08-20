@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>G26: Be Precise</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../clean-code.html">← back</a>
+  <h1>G26: Be Precise</h1>
+  <p class="desc">Vague behavior — an unhandled tie, an ignored edge case — becomes a bug the moment someone relies on it.</p>
+
+  <div class="example-label avoid">Avoid — silent about ties, and throws on an empty list</div>
+  <pre><code class="language-java">Customer highestSpender(List&lt;Customer&gt; customers) {
+    return customers.stream().max(Comparator.comparing(Customer::getTotalSpent)).get();
+}</code></pre>
+
+  <div class="example-label prefer">Prefer — the tie-break rule and the empty case are both explicit</div>
+  <pre><code class="language-java">Optional&lt;Customer&gt; highestSpender(List&lt;Customer&gt; customers) {
+    return customers.stream()
+        .max(Comparator.comparing(Customer::getTotalSpent).thenComparing(Customer::getId));
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
