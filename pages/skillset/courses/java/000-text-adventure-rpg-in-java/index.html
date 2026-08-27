@@ -28,7 +28,7 @@
     <button id="markInProgress">Mark in progress</button>
   </div>
 
-  <p class="desc">The same text adventure RPG as the C course, built the traditional Java way: plain <code>javac</code>/<code>java</code>, a real JVM, ordinary classes and objects, and <code>jdb</code> — the JDK's own command-line debugger — instead of an IDE.</p>
+  <p class="desc">A text adventure RPG built the traditional Java way: plain <code>javac</code>/<code>java</code>, a real JVM, ordinary classes and objects, and <code>jdb</code> — the JDK's own command-line debugger — instead of an IDE.</p>
 
   <!-- Step 1 — filled -->
   <section class="step" id="step-1">
@@ -43,7 +43,7 @@ jdb -version</code></pre>
     <p>Each should print a version banner, for example <code>javac 25.0.1</code>, <code>openjdk version "25.0.1" ...</code>, and <code>This is jdb version 25.0 (Java SE version 25.0.1)</code>. If none of them are found, install a JDK — <a href="https://sdkman.io/" target="_blank" rel="noopener">SDKMAN</a> (<code>sdk install java</code>) is the easiest cross-platform path; Linux package managers and the Windows/macOS installers from your JDK vendor of choice work too.</p>
     <details class="explain">
       <summary>jdb isn't a separate tool</summary>
-      <p>Unlike the C course's <code>gdb</code>/<code>lldb</code>, which are independent projects installed on their own, <code>jdb</code> is part of the JDK distribution itself — the same download that gives you <code>javac</code> and <code>java</code> gives you <code>jdb</code> too, in the same <code>bin/</code> directory. If <code>javac -version</code> and <code>java -version</code> both work, <code>jdb -version</code> almost certainly will too.</p>
+      <p>Unlike <code>gdb</code>/<code>lldb</code>, which are independent projects installed on their own, <code>jdb</code> is part of the JDK distribution itself — the same download that gives you <code>javac</code> and <code>java</code> gives you <code>jdb</code> too, in the same <code>bin/</code> directory. If <code>javac -version</code> and <code>java -version</code> both work, <code>jdb -version</code> almost certainly will too.</p>
     </details>
   </section>
 
@@ -53,7 +53,7 @@ jdb -version</code></pre>
       <h2>Step 2 — Hello World, compiled and run with javac/java</h2>
       <button class="bookmark-btn" data-step="step-2" data-title="Hello World, compiled and run with javac/java" title="Bookmark this step">☆</button>
     </div>
-    <p>Every step in this course lives in one file, <code>HelloWorld.java</code>, the same way the C course grew <code>main.c</code>. Start with the same greet / test / dispatch shape:</p>
+    <p>Every step in this course lives in one file, <code>HelloWorld.java</code>. Start with a greet / test / dispatch shape:</p>
     <pre><code class="language-java">public class HelloWorld {
     static String greet() {
         return "Hello, World!";
@@ -113,10 +113,10 @@ class Player {
     <pre><code>javac HelloWorld.java
 java HelloWorld</code></pre>
     <details class="explain">
-      <summary>new Player() — an object on the heap, not a struct in a byte count</summary>
-      <p><code>new Player()</code> allocates space for a <code>Player</code> on the regular JVM heap and hands back a reference to it — there's no <code>malloc</code>, no size to compute, no matching <code>free</code>. The garbage collector reclaims it automatically once nothing references it anymore. <code>player.health</code> and <code>player.gold</code> read and write the object's fields directly, the same way <code>player-&gt;health</code> would in C, just without a <code>-&gt;</code>.</p>
+      <summary>new Player() — an object on the heap</summary>
+      <p><code>new Player()</code> allocates space for a <code>Player</code> on the regular JVM heap and hands back a reference to it — no size to compute and nothing to release by hand. The garbage collector reclaims it automatically once nothing references it anymore. <code>player.health</code> and <code>player.gold</code> read and write the object's fields directly.</p>
     </details>
-    <p><code>demo()</code> doesn't get a <code>test&lt;Name&gt;()</code> of its own yet, for the same reason the earlier courses' first memory/struct demos didn't — it only prints, with nothing to assert on until later steps give it real game state. <code>runTests()</code> still just checks <code>testGreet()</code>.</p>
+    <p><code>demo()</code> doesn't get a <code>test&lt;Name&gt;()</code> of its own yet — it only prints, with nothing to assert on until later steps give it real game state. <code>runTests()</code> still just checks <code>testGreet()</code>.</p>
   </section>
 
   <!-- Step 4 — filled -->
@@ -157,7 +157,7 @@ java HelloWorld</code></pre>
     </div>
     <p>Compile with <code>-g</code> so <code>jdb</code> has full source line and local-variable info to work with — without it, <code>print</code>/<code>locals</code> on a local variable can come back empty:</p>
     <pre><code>javac -g HelloWorld.java</code></pre>
-    <p>Launch <code>jdb</code> the same way you'd run the program — the class name, then its arguments — and set a breakpoint on <code>testGreet()</code> from Step 2, the same target the other courses' debugging steps used:</p>
+    <p>Launch <code>jdb</code> the same way you'd run the program — the class name, then its arguments — and set a breakpoint on <code>testGreet()</code> from Step 2:</p>
     <pre><code>jdb HelloWorld test</code></pre>
     <pre><code>&gt; stop in HelloWorld.testGreet
 Deferring breakpoint HelloWorld.testGreet.
@@ -192,7 +192,7 @@ The application exited</code></pre>
     </details>
     <details class="explain">
       <summary>next, print, where &amp; cont — the same shape as gdb/lldb</summary>
-      <p><code>next</code> steps over a line the same way it does in gdb/lldb. <code>print &lt;expr&gt;</code> shows a value — <code>result</code> reads <code>"Hello, World!"</code> right where the C course's <code>gdb</code>/<code>lldb</code> sessions found the equivalent pointer. <code>where</code> is <code>jdb</code>'s name for a backtrace, showing the exact same three-deep call chain — <code>testGreet</code> called by <code>runTests</code> called by <code>main</code> — that the other courses' debugging steps walked. <code>cont</code> resumes to the next breakpoint or the program's end, same as <code>continue</code>.</p>
+      <p><code>next</code> steps over a line the same way it does in gdb/lldb. <code>print &lt;expr&gt;</code> shows a value — <code>result</code> reads <code>"Hello, World!"</code>. <code>where</code> is <code>jdb</code>'s name for a backtrace, showing the three-deep call chain — <code>testGreet</code> called by <code>runTests</code> called by <code>main</code>. <code>cont</code> resumes to the next breakpoint or the program's end, same as <code>continue</code>.</p>
     </details>
   </section>
 
