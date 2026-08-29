@@ -13,5 +13,5 @@ const statusClass = { completed:'status-completed', inprogress:'status-inprogres
 // One entry per course: name, category key, status key, and an optional link
 // to the course or certificate ("#" when there isn't one yet).
 const DATA = [
-  { n: "Angular Fundamentals: Components & Services", cat: "angular", status: "completed", url: "#" },
+  { n: "Java / Angular / AWS full stack app (coming soon)", cat: "angular", status: "planned", url: "#" },
 ];
