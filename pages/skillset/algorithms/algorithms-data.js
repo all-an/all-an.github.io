@@ -12,7 +12,7 @@ const diffClass = { beginner:'diff-beginner', easy:'diff-easy', easymedium:'diff
 const DATA = [
   // Beginner
   {n:"Reverse a string", cat:"beginner", tech:"String", slug:"reverseastring", page:"001-reverse-a-string"},
-  {n:"Check if a string is a palindrome", cat:"beginner", tech:"String / Two Pointers", slug:"palindromecheck"},
+  {n:"Check if a string is a palindrome", cat:"beginner", tech:"String / Two Pointers", slug:"palindromecheck", page:"002-check-if-a-string-is-a-palindrome"},
   {n:"Find the maximum/minimum in an array", cat:"beginner", tech:"Array", slug:"findmaxmininarray"},
   {n:"Count occurrences of a character in a string", cat:"beginner", tech:"String / Hashing", slug:"countcharacteroccurrences"},
   {n:"FizzBuzz", cat:"beginner", tech:"Math / Simulation", slug:"fizzbuzz"},

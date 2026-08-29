@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Check if a string is a palindrome — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Check if a string is a palindrome</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Beginner</span>
+    <span class="badge badge-tech">String / Two Pointers</span>
+  </div>
+
+  <p class="desc">A palindrome reads the same forwards and backwards — <code>"racecar"</code> and <code>"noon"</code> are palindromes, <code>"hello"</code> is not. Given a string, return whether it is one. It is the classic introduction to the two-pointer technique.</p>
+
+  <!-- interactive demo: tests whatever the visitor types, live (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type a string</label>
+    <input id="demoInput" type="text" value="racecar" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Palindrome?</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>The one-liner is to compare the string with its reverse, but interviews want the two-pointer version: put one index at the start and one at the end, compare the characters they point at, and step both toward the middle. The moment two differ, it is not a palindrome; if the pointers meet without a mismatch, it is. Reject a <code>null</code> input by throwing an exception.</p>
+  <p>The variant you will often be asked next — "valid palindrome" — first normalizes the string by lower-casing it and dropping every non-alphanumeric character, so that <code>"A man, a plan, a canal: Panama"</code> counts. The comparison loop is identical; only the pre-processing changes.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">import java.util.Objects;
+
+// Approach 1 — built-in: compare the string against its reverse.
+static boolean isPalindrome(String s) {
+    return s.equals(new StringBuilder(s).reverse().toString());
+}
+
+// Approach 2 — two pointers: walk in from both ends, comparing as you go.
+static boolean isPalindromeCheck(String stringToCheck) {
+    if (Objects.isNull(stringToCheck)) {
+        throw new IllegalArgumentException("String cannot be null");
+    }
+    int left = 0;
+    int right = stringToCheck.length() - 1;
+    while (left &lt; right) {
+        if (stringToCheck.charAt(left) != stringToCheck.charAt(right)) {
+            return false; // characters differ — not a palindrome
+        }
+        left++;
+        right--;
+    }
+    return true; // pointers met with every pair matching
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Approach 1 — built-in: compare the string with its reversed form.
+// [...s] spreads by code point so emoji and accents compare correctly.
+function isPalindrome(s) {
+  return s === [...s].reverse().join('');
+}
+
+// Approach 2 — two pointers: walk in from both ends, comparing as you go.
+function isPalindromeCheck(stringToCheck) {
+  if (stringToCheck == null) {
+    throw new Error('String cannot be null');
+  }
+  let left = 0;
+  let right = stringToCheck.length - 1;
+  while (left &lt; right) {
+    if (stringToCheck[left] !== stringToCheck[right]) {
+      return false; // characters differ — not a palindrome
+    }
+    left++;
+    right--;
+  }
+  return true; // pointers met with every pair matching
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(n)</strong> — each character is compared at most once</li>
+    <li>Space <strong>O(1)</strong> — the two-pointer version keeps only two indices</li>
+  </ul>
+  <p>The reverse-and-compare one-liner is also <strong>O(n)</strong> time but <strong>O(n)</strong> space, because it builds a whole second string. The two-pointer loop also stops early on the first mismatch, so a string like <code>"zebra..."</code> is rejected after a single comparison.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
