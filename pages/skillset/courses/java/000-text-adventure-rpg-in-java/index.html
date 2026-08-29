@@ -196,109 +196,1552 @@ The application exited</code></pre>
     </details>
   </section>
 
-  <!-- Steps 6-18 — titles only, filled in as the course is written -->
+  <!-- Step 6 — filled -->
   <section class="step" id="step-6">
     <div class="step-head">
       <h2>Step 6 — Reading player input with Scanner</h2>
       <button class="bookmark-btn" data-step="step-6" data-title="Reading player input with Scanner" title="Bookmark this step">☆</button>
     </div>
-    <p class="step-teaser">java.util.Scanner as the standard way to read a line of text from the keyboard, and why it needs closing.</p>
+    <p>The game needs to hear from the player. <code>java.util.Scanner</code> is the standard library's line reader — wrap it around a source of text and call <code>nextLine()</code> to pull one line at a time. Add the import at the very top of the file, above <code>public class HelloWorld</code>:</p>
+    <pre><code class="language-java">import java.util.Scanner;</code></pre>
+    <p>Add an <code>askName()</code> that prompts, reads a line, and builds a welcome message — taking the <code>Scanner</code> as a parameter rather than creating its own, so a test can hand it one backed by a fixed string:</p>
+    <pre><code class="language-java">// Prompts for the player's name, reads one line, and returns a welcome
+// message. A blank line falls back to "stranger" so the message is never
+// left dangling. The Scanner is passed in so tests can supply their own.
+static String askName(Scanner in) {
+    System.out.print("What is your name, adventurer? ");
+    String name = in.nextLine().trim();
+    if (name.isEmpty()) {
+        name = "stranger";
+    }
+    return "Welcome, " + name + "!";
+}</code></pre>
+    <p>Because <code>askName()</code> takes its <code>Scanner</code> as an argument, its test can build one from a plain string literal — no keyboard involved:</p>
+    <pre><code class="language-java">static void testAskName() {
+    Scanner in = new Scanner("Aria\n");
+    String result = askName(in);
+    if (result.equals("Welcome, Aria!")) {
+        System.out.println("[pass] testAskName");
+    } else {
+        System.out.println("[fail] testAskName: got \"" + result + "\"");
+    }
+}</code></pre>
+    <p>Register it in <code>runTests()</code>, and wire a real <code>Scanner</code> on <code>System.in</code> into <code>main()</code>'s non-test path, closing it once at the end:</p>
+    <pre><code class="language-java">static void runTests() {
+    testGreet();
+    testAskName();
+}
+
+public static void main(String[] args) {
+    if (args.length > 0 && args[0].equals("test")) {
+        runTests();
+        return;
+    }
+    System.out.println(greet());
+    Scanner in = new Scanner(System.in);
+    System.out.println(askName(in));
+    demo();
+    in.close();
+}</code></pre>
+    <pre><code>javac HelloWorld.java
+java HelloWorld
+java HelloWorld test</code></pre>
+    <details class="explain">
+      <summary>A Scanner wraps a source — the keyboard is just one option</summary>
+      <p><code>new Scanner(System.in)</code> reads from standard input, the keyboard. <code>new Scanner("Aria\n")</code> reads from that string as if it had been typed. Same class, same <code>nextLine()</code>, different source — which is exactly why <code>askName()</code> takes the <code>Scanner</code> as a parameter instead of building its own: the test path feeds it a known string and asserts on the result, while <code>main()</code> feeds it the real keyboard.</p>
+    </details>
+    <details class="explain">
+      <summary>nextLine() vs next() vs nextInt()</summary>
+      <p><code>nextLine()</code> reads everything up to and including the next newline, and hands back the text without that newline — so "go north" comes through as one <code>String</code>. <code>next()</code> reads a single whitespace-delimited token — just "go" — and stops. <code>nextInt()</code> parses a number but leaves the newline sitting in the buffer, which is the classic reason a later <code>nextLine()</code> mysteriously returns an empty string. This course sticks to <code>nextLine()</code> everywhere and does its own splitting later, in Step 10.</p>
+    </details>
+    <details class="explain">
+      <summary>Why the Scanner gets closed — and only once</summary>
+      <p>A <code>Scanner</code> holds its underlying source open; <code>close()</code> releases it. Closing a <code>Scanner</code> that wraps <code>System.in</code> also closes <code>System.in</code> itself for the rest of the JVM's life, so there can only ever be one, closed once, at the very end of <code>main()</code> — never inside a helper that runs mid-game. Later steps move this into a <code>try</code>-with-resources block (Step 13) so the close happens automatically even when something throws.</p>
+    </details>
   </section>
 
+  <!-- Step 7 — filled -->
   <section class="step" id="step-7">
     <div class="step-head">
       <h2>Step 7 — Conditionals &amp; the game loop</h2>
       <button class="bookmark-btn" data-step="step-7" data-title="Conditionals & the game loop" title="Bookmark this step">☆</button>
     </div>
-    <p class="step-teaser">Wrapping the game in a while loop that keeps reading commands until the player quits or the story ends.</p>
+    <p>One line of input isn't a game. A text adventure keeps asking for a command, reacting to it, and asking again — until the player quits or the story ends. Two pieces make that work: a function that turns one command into a response, and a loop that keeps calling it.</p>
+    <p>Start with the response function — an <code>if</code> / <code>else if</code> / <code>else</code> chain, one branch per command, with the <code>else</code> catching anything unrecognized:</p>
+    <pre><code class="language-java">// Turns one already-normalized command into the text shown to the player.
+// Anything unrecognized falls through to a gentle nudge rather than silence.
+static String respondTo(String command) {
+    if (command.equals("look")) {
+        return "You stand at the mouth of a dark cave. A path leads north.";
+    } else if (command.equals("north")) {
+        return "You walk north into the gloom.";
+    } else if (command.equals("help")) {
+        return "Commands: look, north, help, quit";
+    } else {
+        return "You can't do that here.";
+    }
+}</code></pre>
+    <pre><code class="language-java">static void testRespondTo() {
+    boolean ok = respondTo("look").startsWith("You stand at the mouth")
+            &amp;&amp; respondTo("help").contains("quit")
+            &amp;&amp; respondTo("mumble").equals("You can't do that here.");
+    System.out.println(ok ? "[pass] testRespondTo" : "[fail] testRespondTo");
+}</code></pre>
+    <p>Now the loop. It has two separate reasons to stop — the player types <code>quit</code>, or input runs out entirely — so it's written as <code>while (true)</code> with a <code>break</code> for each:</p>
+    <pre><code class="language-java">// Reads commands until the player types "quit" or input ends. Each command
+// is trimmed and lowercased so " Look " and "look" mean the same thing.
+static void playLoop(Scanner in) {
+    while (true) {
+        System.out.print("&gt; ");
+        if (!in.hasNextLine()) {
+            break;
+        }
+        String command = in.nextLine().trim().toLowerCase();
+        if (command.equals("quit")) {
+            System.out.println("Farewell, adventurer.");
+            break;
+        }
+        System.out.println(respondTo(command));
+    }
+}</code></pre>
+    <p>Add <code>testRespondTo()</code> to <code>runTests()</code>, and call <code>playLoop(in)</code> from <code>main()</code> in place of the old single <code>askName()</code> print — after the welcome, before the <code>Scanner</code> is closed:</p>
+    <pre><code class="language-java">System.out.println(greet());
+Scanner in = new Scanner(System.in);
+System.out.println(askName(in));
+playLoop(in);
+in.close();</code></pre>
+    <pre><code>javac HelloWorld.java
+java HelloWorld
+java HelloWorld test</code></pre>
+    <details class="explain">
+      <summary>if / else if / else — first match wins</summary>
+      <p>Java tests each condition from the top down and runs the body of the <strong>first</strong> one that's true, skipping every branch below it. The trailing <code>else</code> has no condition — it runs only when every test above failed, which is where unknown commands land. Because each branch here ends in <code>return</code>, control leaves <code>respondTo()</code> immediately; there's no fall-through between branches the way there is in a bare C-style <code>switch</code>. Step 11 swaps this chain for an <code>enum</code>-driven <code>switch</code> once the command set is fixed.</p>
+    </details>
+    <details class="explain">
+      <summary>while (true) + break, instead of a loop condition</summary>
+      <p>A <code>while (condition)</code> loop fits when there's one clean test to repeat on. This loop stops for two unrelated reasons — a <code>quit</code> command and end-of-input — that don't compress into a single boolean without an awkward flag variable, so the idiom is <code>while (true)</code> with a <code>break</code> at each exit. <code>in.hasNextLine()</code> is the end-of-input guard: it returns <code>false</code> when the stream is exhausted (a piped-in file that ran out, or Ctrl-D at the keyboard), so the loop ends cleanly instead of <code>nextLine()</code> throwing <code>NoSuchElementException</code>.</p>
+    </details>
+    <details class="explain">
+      <summary>trim().toLowerCase() — normalizing before comparing</summary>
+      <p><code>String</code> comparison with <code>equals()</code> is exact: <code>"Look"</code>, <code>"look"</code> and <code>" look "</code> are three different values. Rather than list every casing in <code>respondTo()</code>, the loop normalizes once — <code>trim()</code> drops leading and trailing whitespace, <code>toLowerCase()</code> folds the case — so every branch downstream can compare against a single lowercase form. Each call returns a <em>new</em> <code>String</code>; the original input is untouched, because <code>String</code> is immutable (Step 4's constructor discussion, applied to a built-in type).</p>
+    </details>
   </section>
 
+  <!-- Step 8 — filled -->
   <section class="step" id="step-8">
     <div class="step-head">
       <h2>Step 8 — Methods: organizing game logic</h2>
       <button class="bookmark-btn" data-step="step-8" data-title="Methods: organizing game logic" title="Bookmark this step">☆</button>
     </div>
-    <p class="step-teaser">Splitting the growing game loop into small, well-named methods instead of one long main.</p>
+    <p>Two fixed strings are already buried inside <code>respondTo()</code>: the cave description and the command list. Both are about to be needed in more than one place, so lift each into its own small, named method that does exactly one thing:</p>
+    <pre><code class="language-java">// The opening description of the starting room. Its own method so the text
+// lives in one place — used by the "look" command and the game's intro.
+static String caveDescription() {
+    return "You stand at the mouth of a dark cave. A path leads north.";
+}
+
+// The list of commands the player can type. Shown by "help" and after any
+// command the game doesn't recognize.
+static String helpText() {
+    return "Commands: look, north, help, quit";
+}</code></pre>
+    <p><code>respondTo()</code> now reads as a table of intent — each branch names <em>what</em> happens, with the <em>how</em> delegated:</p>
+    <pre><code class="language-java">static String respondTo(String command) {
+    if (command.equals("look")) {
+        return caveDescription();
+    } else if (command.equals("north")) {
+        return "You walk north into the gloom.";
+    } else if (command.equals("help")) {
+        return helpText();
+    } else {
+        return "You can't do that here. Type 'help' for options.";
+    }
+}</code></pre>
+    <p>Do the same to <code>main()</code>. Everything that makes up one play session — greet, ask the name, show the room, loop — moves into a <code>startGame()</code> method, leaving <code>main()</code> responsible only for the test switch and the <code>Scanner</code>'s lifetime:</p>
+    <pre><code class="language-java">// Runs one full play session against the given input source.
+static void startGame(Scanner in) {
+    System.out.println(greet());
+    System.out.println(askName(in));
+    System.out.println(caveDescription());
+    playLoop(in);
+}
+
+public static void main(String[] args) {
+    if (args.length > 0 &amp;&amp; args[0].equals("test")) {
+        runTests();
+        return;
+    }
+    Scanner in = new Scanner(System.in);
+    startGame(in);
+    in.close();
+}</code></pre>
+    <p>The <code>demo()</code> method from Steps 3–4 was scaffolding to hold a <code>Player</code> while the game had nowhere to put one. The game now has real methods to grow into, so delete <code>demo()</code> — the <code>Player</code> class stays and gets wired in properly in Step 9. <code>runTests()</code> is unchanged: <code>testGreet()</code>, <code>testAskName()</code>, <code>testRespondTo()</code>.</p>
+    <pre><code>javac HelloWorld.java
+java HelloWorld
+java HelloWorld test</code></pre>
+    <details class="explain">
+      <summary>One method, one job — and one reason to change</summary>
+      <p><code>caveDescription()</code> returns a description; <code>helpText()</code> returns the command list; <code>playLoop()</code> runs the loop; <code>startGame()</code> sequences a session. Each has a single responsibility, so each has a single reason to be edited later — changing the room's wording touches <code>caveDescription()</code> and nothing else. A method whose name needs an "and" to describe it ("greets the player and reads commands and…") is usually two methods wearing one signature.</p>
+    </details>
+    <details class="explain">
+      <summary>Passing the Scanner down instead of reaching for a global</summary>
+      <p><code>startGame()</code> and <code>playLoop()</code> both need the input source, so it's handed to them as a parameter, threaded down from the one place it's created in <code>main()</code>. Java has no true global variables — the closest thing is a <code>static</code> field on the class — and a <code>static Scanner</code> shared implicitly by every method is exactly what makes code hard to test. An explicit parameter keeps <code>respondTo()</code> and its helpers provably independent of where input comes from.</p>
+    </details>
+    <details class="explain">
+      <summary>void vs a return type — what a method hands back</summary>
+      <p><code>caveDescription()</code> is declared <code>String</code> because its whole purpose is to produce a value for the caller to use. <code>startGame()</code> and <code>playLoop()</code> are declared <code>void</code>: they exist for their side effect — printing to the screen, consuming input — and have nothing meaningful to return. A rough rule that holds through the rest of this course: methods that compute return a value and get a <code>test&lt;Name&gt;()</code>; methods that only drive the console are <code>void</code> and are checked by playing the game.</p>
+    </details>
   </section>
 
+  <!-- Step 9 — filled -->
   <section class="step" id="step-9">
     <div class="step-head">
       <h2>Step 9 — Arrays &amp; ArrayList: rooms and inventory</h2>
       <button class="bookmark-btn" data-step="step-9" data-title="Arrays & ArrayList: rooms and inventory" title="Bookmark this step">☆</button>
     </div>
-    <p class="step-teaser">Fixed-size arrays versus a growable ArrayList, and which one actually fits a player's inventory.</p>
+    <p>The game needs two lists with opposite shapes. The set of rooms is decided up front and never changes size — a plain <strong>array</strong>. The player's pack starts empty and grows every time they pick something up — an <strong>ArrayList</strong>. Add the import at the top:</p>
+    <pre><code class="language-java">import java.util.ArrayList;</code></pre>
+    <p>The rooms are a <code>static final</code> array literal — fixed length, shared by the whole class:</p>
+    <pre><code class="language-java">// The world's rooms, in north-bound order. Known at compile time and never
+// resized, so a plain array rather than a list.
+static final String[] ROOMS = { "cave mouth", "tunnel", "underground lake" };</code></pre>
+    <p><code>Player</code> gains an <code>inventory</code> field, initialized in the constructor so every <code>Player</code> starts with an empty — never <code>null</code> — pack:</p>
+    <pre><code class="language-java">class Player {
+    int health;
+    int gold;
+    ArrayList&lt;String&gt; inventory;
+
+    Player(int health, int gold) {
+        this.health = health;
+        this.gold = gold;
+        this.inventory = new ArrayList&lt;&gt;();
+    }
+}</code></pre>
+    <p>Two helpers work the inventory: one adds an item, one describes it:</p>
+    <pre><code class="language-java">// Adds an item to the player's pack and returns the line to show them.
+static String takeItem(Player player, String item) {
+    player.inventory.add(item);
+    return "You take the " + item + ".";
+}
+
+// A readable summary of what the player is carrying.
+static String describeInventory(Player player) {
+    if (player.inventory.isEmpty()) {
+        return "You are carrying nothing.";
+    }
+    return "You are carrying: " + String.join(", ", player.inventory);
+}</code></pre>
+    <pre><code class="language-java">static void testTakeItem() {
+    Player player = new Player(100, 0);
+    takeItem(player, "torch");
+    takeItem(player, "rope");
+    boolean ok = player.inventory.size() == 2
+            &amp;&amp; describeInventory(player).equals("You are carrying: torch, rope");
+    System.out.println(ok ? "[pass] testTakeItem" : "[fail] testTakeItem");
+}
+
+static void testRoomsAreFixed() {
+    boolean ok = ROOMS.length == 3 &amp;&amp; ROOMS[0].equals("cave mouth");
+    System.out.println(ok ? "[pass] testRoomsAreFixed" : "[fail] testRoomsAreFixed");
+}</code></pre>
+    <p>Thread a <code>Player</code> through the game. <code>startGame()</code> creates one and hands the player a torch; <code>playLoop()</code> and <code>respondTo()</code> take it as a parameter so an <code>inventory</code> command can report it:</p>
+    <pre><code class="language-java">static void startGame(Scanner in) {
+    Player player = new Player(100, 0);
+    System.out.println(greet());
+    System.out.println(askName(in));
+    System.out.println(caveDescription());
+    System.out.println(takeItem(player, "torch"));
+    playLoop(in, player);
+}
+
+static void playLoop(Scanner in, Player player) {
+    // ... unchanged, except the response line:
+    System.out.println(respondTo(command, player));
+}
+
+static String respondTo(String command, Player player) {
+    if (command.equals("look")) {
+        return caveDescription();
+    } else if (command.equals("north")) {
+        return "You walk north into the gloom.";
+    } else if (command.equals("inventory")) {
+        return describeInventory(player);
+    } else if (command.equals("help")) {
+        return helpText();
+    } else {
+        return "You can't do that here. Type 'help' for options.";
+    }
+}</code></pre>
+    <p>Update <code>helpText()</code> to mention <code>inventory</code>, add both new tests to <code>runTests()</code>, and fix <code>testRespondTo()</code> to pass a throwaway <code>new Player(100, 0)</code> as the second argument.</p>
+    <pre><code>javac HelloWorld.java
+java HelloWorld
+java HelloWorld test</code></pre>
+    <details class="explain">
+      <summary>Array or ArrayList — let the size decide</summary>
+      <p>An array's length is fixed the moment it's created: <code>{ "cave mouth", "tunnel", "underground lake" }</code> is length 3 forever, and there's no <code>add</code> — you'd have to allocate a bigger array and copy. That's the right trade when the count is known and stable, like the room list. An <code>ArrayList</code> carries a little bookkeeping overhead in exchange for <code>add()</code>, <code>remove()</code> and automatic resizing — the right trade when the count isn't known up front, like an inventory. Reach for an array only when the size genuinely never changes; otherwise <code>ArrayList</code> is the default.</p>
+    </details>
+    <details class="explain">
+      <summary>ArrayList&lt;String&gt;, new ArrayList&lt;&gt;(), and the empty-not-null rule</summary>
+      <p>The <code>&lt;String&gt;</code> is a <strong>generic type argument</strong> — it tells the compiler this list holds <code>String</code>s and nothing else, so <code>inventory.add(42)</code> won't compile and <code>inventory.get(0)</code> is known to be a <code>String</code> without a cast. On the right of <code>=</code>, <code>new ArrayList&lt;&gt;()</code> uses the empty <em>diamond</em> <code>&lt;&gt;</code>: the type is inferred from the field's declaration, so it isn't repeated. Initializing it in the constructor rather than leaving it to default means <code>inventory</code> is never <code>null</code> — <code>takeItem()</code> can call <code>.add()</code> on the very first turn without a <code>NullPointerException</code>.</p>
+    </details>
+    <details class="explain">
+      <summary>.length vs .size(), and iterating either one</summary>
+      <p>An array's element count is the field <code>ROOMS.length</code> — no parentheses. An <code>ArrayList</code>'s is the method <code>player.inventory.size()</code> — with parentheses. Mixing them up is one of the most common early Java compile errors. Both work with the enhanced <code>for</code> loop, though: <code>for (String room : ROOMS)</code> and <code>for (String item : player.inventory)</code> read identically. <code>String.join(", ", player.inventory)</code> used above is a shortcut for that loop when all you want is the elements stitched together with a separator.</p>
+    </details>
   </section>
 
+  <!-- Step 10 — filled -->
   <section class="step" id="step-10">
     <div class="step-head">
       <h2>Step 10 — Strings: parsing player commands</h2>
       <button class="bookmark-btn" data-step="step-10" data-title="Strings: parsing player commands" title="Bookmark this step">☆</button>
     </div>
-    <p class="step-teaser">Splitting raw input like "go north" into a verb and a noun with String's own built-in methods.</p>
+    <p>So far every command is a single word. Real adventure input has two parts — a verb and a noun: <code>go north</code>, <code>take rusty key</code>, <code>drop rope</code>. Split the line on its first run of whitespace, keeping everything after it as one piece:</p>
+    <pre><code class="language-java">// Splits a command line into a verb and the rest as its noun.
+// "take rusty key" -> { "take", "rusty key" };  "look" -> { "look", "" }.
+static String[] parseCommand(String input) {
+    String[] parts = input.trim().split("\\s+", 2);
+    String verb = parts[0];
+    String noun = parts.length &gt; 1 ? parts[1] : "";
+    return new String[] { verb, noun };
+}</code></pre>
+    <pre><code class="language-java">static void testParseCommand() {
+    String[] a = parseCommand("take rusty key");
+    String[] b = parseCommand("look");
+    boolean ok = a[0].equals("take") &amp;&amp; a[1].equals("rusty key")
+            &amp;&amp; b[0].equals("look") &amp;&amp; b[1].isEmpty();
+    System.out.println(ok ? "[pass] testParseCommand" : "[fail] testParseCommand");
+}</code></pre>
+    <p><code>respondTo()</code> now branches on the <em>verb</em> and uses the <em>noun</em>, so one <code>take</code> branch handles any item and <code>go</code> handles any direction. Direction handling moves into its own helper to keep the chain flat:</p>
+    <pre><code class="language-java">static String respondTo(String command, Player player) {
+    String[] parsed = parseCommand(command);
+    String verb = parsed[0];
+    String noun = parsed[1];
+
+    if (verb.equals("look")) {
+        return caveDescription();
+    } else if (verb.equals("go")) {
+        return respondToGo(noun);
+    } else if (verb.equals("take")) {
+        return noun.isEmpty() ? "Take what?" : takeItem(player, noun);
+    } else if (verb.equals("inventory")) {
+        return describeInventory(player);
+    } else if (verb.equals("help")) {
+        return helpText();
+    } else {
+        return "You can't do that here. Type 'help' for options.";
+    }
+}
+
+// Handles "go &lt;direction&gt;". Only north leads anywhere from the cave mouth.
+static String respondToGo(String direction) {
+    if (direction.isEmpty()) {
+        return "Go where?";
+    }
+    if (direction.equals("north")) {
+        return "You walk north into the gloom.";
+    }
+    return "You can't go " + direction + " from here.";
+}</code></pre>
+    <p>Update <code>helpText()</code> to <code>"Commands: look, go &lt;direction&gt;, take &lt;item&gt;, inventory, help, quit"</code>, add <code>testParseCommand()</code> to <code>runTests()</code>, and extend <code>testRespondTo()</code> to check <code>"go north"</code> and <code>"take torch"</code> now that those are multi-word.</p>
+    <pre><code>javac HelloWorld.java
+java HelloWorld
+java HelloWorld test</code></pre>
+    <details class="explain">
+      <summary>split("\\s+", 2) — the regex and the limit</summary>
+      <p>The first argument to <code>split()</code> is a <strong>regular expression</strong>, not a literal — <code>\\s+</code> means "one or more whitespace characters", so any mix of spaces and tabs between the verb and noun collapses to one separator. The <code>2</code> is the <strong>limit</strong>: it caps the result at two elements, so only the first gap is a split point and <code>"rusty key"</code> survives intact as <code>parts[1]</code>. Without the limit, <code>"take rusty key"</code> would come back as three separate tokens and the item name would be truncated to <code>"rusty"</code>.</p>
+    </details>
+    <details class="explain">
+      <summary>The manual alternative: indexOf and substring</summary>
+      <p>The same split without a regex:</p>
+      <pre><code class="language-java">int gap = input.trim().indexOf(' ');
+String verb = gap &lt; 0 ? input.trim() : input.trim().substring(0, gap);
+String noun = gap &lt; 0 ? "" : input.trim().substring(gap + 1);</code></pre>
+      <p><code>indexOf(' ')</code> returns the position of the first space, or <code>-1</code> when there is none — always test for <code>-1</code> before using the result. <code>substring(start, end)</code> takes characters from <code>start</code> up to <strong>but not including</strong> <code>end</code>; the single-argument <code>substring(start)</code> runs to the end of the string. It works, but <code>split</code> with a limit says the intent in one line.</p>
+    </details>
+    <details class="explain">
+      <summary>String is immutable — parsing never changes the input</summary>
+      <p><code>trim()</code>, <code>split()</code>, <code>substring()</code>, <code>toLowerCase()</code> all return <strong>new</strong> <code>String</code> objects; the original is never touched. That's why the loop in Step 7 could safely normalize with <code>trim().toLowerCase()</code> without disturbing anything else holding that text. It's also why text is always compared with <code>.equals()</code>, never <code>==</code>: <code>==</code> asks "the same object?", which is unreliable for strings built at runtime, while <code>.equals()</code> asks "the same characters?", which is what a command check actually means.</p>
+    </details>
   </section>
 
+  <!-- Step 11 — filled -->
   <section class="step" id="step-11">
     <div class="step-head">
       <h2>Step 11 — Enums: game states and directions</h2>
       <button class="bookmark-btn" data-step="step-11" data-title="Enums: game states and directions" title="Bookmark this step">☆</button>
     </div>
-    <p class="step-teaser">Replacing string comparisons for "north"/"south"/"east"/"west" with a type-safe enum the compiler can check.</p>
+    <p>The command set has settled, so the string comparisons can become something the compiler checks. An <strong>enum</strong> is a type with a fixed, named set of values. Three of them earn their place here: the recognized verbs, the compass directions, and the game's overall state.</p>
+    <pre><code class="language-java">// The verbs the parser recognizes. UNKNOWN is the catch-all for anything else.
+enum Verb {
+    LOOK, GO, TAKE, INVENTORY, HELP, UNKNOWN;
+
+    // Maps player text to a Verb, case-insensitively; UNKNOWN when nothing fits.
+    static Verb fromInput(String text) {
+        for (Verb v : values()) {
+            if (v != UNKNOWN &amp;&amp; v.name().equalsIgnoreCase(text)) {
+                return v;
+            }
+        }
+        return UNKNOWN;
+    }
+}
+
+// The four compass directions. Parsing works the same way as Verb.
+enum Direction {
+    NORTH, SOUTH, EAST, WEST;
+
+    static Direction fromInput(String text) {
+        for (Direction d : values()) {
+            if (d.name().equalsIgnoreCase(text)) {
+                return d;
+            }
+        }
+        return null;
+    }
+}
+
+// Where the game stands. PLAYING keeps the loop running; QUIT and WON each
+// end it with their own closing line.
+enum GameState {
+    PLAYING, QUIT, WON
+}</code></pre>
+    <p>With <code>Verb</code> in hand, <code>respondTo()</code>'s <code>if</code>/<code>else if</code> chain becomes a <code>switch</code> — one arm per constant, the <code>default</code> covering <code>UNKNOWN</code>:</p>
+    <pre><code class="language-java">static String respondTo(String command, Player player) {
+    String[] parsed = parseCommand(command);
+    Verb verb = Verb.fromInput(parsed[0]);
+    String noun = parsed[1];
+
+    switch (verb) {
+        case LOOK:
+            return caveDescription();
+        case GO:
+            return respondToGo(noun);
+        case TAKE:
+            return noun.isEmpty() ? "Take what?" : takeItem(player, noun);
+        case INVENTORY:
+            return describeInventory(player);
+        case HELP:
+            return helpText();
+        default:
+            return "You can't do that here. Type 'help' for options.";
+    }
+}</code></pre>
+    <p><code>respondToGo()</code> parses to a <code>Direction</code> and compares with <code>==</code> — safe now, because each constant is the only instance of itself:</p>
+    <pre><code class="language-java">static String respondToGo(String text) {
+    if (text.isEmpty()) {
+        return "Go where?";
+    }
+    Direction dir = Direction.fromInput(text);
+    if (dir == null) {
+        return "\"" + text + "\" isn't a direction.";
+    }
+    if (dir == Direction.NORTH) {
+        return "You walk north into the gloom.";
+    }
+    return "You can't go " + dir.name().toLowerCase() + " from here.";
+}</code></pre>
+    <p><code>playLoop()</code> tracks a <code>GameState</code> instead of breaking out of a <code>while (true)</code>, and prints a closing line chosen by the state it ended in:</p>
+    <pre><code class="language-java">static void playLoop(Scanner in, Player player) {
+    GameState state = GameState.PLAYING;
+    while (state == GameState.PLAYING) {
+        System.out.print("&gt; ");
+        if (!in.hasNextLine()) {
+            break;
+        }
+        String command = in.nextLine().trim().toLowerCase();
+        if (command.equals("quit")) {
+            state = GameState.QUIT;
+        } else {
+            System.out.println(respondTo(command, player));
+        }
+    }
+    System.out.println(state == GameState.WON
+            ? "You climb into daylight. You have escaped the cave — you win!"
+            : "Farewell, adventurer.");
+}</code></pre>
+    <pre><code class="language-java">static void testDirectionFromInput() {
+    boolean ok = Direction.fromInput("north") == Direction.NORTH
+            &amp;&amp; Direction.fromInput("EAST") == Direction.EAST
+            &amp;&amp; Direction.fromInput("up") == null;
+    System.out.println(ok ? "[pass] testDirectionFromInput" : "[fail] testDirectionFromInput");
+}
+
+static void testVerbFromInput() {
+    boolean ok = Verb.fromInput("take") == Verb.TAKE
+            &amp;&amp; Verb.fromInput("wibble") == Verb.UNKNOWN;
+    System.out.println(ok ? "[pass] testVerbFromInput" : "[fail] testVerbFromInput");
+}</code></pre>
+    <p>Add both tests to <code>runTests()</code>.</p>
+    <pre><code>javac HelloWorld.java
+java HelloWorld
+java HelloWorld test</code></pre>
+    <details class="explain">
+      <summary>What an enum is — and why == is safe on one</summary>
+      <p>Each constant in an <code>enum</code> is a single, permanent instance of that enum's type, created once by the JVM. There is exactly one <code>Direction.NORTH</code> in the whole program, so <code>dir == Direction.NORTH</code> is both correct and the idiomatic comparison — the reference-identity trap that makes <code>==</code> wrong for <code>String</code> doesn't exist here. The type is closed: <code>Direction.UP</code> doesn't compile, and neither does assigning a <code>Direction</code> variable anything outside the four listed names.</p>
+    </details>
+    <details class="explain">
+      <summary>values(), name(), valueOf() — free on every enum</summary>
+      <p>The compiler adds three members to every enum. <code>values()</code> returns an array of all its constants in declaration order — that's what both <code>fromInput</code> loops iterate. <code>name()</code> returns the constant's identifier as a <code>String</code> (<code>Direction.NORTH.name()</code> is <code>"NORTH"</code>). <code>valueOf("NORTH")</code> does the reverse, but throws <code>IllegalArgumentException</code> on any name that isn't a constant — which is exactly why <code>fromInput</code> rolls its own case-insensitive loop and returns a sentinel (<code>null</code> or <code>UNKNOWN</code>) instead of letting bad player input throw.</p>
+    </details>
+    <details class="explain">
+      <summary>switch over an enum — no quotes, and a compiler that helps</summary>
+      <p>Inside <code>switch (verb)</code> the <code>case</code> labels are the bare constant names — <code>case LOOK</code>, not <code>case Verb.LOOK</code> and not <code>"look"</code>. Because the value set is closed, tools can flag a <code>switch</code> that forgets a constant, turning "handle the new command everywhere" into a checklist the compiler helps with rather than a runtime surprise. Each arm here ends in <code>return</code>, so there's no fall-through between cases; a <code>switch</code> that used <code>break</code> instead would need one per arm.</p>
+    </details>
   </section>
 
+  <!-- Step 12 — filled -->
   <section class="step" id="step-12">
     <div class="step-head">
       <h2>Step 12 — Interfaces &amp; polymorphism: interchangeable room behaviors</h2>
       <button class="bookmark-btn" data-step="step-12" data-title="Interfaces & polymorphism: interchangeable room behaviors" title="Bookmark this step">☆</button>
     </div>
-    <p class="step-teaser">Giving different room types a shared interface so the game loop can treat them all the same way.</p>
+    <p>The world is still a flat <code>String[]</code> of room names, with the cave's description hardcoded in <code>caveDescription()</code>. Real rooms differ: one gives gold the first time you enter, one is the exit. Give them a shared <strong>interface</strong> — a contract every room type fulfils — so the game can hold any room and treat them all alike:</p>
+    <pre><code class="language-java">// A place the player can be. Every room names and describes itself; the two
+// default methods let a room opt in to an entry effect or being the exit.
+interface Room {
+    String name();
+    String description();
+
+    // Runs when the player steps in. "" means "nothing happened."
+    default String onEnter(Player player) {
+        return "";
+    }
+
+    // True only for the room that wins the game when entered.
+    default boolean isExit() {
+        return false;
+    }
+}</code></pre>
+    <p>Three classes implement it. Each writes only the methods that differ for it — the defaults cover the rest:</p>
+    <pre><code class="language-java">// The starting room. No entry effect, not the exit — defaults are enough.
+class CaveMouth implements Room {
+    public String name() {
+        return "cave mouth";
+    }
+    public String description() {
+        return "You stand at the mouth of a dark cave. A path leads north.";
+    }
+}
+
+// The middle room. The first entry drops 10 gold into the player's purse.
+class Tunnel implements Room {
+    private boolean goldFound = false;
+
+    public String name() {
+        return "tunnel";
+    }
+    public String description() {
+        return "A cramped tunnel of dripping stone runs north and south.";
+    }
+    public String onEnter(Player player) {
+        if (goldFound) {
+            return "";
+        }
+        goldFound = true;
+        player.gold += 10;
+        return "You scoop up 10 gold coins from the tunnel floor.";
+    }
+}
+
+// The final room. Entering it ends the game as a win.
+class UndergroundLake implements Room {
+    public String name() {
+        return "underground lake";
+    }
+    public String description() {
+        return "A still black lake fills the cavern. A climb north leads toward daylight.";
+    }
+    public boolean isExit() {
+        return true;
+    }
+}</code></pre>
+    <p>Replace the name array with a <code>Room</code> array, and give <code>Player</code> its position in that array:</p>
+    <pre><code class="language-java">static final Room[] ROOMS = { new CaveMouth(), new Tunnel(), new UndergroundLake() };
+
+// in Player: a new field, set to 0 in the constructor
+int roomIndex;
+
+// A one-liner for "the room the player is standing in right now."
+static Room currentRoom(Player player) {
+    return ROOMS[player.roomIndex];
+}</code></pre>
+    <p>Movement now walks that array. <code>respondToGo()</code> takes the <code>Player</code>, changes <code>roomIndex</code> when the way is open, and returns the new room's description plus whatever entering it triggered — calling <code>description()</code> and <code>onEnter()</code> without knowing which class answers:</p>
+    <pre><code class="language-java">static String respondToGo(Player player, String text) {
+    Direction dir = Direction.fromInput(text);
+    if (dir == null) {
+        return text.isEmpty() ? "Go where?" : "\"" + text + "\" isn't a direction.";
+    }
+    int target = player.roomIndex;
+    if (dir == Direction.NORTH) {
+        target++;
+    } else if (dir == Direction.SOUTH) {
+        target--;
+    } else {
+        return "You can't go " + dir.name().toLowerCase() + " from here.";
+    }
+    if (target &lt; 0 || target &gt;= ROOMS.length) {
+        return "Solid rock blocks the way " + dir.name().toLowerCase() + ".";
+    }
+    player.roomIndex = target;
+    Room room = ROOMS[target];
+    String entering = room.onEnter(player);
+    return entering.isEmpty() ? room.description() : room.description() + "\n" + entering;
+}</code></pre>
+    <p>In <code>respondTo()</code>, the <code>LOOK</code> case becomes <code>return currentRoom(player).description();</code> and <code>GO</code> becomes <code>return respondToGo(player, noun);</code>. Delete <code>caveDescription()</code> — its text now lives in <code>CaveMouth</code>. In <code>playLoop()</code>, after printing the response, promote the state when the player has reached the exit:</p>
+    <pre><code class="language-java">System.out.println(respondTo(command, player));
+if (currentRoom(player).isExit()) {
+    state = GameState.WON;
+}</code></pre>
+    <pre><code class="language-java">static void testRoomPolymorphism() {
+    Player player = new Player(100, 0);
+    Room tunnel = new Tunnel();
+    String first = tunnel.onEnter(player);
+    String second = tunnel.onEnter(player);
+    boolean ok = first.contains("10 gold") &amp;&amp; player.gold == 10
+            &amp;&amp; second.isEmpty()                 // gold is found only once
+            &amp;&amp; !new CaveMouth().isExit()         // inherited default
+            &amp;&amp; new UndergroundLake().isExit();   // overridden
+    System.out.println(ok ? "[pass] testRoomPolymorphism" : "[fail] testRoomPolymorphism");
+}</code></pre>
+    <p>Add it to <code>runTests()</code>. In <code>testRespondTo()</code>, <code>"go north"</code> now returns the <em>tunnel's</em> description, so assert on <code>respondTo("go north", player).contains("cramped tunnel")</code>. In <code>testRoomsAreFixed()</code>, <code>ROOMS[0]</code> is now a <code>Room</code> rather than a <code>String</code> — assert on <code>ROOMS[0].name().equals("cave mouth")</code>. Update <code>startGame()</code>'s intro to print <code>currentRoom(player).description()</code> instead of the deleted helper.</p>
+    <pre><code>javac HelloWorld.java
+java HelloWorld
+java HelloWorld test</code></pre>
+    <details class="explain">
+      <summary>An interface is a contract; polymorphism is calling it blind</summary>
+      <p><code>interface Room</code> lists method signatures with no bodies (bar the two <code>default</code>s). <code>class Tunnel implements Room</code> is a promise: "I provide every one of those." Code that holds a <code>Room</code> variable — or a <code>Room[]</code> mixing all three classes — can call <code>description()</code> or <code>onEnter()</code> on it without a single <code>if</code> checking the type. The JVM looks at the object's <em>actual</em> class at the moment of the call and runs that class's version. That indirection is polymorphism, and it's what lets a fourth room type be added later without touching <code>respondToGo()</code> at all.</p>
+    </details>
+    <details class="explain">
+      <summary>default methods — write only what's different</summary>
+      <p>An interface method with a body is a <strong>default</strong>: implementing classes inherit it and override only when they need something else. <code>CaveMouth</code> is a plain room, so it writes just <code>name()</code> and <code>description()</code> and takes the inherited <code>onEnter()</code> (returns <code>""</code>) and <code>isExit()</code> (returns <code>false</code>). <code>Tunnel</code> overrides <code>onEnter()</code>; <code>UndergroundLake</code> overrides <code>isExit()</code>. No class carries an empty <code>return false;</code> it doesn't care about — the default is the "don't care" answer.</p>
+    </details>
+    <details class="explain">
+      <summary>Why the methods are public in the classes</summary>
+      <p>Every member of an interface is implicitly <code>public</code>. A class can't implement an interface method with weaker visibility, so the methods in <code>CaveMouth</code>, <code>Tunnel</code> and <code>UndergroundLake</code> must be spelled <code>public</code> explicitly — leave it off and the method is package-private, and <code>javac</code> rejects the class for "attempting to assign weaker access privileges." The <code>goldFound</code> field, by contrast, is <code>private</code>: it's <code>Tunnel</code>'s own bookkeeping and nothing outside it should see the flag flip.</p>
+    </details>
   </section>
 
+  <!-- Step 13 — filled -->
   <section class="step" id="step-13">
     <div class="step-head">
       <h2>Step 13 — Exceptions: handling bad input gracefully</h2>
       <button class="bookmark-btn" data-step="step-13" data-title="Exceptions: handling bad input gracefully" title="Bookmark this step">☆</button>
     </div>
-    <p class="step-teaser">try/catch around the risky parts, and why a caught exception beats a crashed game every time.</p>
+    <p>A <code>drop</code> command needs a number: <code>drop 2</code>. The player will eventually type <code>drop banana</code>, or <code>drop 9</code> with three items in their pack. Both would throw and end the program — <code>NumberFormatException</code> from the parse, <code>IndexOutOfBoundsException</code> from the list. The game should answer, not crash.</p>
+    <p>First, a small exception type of its own for problems the game can describe to the player:</p>
+    <pre><code class="language-java">// Thrown for things the game can explain but not do — a bad item number,
+// an empty pack. Its message is written to be shown to the player as-is.
+class GameException extends RuntimeException {
+    GameException(String message) {
+        super(message);
+    }
+}</code></pre>
+    <p>A helper that does the risky list work and throws <code>GameException</code> rather than letting a raw one escape:</p>
+    <pre><code class="language-java">// Removes and returns the item at a 1-based position in the player's pack.
+static String removeItemAt(Player player, int position) {
+    if (player.inventory.isEmpty()) {
+        throw new GameException("Your pack is empty.");
+    }
+    if (position &lt; 1 || position &gt; player.inventory.size()) {
+        throw new GameException("You have no item #" + position + ".");
+    }
+    return player.inventory.remove(position - 1);
+}</code></pre>
+    <p>The <code>DROP</code> case (add <code>DROP</code> to the <code>Verb</code> enum and <code>helpText()</code>) wraps both risky calls in one <code>try</code>, with a <code>catch</code> per failure:</p>
+    <pre><code class="language-java">case DROP:
+    try {
+        int position = Integer.parseInt(noun);
+        return "You drop the " + removeItemAt(player, position) + ".";
+    } catch (NumberFormatException e) {
+        return "Drop which item? Use its number, e.g. \"drop 1\".";
+    } catch (GameException e) {
+        return e.getMessage();
+    }</code></pre>
+    <p>And <code>main()</code> finally keeps Step 6's promise — <code>try</code>-with-resources closes the <code>Scanner</code> automatically, even if <code>startGame()</code> throws:</p>
+    <pre><code class="language-java">public static void main(String[] args) {
+    if (args.length &gt; 0 &amp;&amp; args[0].equals("test")) {
+        runTests();
+        return;
+    }
+    try (Scanner in = new Scanner(System.in)) {
+        startGame(in);
+    }
+}</code></pre>
+    <pre><code class="language-java">static void testRemoveItemAt() {
+    Player player = new Player(100, 0);
+    takeItem(player, "torch");
+    takeItem(player, "rope");
+    boolean removedRight = removeItemAt(player, 1).equals("torch")
+            &amp;&amp; player.inventory.size() == 1;
+
+    boolean threwOnBadIndex = false;
+    try {
+        removeItemAt(player, 9);
+    } catch (GameException e) {
+        threwOnBadIndex = true;
+    }
+    System.out.println(removedRight &amp;&amp; threwOnBadIndex
+            ? "[pass] testRemoveItemAt" : "[fail] testRemoveItemAt");
+}</code></pre>
+    <p>Add it to <code>runTests()</code>.</p>
+    <pre><code>javac HelloWorld.java
+java HelloWorld
+java HelloWorld test</code></pre>
+    <details class="explain">
+      <summary>Checked vs unchecked, and why GameException extends RuntimeException</summary>
+      <p>An exception is an object thrown up the call stack until some <code>catch</code> handles it — or, if none does, the thread dies after printing a stack trace. Subclasses of <code>RuntimeException</code> are <strong>unchecked</strong>: methods that throw them need no <code>throws</code> clause and callers aren't forced to handle them. <code>GameException</code> extends <code>RuntimeException</code> so <code>removeItemAt()</code>'s signature stays clean and only the one place that can present a message — the <code>DROP</code> case — bothers to catch it. Extending <code>Exception</code> directly would make it <strong>checked</strong>, and every method in the call chain would need <code>throws GameException</code> bolted on.</p>
+    </details>
+    <details class="explain">
+      <summary>One try, several catch — ordered specific to general</summary>
+      <p><code>Integer.parseInt("banana")</code> throws <code>NumberFormatException</code>; <code>removeItemAt</code> throws <code>GameException</code>. Both live in the same <code>try</code>, and each <code>catch</code> handles exactly one type, converting it to a return value the loop prints. When catch types share a hierarchy, the more specific one must come first — a <code>catch (RuntimeException e)</code> above <code>catch (NumberFormatException e)</code> won't compile, because the first would swallow everything and the second could never run. Here the two types are unrelated, so either order compiles, but specific-first is the habit to keep.</p>
+    </details>
+    <details class="explain">
+      <summary>try-with-resources, and "look before you leap" vs "ask forgiveness"</summary>
+      <p><code>try (Scanner in = new Scanner(System.in))</code> declares the resource in the parentheses; the JVM calls <code>in.close()</code> the instant the block exits, whether it falls off the end or an exception throws out of it. That's strictly better than the manual <code>in.close()</code> from Step 6, which a thrown exception would have jumped straight past. Note the game uses both risk styles deliberately: <code>playLoop()</code> still <em>checks</em> <code>in.hasNextLine()</code> before reading — cheap, obvious, do it up front — while <code>DROP</code> <em>attempts</em> the parse and catches the failure, because validating "is this a number?" by hand would just re-implement <code>parseInt</code>.</p>
+    </details>
   </section>
 
+  <!-- Step 14 — filled -->
   <section class="step" id="step-14">
     <div class="step-head">
       <h2>Step 14 — File I/O: saving and loading a game</h2>
       <button class="bookmark-btn" data-step="step-14" data-title="File I/O: saving and loading a game" title="Bookmark this step">☆</button>
     </div>
-    <p class="step-teaser">Writing the player's progress to disk and reading it back with java.nio.file, so a session can be resumed.</p>
+    <p>A <code>Player</code> is now four things: <code>health</code>, <code>gold</code>, <code>roomIndex</code>, <code>inventory</code>. Write them to a text file and the player can quit and pick up where they left off. Keep the format plain <code>key=value</code> lines — a human can read it, and <code>cat savegame.txt</code> is a debugging tool. Imports first:</p>
+    <pre><code class="language-java">import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;</code></pre>
+    <p>Two pure functions do the conversion, with no file anywhere in sight — which is what makes them testable:</p>
+    <pre><code class="language-java">static final Path SAVE_FILE = Path.of("savegame.txt");
+
+// The player's state as a key=value text block.
+static String toSaveText(Player player) {
+    return "health=" + player.health + "\n"
+         + "gold=" + player.gold + "\n"
+         + "room=" + player.roomIndex + "\n"
+         + "inventory=" + String.join(",", player.inventory) + "\n";
+}
+
+// The inverse: a fresh Player rebuilt from toSaveText()'s output.
+static Player fromSaveText(String text) {
+    Player player = new Player(100, 0);
+    for (String line : text.split("\n")) {
+        String[] kv = line.split("=", 2);
+        if (kv.length &lt; 2) {
+            continue;
+        }
+        switch (kv[0]) {
+            case "health": player.health = Integer.parseInt(kv[1]); break;
+            case "gold": player.gold = Integer.parseInt(kv[1]); break;
+            case "room": player.roomIndex = Integer.parseInt(kv[1]); break;
+            case "inventory":
+                if (!kv[1].isEmpty()) {
+                    for (String item : kv[1].split(",")) {
+                        player.inventory.add(item);
+                    }
+                }
+                break;
+        }
+    }
+    return player;
+}</code></pre>
+    <p>The disk layer is two thin wrappers. Both declare <code>throws IOException</code> — the compiler won't let disk failure be ignored:</p>
+    <pre><code class="language-java">static void saveGame(Player player) throws IOException {
+    Files.writeString(SAVE_FILE, toSaveText(player));
+}
+
+static Player loadGame() throws IOException {
+    return fromSaveText(Files.readString(SAVE_FILE));
+}
+
+// Copies loaded state into the Player the game loop already holds, since
+// respondTo() can't reassign the caller's reference (see the explainer).
+static void copyInto(Player into, Player from) {
+    into.health = from.health;
+    into.gold = from.gold;
+    into.roomIndex = from.roomIndex;
+    into.inventory.clear();
+    into.inventory.addAll(from.inventory);
+}</code></pre>
+    <p>Add <code>SAVE</code> and <code>LOAD</code> to the <code>Verb</code> enum and <code>helpText()</code>, then two cases in <code>respondTo()</code>:</p>
+    <pre><code class="language-java">case SAVE:
+    try {
+        saveGame(player);
+        return "Game saved.";
+    } catch (IOException e) {
+        return "Couldn't save: " + e.getMessage();
+    }
+case LOAD:
+    try {
+        copyInto(player, loadGame());
+        return "Game loaded.\n" + currentRoom(player).description();
+    } catch (IOException e) {
+        return "No saved game to load.";
+    } catch (NumberFormatException e) {
+        return "Your save file is corrupt.";
+    }</code></pre>
+    <pre><code class="language-java">static void testSaveRoundTrip() {
+    Player original = new Player(70, 25);
+    original.roomIndex = 1;
+    takeItem(original, "torch");
+    takeItem(original, "map");
+
+    Player restored = fromSaveText(toSaveText(original));
+    boolean ok = restored.health == 70
+            &amp;&amp; restored.gold == 25
+            &amp;&amp; restored.roomIndex == 1
+            &amp;&amp; restored.inventory.equals(original.inventory);
+    System.out.println(ok ? "[pass] testSaveRoundTrip" : "[fail] testSaveRoundTrip");
+}</code></pre>
+    <p>Add it to <code>runTests()</code>. The disk wrappers themselves are exercised by playing: <code>save</code>, <code>quit</code>, relaunch, <code>load</code>.</p>
+    <pre><code>javac HelloWorld.java
+java HelloWorld
+java HelloWorld test</code></pre>
+    <details class="explain">
+      <summary>java.nio.file: Path names a file, Files does the work</summary>
+      <p><code>Path.of("savegame.txt")</code> is just a filename, resolved relative to the directory <code>java</code> was launched from — no file is touched until something acts on the path. <code>Files.writeString(path, text)</code> creates the file or truncates an existing one and writes the whole string in a single call; <code>Files.readString(path)</code> reads it all back. Both open and close the underlying stream internally, so there's nothing to close by hand — the older <code>FileWriter</code>/<code>BufferedReader</code> dance isn't needed for a file this size.</p>
+    </details>
+    <details class="explain">
+      <summary>IOException is checked — the compiler makes you decide</summary>
+      <p><code>IOException</code> extends <code>Exception</code>, not <code>RuntimeException</code>, so it's <strong>checked</strong>: <code>saveGame()</code> and <code>loadGame()</code> must declare <code>throws IOException</code>, and every caller must then either catch it or declare it too. That's the language forcing an answer to "what happens when the disk is full, or the file is read-only, or it was deleted between check and read?" The <code>SAVE</code>/<code>LOAD</code> cases catch it and turn it into a line of game text; contrast Step 13's <code>GameException</code>, which is unchecked precisely so it <em>doesn't</em> impose this on every method it passes through.</p>
+    </details>
+    <details class="explain">
+      <summary>Why LOAD copies fields instead of returning a new Player</summary>
+      <p><code>respondTo(String command, Player player)</code> receives a <em>copy of the reference</em> to the player — Java passes references by value. Writing <code>player = loadGame();</code> inside <code>respondTo()</code> would only repoint that local copy; the <code>playLoop()</code> variable would still point at the old object. <code>copyInto()</code> sidesteps it by mutating the object the loop already holds — same reference, new field values. It's the same reason Step 8 threads the <code>Scanner</code> through as a parameter rather than expecting a reassignment to propagate back.</p>
+    </details>
   </section>
 
+  <!-- Step 15 — filled -->
   <section class="step" id="step-15">
     <div class="step-head">
       <h2>Step 15 — Collections: Map/Set for the world graph</h2>
       <button class="bookmark-btn" data-step="step-15" data-title="Collections: Map/Set for the world graph" title="Bookmark this step">☆</button>
     </div>
-    <p class="step-teaser">Modeling which rooms connect to which with a Map, instead of a wall of if/else room-by-room logic.</p>
+    <p>Movement still does <code>roomIndex++</code> for north and <code>roomIndex--</code> for south — the layout is baked into arithmetic. A branching cave, or an east–west fork, can't be expressed that way. Model the world as what it actually is: a <strong>graph</strong>, stored as a <code>Map</code> from each room to its exits.</p>
+    <pre><code class="language-java">import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;</code></pre>
+    <pre><code class="language-java">// For each room index, which Direction leads to which other room index.
+// A direction absent from a room's map is a wall. Map.of builds it immutable
+// in one expression — the world never changes at runtime.
+static final Map&lt;Integer, Map&lt;Direction, Integer&gt;&gt; WORLD = Map.of(
+    0, Map.of(Direction.NORTH, 1),
+    1, Map.of(Direction.NORTH, 2, Direction.SOUTH, 0),
+    2, Map.of(Direction.SOUTH, 1)
+);</code></pre>
+    <p><code>Player</code> gains a <code>Set&lt;Integer&gt; visited</code>, initialized to <code>new HashSet&lt;&gt;()</code> in the constructor with the starting room added: <code>this.visited.add(0);</code>.</p>
+    <p><code>respondToGo()</code> becomes a lookup — no arithmetic, and it never needs editing when a room is added:</p>
+    <pre><code class="language-java">static String respondToGo(Player player, String text) {
+    Direction dir = Direction.fromInput(text);
+    if (dir == null) {
+        return text.isEmpty() ? "Go where?" : "\"" + text + "\" isn't a direction.";
+    }
+    Integer destination = WORLD.get(player.roomIndex).get(dir);
+    if (destination == null) {
+        return "Solid rock blocks the way " + dir.name().toLowerCase() + ".";
+    }
+    player.roomIndex = destination;
+    Room room = ROOMS[destination];
+    boolean firstVisit = player.visited.add(destination);
+    String body = firstVisit
+            ? room.description()
+            : "You are back at the " + room.name() + ".";
+    String entering = room.onEnter(player);
+    return entering.isEmpty() ? body : body + "\n" + entering;
+}</code></pre>
+    <p>Add a <code>MAP</code> verb (to the enum and <code>helpText()</code>) that reads the <code>Set</code>:</p>
+    <pre><code class="language-java">case MAP:
+    return "You have explored " + player.visited.size() + " of " + ROOMS.length + " areas.";</code></pre>
+    <pre><code class="language-java">static void testWorldGraph() {
+    boolean ok = WORLD.get(0).get(Direction.NORTH) == 1
+            &amp;&amp; WORLD.get(1).get(Direction.SOUTH) == 0
+            &amp;&amp; WORLD.get(2).get(Direction.NORTH) == null;   // the lake has no north exit
+    System.out.println(ok ? "[pass] testWorldGraph" : "[fail] testWorldGraph");
+}
+
+static void testVisitedSet() {
+    Player player = new Player(100, 0);   // constructor already recorded room 0
+    boolean firstAdd = player.visited.add(1);
+    boolean secondAdd = player.visited.add(1);
+    System.out.println(firstAdd &amp;&amp; !secondAdd &amp;&amp; player.visited.size() == 2
+            ? "[pass] testVisitedSet" : "[fail] testVisitedSet");
+}</code></pre>
+    <p>Add both to <code>runTests()</code>. <code>visited</code> is in-memory only — it isn't in the Step 14 save format, so a loaded game starts its exploration count fresh, which is a fine simplification for now.</p>
+    <pre><code>javac HelloWorld.java
+java HelloWorld
+java HelloWorld test</code></pre>
+    <details class="explain">
+      <summary>Map — keys to values, and .get() returning null as a signal</summary>
+      <p>A <code>Map&lt;K, V&gt;</code> associates each key with one value and looks it up in roughly constant time. <code>WORLD</code> nests two of them: room index &rarr; (direction &rarr; room index), which is exactly an adjacency list — the standard way to store a graph. <code>get()</code> returns <code>null</code> when the key isn't present, and the code leans on that twice: no entry for a direction means "wall". <code>Map.of(...)</code> creates a small <strong>immutable</strong> map inline; try to <code>put()</code> into it and it throws. That's the right default for fixed data — a mutable <code>new HashMap&lt;&gt;()</code> is for maps built up at runtime.</p>
+    </details>
+    <details class="explain">
+      <summary>Set — no duplicates, and add() tells you if it was new</summary>
+      <p>A <code>Set</code> holds each distinct element once. <code>visited.add(destination)</code> returns <code>true</code> when the element was actually inserted and <code>false</code> when it was already there — so <code>boolean firstVisit = player.visited.add(...)</code> both records the visit and answers "first time here?" in a single line. <code>size()</code> then counts distinct rooms seen, no matter how many times the player has paced back and forth. A <code>HashSet</code> gives fast membership with no ordering; <code>TreeSet</code> would keep the indices sorted, which isn't needed here.</p>
+    </details>
+    <details class="explain">
+      <summary>Replacing branches with data</summary>
+      <p>The old <code>roomIndex++ / roomIndex--</code> hardcoded "north is the next room" into control flow, so every new room or non-linear connection meant new <code>if</code> branches. <code>WORLD</code> turns the layout into a <em>value</em>: it can be printed, unit-tested (as <code>testWorldGraph()</code> does), or one day read from a level file, and <code>respondToGo()</code> stays exactly as it is — only the map literal grows. "Prefer data over code" is why the Step 7 note about walls of <code>if/else</code> never came true.</p>
+    </details>
   </section>
 
+  <!-- Step 16 — filled -->
   <section class="step" id="step-16">
     <div class="step-head">
       <h2>Step 16 — Unit testing without a framework, then a peek at JUnit</h2>
       <button class="bookmark-btn" data-step="step-16" data-title="Unit testing without a framework, then a peek at JUnit" title="Bookmark this step">☆</button>
     </div>
-    <p class="step-teaser">Comparing this course's hand-rolled test&lt;Name&gt;() pattern against what a real framework like JUnit adds on top.</p>
+    <p>Thirteen <code>test&lt;Name&gt;()</code> methods have accumulated, each ending in the same <code>System.out.println(ok ? "[pass] ..." : "[fail] ...")</code>. Collapse that repetition into one assertion helper with a running tally:</p>
+    <pre><code class="language-java">// Test bookkeeping. Each assertion calls check(); runTests() prints the total.
+static int testsPassed = 0;
+static int testsFailed = 0;
+
+// Records one assertion. A failure prints its label so the line points
+// straight at the check that broke.
+static void check(boolean condition, String label) {
+    if (condition) {
+        testsPassed++;
+    } else {
+        testsFailed++;
+        System.out.println("[fail] " + label);
+    }
+}</code></pre>
+    <p>Every test rewrites to one or more <code>check()</code> calls — shorter, and each assertion is individually named:</p>
+    <pre><code class="language-java">static void testGreet() {
+    check(greet().equals("Hello, World!"), "greet returns the greeting");
+}
+
+static void testParseCommand() {
+    String[] a = parseCommand("take rusty key");
+    check(a[0].equals("take") &amp;&amp; a[1].equals("rusty key"), "parseCommand splits verb and noun");
+    check(parseCommand("look")[1].isEmpty(), "parseCommand gives an empty noun for one word");
+}</code></pre>
+    <p><code>runTests()</code> keeps its explicit call list and ends with the tally:</p>
+    <pre><code class="language-java">static void runTests() {
+    testGreet();
+    testAskName();
+    testRespondTo();
+    testTakeItem();
+    testRoomsAreFixed();
+    testParseCommand();
+    testDirectionFromInput();
+    testVerbFromInput();
+    testRoomPolymorphism();
+    testRemoveItemAt();
+    testSaveRoundTrip();
+    testWorldGraph();
+    testVisitedSet();
+
+    System.out.println(testsFailed == 0
+            ? "All " + testsPassed + " checks passed."
+            : testsPassed + " passed, " + testsFailed + " failed.");
+}</code></pre>
+    <p>That's the whole test setup — no library, runs with <code>java HelloWorld test</code>. A real project reaches for <strong>JUnit</strong>. The same two tests, written for JUnit 5, would live in a separate file:</p>
+    <pre><code class="language-java">import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class HelloWorldTest {
+    @Test
+    void greetReturnsGreeting() {
+        assertEquals("Hello, World!", HelloWorld.greet());
+    }
+
+    @Test
+    void parseCommandSplitsVerbAndNoun() {
+        String[] parsed = HelloWorld.parseCommand("take rusty key");
+        assertEquals("take", parsed[0]);
+        assertEquals("rusty key", parsed[1]);
+    }
+}</code></pre>
+    <p>This course doesn't add JUnit — there's no build tool yet to fetch the jars, and running it by hand means downloading <code>junit-platform-console-standalone.jar</code> and invoking <code>java -jar junit-platform-console-standalone.jar -cp . --scan-classpath</code>. Step 17's packaging work and a real build tool (Maven/Gradle, outside this course) are what make that painless. The hand-rolled runner stays as the default.</p>
+    <pre><code>javac HelloWorld.java
+java HelloWorld test</code></pre>
+    <details class="explain">
+      <summary>What the hand-rolled pattern buys, and what it costs</summary>
+      <p>Upsides: zero dependencies, one compile, tests are just <code>static</code> methods you can read top to bottom, and <code>java HelloWorld test</code> works on any machine with a JDK. Downsides: <code>runTests()</code> is a call list you maintain by hand — forget a line and the test silently never runs; there's no isolation between tests, so leftover state could leak (these tests dodge it by building a fresh <code>Player</code> each time); and a test that <em>throws</em> instead of returning <code>false</code> aborts the entire run at that point. Fine for a single-file teaching project; it stops scaling somewhere around a second source file.</p>
+    </details>
+    <details class="explain">
+      <summary>What JUnit adds on top</summary>
+      <p><code>@Test</code> discovery removes the call list — the runner finds every annotated method by reflection. Each test method runs on a fresh instance of the test class, so isolation is automatic. <code>assertEquals(expected, actual)</code> prints both sides on failure; <code>assertThrows</code> asserts that code throws; <code>assertAll</code> reports every failing assertion in a group instead of stopping at the first. <code>@BeforeEach</code> centralizes setup. A failure fails one method and the rest still run, and the output plugs into IDEs and CI. The price is the dependency and a classpath that can find it.</p>
+    </details>
+    <details class="explain">
+      <summary>check() and assertEquals are the same idea</summary>
+      <p>Both reduce "verify a fact, record the outcome" to a single call. The difference is mechanism: <code>assertEquals</code> throws an <code>AssertionError</code> that JUnit catches per method and tallies; <code>check()</code> just increments a counter and prints on failure. The habit you build writing <code>check(actual.equals(expected), "why this matters")</code> transfers directly — a JUnit test is the same assertions with a more capable runner underneath.</p>
+    </details>
   </section>
 
+  <!-- Step 17 — filled -->
   <section class="step" id="step-17">
     <div class="step-head">
       <h2>Step 17 — Packaging: a runnable JAR with a manifest</h2>
       <button class="bookmark-btn" data-step="step-17" data-title="Packaging: a runnable JAR with a manifest" title="Bookmark this step">☆</button>
     </div>
-    <p class="step-teaser">Bundling every .class file into one jar a player can run with a single java -jar command.</p>
+    <p>One <code>javac HelloWorld.java</code> now produces a fistful of class files — <code>HelloWorld.class</code>, <code>Player.class</code>, <code>Room.class</code>, <code>CaveMouth.class</code>, <code>Tunnel.class</code>, <code>UndergroundLake.class</code>, <code>GameException.class</code>, and one each for the three enums. Handing someone the game means handing them all of them, in the right layout. A <strong>JAR</strong> bundles the lot into a single file. No source changes this step — it's all packaging.</p>
+    <p>Compile into a clean output directory, then create the jar from it with a manifest that names the entry-point class:</p>
+    <pre><code>javac -d out HelloWorld.java
+jar --create --file adventure.jar --main-class HelloWorld -C out .</code></pre>
+    <p>Run it — one file, no classpath to spell out:</p>
+    <pre><code>java -jar adventure.jar
+java -jar adventure.jar test</code></pre>
+    <p>The older explicit-manifest form does the same thing and shows what <code>--main-class</code> writes. Create a file <code>MANIFEST.MF</code> with a single line <em>and a trailing newline</em>:</p>
+    <pre><code>Main-Class: HelloWorld</code></pre>
+    <pre><code>jar --create --file adventure.jar --manifest MANIFEST.MF -C out .
+jar --list --file adventure.jar</code></pre>
+    <details class="explain">
+      <summary>A JAR is just a ZIP of class files</summary>
+      <p><code>jar</code> writes a ZIP archive with a <code>.jar</code> extension: the <code>.class</code> files, any resources, and a generated <code>META-INF/MANIFEST.MF</code>. <code>jar --list --file adventure.jar</code> shows the contents, and <code>unzip adventure.jar</code> would extract them — it really is a ZIP. If the code used packages (<code>package com.example.game;</code>), those become directories inside the jar, mirroring the source tree; this single-file, package-less project just puts every class at the root.</p>
+    </details>
+    <details class="explain">
+      <summary>Main-Class, and the trailing-newline trap</summary>
+      <p><code>java -jar adventure.jar</code> has to know which of the ten classes holds <code>main()</code>. The <code>Main-Class:</code> header in the manifest tells it; without one, <code>java -jar</code> stops with "no main manifest attribute." When you write <code>MANIFEST.MF</code> by hand, it <em>must</em> end with a newline — the manifest parser ignores a final line that has no line terminator, so a one-line file with no newline reads as empty and the header is silently lost. <code>--main-class HelloWorld</code> (or the classic <code>jar cfe adventure.jar HelloWorld ...</code>, where <code>e</code> is "entry point") sidesteps that by writing the header for you.</p>
+    </details>
+    <details class="explain">
+      <summary>-d out, -C out ., and -jar vs -cp</summary>
+      <p><code>javac -d out</code> drops the <code>.class</code> files under <code>out/</code> instead of beside the source, so the build output is one deletable directory. <code>jar -C out .</code> means "change into <code>out</code>, then add <code>.</code>" — so paths <em>inside</em> the jar are <code>HelloWorld.class</code>, not <code>out/HelloWorld.class</code>. At run time, <code>java -cp out HelloWorld</code> runs from the loose class files (what every earlier step effectively did with <code>-cp .</code>); <code>java -jar adventure.jar</code> runs from the bundle and takes its main class and classpath from the manifest, ignoring a <code>-cp</code> on the command line. The jar is the version you give to someone who just wants to play.</p>
+    </details>
   </section>
 
+  <!-- Step 18 — filled -->
   <section class="step" id="step-18">
     <div class="step-head">
       <h2>Step 18 — Ship it: the finished Java text adventure</h2>
       <button class="bookmark-btn" data-step="step-18" data-title="Ship it: the finished Java text adventure" title="Bookmark this step">☆</button>
     </div>
-    <p class="step-teaser">Pulling every earlier step together into one playable game, running on a plain JVM with no native compilation at all.</p>
+    <p>Every earlier step lives in one file, <code>HelloWorld.java</code>: the greeting and its test from Steps 1–2, the <code>Player</code> class from Steps 3–4, <code>Scanner</code> input from Step 6, the game loop and methods from Steps 7–8, arrays and <code>ArrayList</code> from Step 9, command parsing from Step 10, three enums from Step 11, the <code>Room</code> interface and its implementations from Step 12, exceptions from Step 13, save/load from Step 14, the <code>Map</code>/<code>Set</code> world graph from Step 15, and the <code>check()</code> test runner from Step 16.</p>
+    <details class="explain">
+      <summary>The complete HelloWorld.java</summary>
+      <pre><code class="language-java">import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Scanner;
+import java.util.Set;
+
+public class HelloWorld {
+
+    // The world's rooms, indexed 0..2. Fixed count, so a plain array.
+    static final Room[] ROOMS = { new CaveMouth(), new Tunnel(), new UndergroundLake() };
+
+    // The world graph: for each room index, which Direction leads where.
+    // A missing direction is a wall. Immutable — the layout never changes.
+    static final Map&lt;Integer, Map&lt;Direction, Integer&gt;&gt; WORLD = Map.of(
+        0, Map.of(Direction.NORTH, 1),
+        1, Map.of(Direction.NORTH, 2, Direction.SOUTH, 0),
+        2, Map.of(Direction.SOUTH, 1)
+    );
+
+    // Where a saved game is written and read.
+    static final Path SAVE_FILE = Path.of("savegame.txt");
+
+    // ---- game text ----------------------------------------------------------
+
+    // The game's opening greeting.
+    static String greet() {
+        return "Hello, World!";
+    }
+
+    // Prompts for the player's name and returns a welcome line. A blank
+    // entry becomes "stranger". The Scanner is passed in so tests supply one.
+    static String askName(Scanner in) {
+        System.out.print("What is your name, adventurer? ");
+        String name = in.nextLine().trim();
+        if (name.isEmpty()) {
+            name = "stranger";
+        }
+        return "Welcome, " + name + "!";
+    }
+
+    // The list of commands, shown by "help" and after any unknown command.
+    static String helpText() {
+        return "Commands: look, go &lt;direction&gt;, take &lt;item&gt;, drop &lt;number&gt;, "
+             + "inventory, map, save, load, help, quit";
+    }
+
+    // ---- inventory --------------------------------------------------------
+
+    // Adds an item to the player's pack and returns the line to show them.
+    static String takeItem(Player player, String item) {
+        player.inventory.add(item);
+        return "You take the " + item + ".";
+    }
+
+    // A readable summary of what the player is carrying.
+    static String describeInventory(Player player) {
+        if (player.inventory.isEmpty()) {
+            return "You are carrying nothing.";
+        }
+        return "You are carrying: " + String.join(", ", player.inventory);
+    }
+
+    // Removes and returns the item at a 1-based position, or throws a
+    // GameException whose message is safe to show the player.
+    static String removeItemAt(Player player, int position) {
+        if (player.inventory.isEmpty()) {
+            throw new GameException("Your pack is empty.");
+        }
+        if (position &lt; 1 || position &gt; player.inventory.size()) {
+            throw new GameException("You have no item #" + position + ".");
+        }
+        return player.inventory.remove(position - 1);
+    }
+
+    // ---- rooms & movement ------------------------------------------------
+
+    // The room the player is standing in right now.
+    static Room currentRoom(Player player) {
+        return ROOMS[player.roomIndex];
+    }
+
+    // Moves the player if the chosen direction has an exit, then reports the
+    // new room and whatever entering it triggered.
+    static String respondToGo(Player player, String text) {
+        Direction dir = Direction.fromInput(text);
+        if (dir == null) {
+            return text.isEmpty() ? "Go where?" : "\"" + text + "\" isn't a direction.";
+        }
+        Integer destination = WORLD.get(player.roomIndex).get(dir);
+        if (destination == null) {
+            return "Solid rock blocks the way " + dir.name().toLowerCase() + ".";
+        }
+        player.roomIndex = destination;
+        Room room = ROOMS[destination];
+        boolean firstVisit = player.visited.add(destination);
+        String body = firstVisit
+                ? room.description()
+                : "You are back at the " + room.name() + ".";
+        String entering = room.onEnter(player);
+        return entering.isEmpty() ? body : body + "\n" + entering;
+    }
+
+    // ---- save / load ---------------------------------------------------
+
+    // The player's state as a key=value text block.
+    static String toSaveText(Player player) {
+        return "health=" + player.health + "\n"
+             + "gold=" + player.gold + "\n"
+             + "room=" + player.roomIndex + "\n"
+             + "inventory=" + String.join(",", player.inventory) + "\n";
+    }
+
+    // A fresh Player rebuilt from toSaveText()'s output.
+    static Player fromSaveText(String text) {
+        Player player = new Player(100, 0);
+        for (String line : text.split("\n")) {
+            String[] kv = line.split("=", 2);
+            if (kv.length &lt; 2) {
+                continue;
+            }
+            switch (kv[0]) {
+                case "health": player.health = Integer.parseInt(kv[1]); break;
+                case "gold": player.gold = Integer.parseInt(kv[1]); break;
+                case "room": player.roomIndex = Integer.parseInt(kv[1]); break;
+                case "inventory":
+                    if (!kv[1].isEmpty()) {
+                        for (String item : kv[1].split(",")) {
+                            player.inventory.add(item);
+                        }
+                    }
+                    break;
+            }
+        }
+        return player;
+    }
+
+    static void saveGame(Player player) throws IOException {
+        Files.writeString(SAVE_FILE, toSaveText(player));
+    }
+
+    static Player loadGame() throws IOException {
+        return fromSaveText(Files.readString(SAVE_FILE));
+    }
+
+    // Copies loaded state into the Player the loop already holds, since
+    // respondTo() can't reassign the caller's reference.
+    static void copyInto(Player into, Player from) {
+        into.health = from.health;
+        into.gold = from.gold;
+        into.roomIndex = from.roomIndex;
+        into.inventory.clear();
+        into.inventory.addAll(from.inventory);
+    }
+
+    // ---- command handling ---------------------------------------------
+
+    // Splits a command line into a verb and the rest as its noun.
+    static String[] parseCommand(String input) {
+        String[] parts = input.trim().split("\\s+", 2);
+        String verb = parts[0];
+        String noun = parts.length &gt; 1 ? parts[1] : "";
+        return new String[] { verb, noun };
+    }
+
+    // Turns one command into the text shown to the player.
+    static String respondTo(String command, Player player) {
+        String[] parsed = parseCommand(command);
+        Verb verb = Verb.fromInput(parsed[0]);
+        String noun = parsed[1];
+
+        switch (verb) {
+            case LOOK:
+                return currentRoom(player).description();
+            case GO:
+                return respondToGo(player, noun);
+            case TAKE:
+                return noun.isEmpty() ? "Take what?" : takeItem(player, noun);
+            case DROP:
+                try {
+                    int position = Integer.parseInt(noun);
+                    return "You drop the " + removeItemAt(player, position) + ".";
+                } catch (NumberFormatException e) {
+                    return "Drop which item? Use its number, e.g. \"drop 1\".";
+                } catch (GameException e) {
+                    return e.getMessage();
+                }
+            case INVENTORY:
+                return describeInventory(player);
+            case MAP:
+                return "You have explored " + player.visited.size()
+                     + " of " + ROOMS.length + " areas.";
+            case SAVE:
+                try {
+                    saveGame(player);
+                    return "Game saved.";
+                } catch (IOException e) {
+                    return "Couldn't save: " + e.getMessage();
+                }
+            case LOAD:
+                try {
+                    copyInto(player, loadGame());
+                    return "Game loaded.\n" + currentRoom(player).description();
+                } catch (IOException e) {
+                    return "No saved game to load.";
+                } catch (NumberFormatException e) {
+                    return "Your save file is corrupt.";
+                }
+            case HELP:
+                return helpText();
+            default:
+                return "You can't do that here. Type 'help' for options.";
+        }
+    }
+
+    // ---- the loop -----------------------------------------------------
+
+    // Reads commands until the player quits, wins, or input ends.
+    static void playLoop(Scanner in, Player player) {
+        GameState state = GameState.PLAYING;
+        while (state == GameState.PLAYING) {
+            System.out.print("&gt; ");
+            if (!in.hasNextLine()) {
+                break;
+            }
+            String command = in.nextLine().trim().toLowerCase();
+            if (command.equals("quit")) {
+                state = GameState.QUIT;
+            } else {
+                System.out.println(respondTo(command, player));
+                if (currentRoom(player).isExit()) {
+                    state = GameState.WON;
+                }
+            }
+        }
+        System.out.println(state == GameState.WON
+                ? "You climb into daylight. You have escaped the cave — you win!"
+                : "Farewell, adventurer.");
+    }
+
+    // Runs one full play session against the given input source.
+    static void startGame(Scanner in) {
+        Player player = new Player(100, 0);
+        System.out.println(greet());
+        System.out.println(askName(in));
+        System.out.println(currentRoom(player).description());
+        System.out.println(takeItem(player, "torch"));
+        playLoop(in, player);
+    }
+
+    public static void main(String[] args) {
+        if (args.length &gt; 0 &amp;&amp; args[0].equals("test")) {
+            runTests();
+            return;
+        }
+        try (Scanner in = new Scanner(System.in)) {
+            startGame(in);
+        }
+    }
+
+    // ---- tests ------------------------------------------------------
+
+    static int testsPassed = 0;
+    static int testsFailed = 0;
+
+    // Records one assertion; a failure prints its label.
+    static void check(boolean condition, String label) {
+        if (condition) {
+            testsPassed++;
+        } else {
+            testsFailed++;
+            System.out.println("[fail] " + label);
+        }
+    }
+
+    static void testGreet() {
+        check(greet().equals("Hello, World!"), "greet returns the greeting");
+    }
+
+    static void testAskName() {
+        check(askName(new Scanner("Aria\n")).equals("Welcome, Aria!"), "askName greets by name");
+        check(askName(new Scanner("\n")).equals("Welcome, stranger!"), "askName falls back to stranger");
+    }
+
+    static void testRespondTo() {
+        Player player = new Player(100, 0);
+        check(respondTo("look", player).startsWith("You stand at the mouth"), "look describes the cave mouth");
+        check(respondTo("go north", player).contains("cramped tunnel"), "go north moves to the tunnel");
+        check(respondTo("mumble", player).startsWith("You can't do that"), "an unknown verb is rejected");
+    }
+
+    static void testTakeItem() {
+        Player player = new Player(100, 0);
+        takeItem(player, "torch");
+        takeItem(player, "rope");
+        check(player.inventory.size() == 2, "takeItem adds to the pack");
+        check(describeInventory(player).equals("You are carrying: torch, rope"), "describeInventory lists items");
+    }
+
+    static void testRoomsAreFixed() {
+        check(ROOMS.length == 3 &amp;&amp; ROOMS[0].name().equals("cave mouth"), "ROOMS is a fixed 3-room array");
+    }
+
+    static void testParseCommand() {
+        String[] a = parseCommand("take rusty key");
+        check(a[0].equals("take") &amp;&amp; a[1].equals("rusty key"), "parseCommand splits verb and noun");
+        check(parseCommand("look")[1].isEmpty(), "parseCommand gives an empty noun for one word");
+    }
+
+    static void testDirectionFromInput() {
+        check(Direction.fromInput("north") == Direction.NORTH, "fromInput maps north");
+        check(Direction.fromInput("EAST") == Direction.EAST, "fromInput is case-insensitive");
+        check(Direction.fromInput("up") == null, "fromInput returns null for non-directions");
+    }
+
+    static void testVerbFromInput() {
+        check(Verb.fromInput("take") == Verb.TAKE, "fromInput maps take");
+        check(Verb.fromInput("wibble") == Verb.UNKNOWN, "fromInput returns UNKNOWN otherwise");
+    }
+
+    static void testRoomPolymorphism() {
+        Player player = new Player(100, 0);
+        Room tunnel = new Tunnel();
+        String first = tunnel.onEnter(player);
+        String second = tunnel.onEnter(player);
+        check(first.contains("10 gold") &amp;&amp; player.gold == 10, "Tunnel.onEnter grants gold once");
+        check(second.isEmpty(), "Tunnel.onEnter is silent on re-entry");
+        check(!new CaveMouth().isExit() &amp;&amp; new UndergroundLake().isExit(), "only the lake overrides isExit");
+    }
+
+    static void testRemoveItemAt() {
+        Player player = new Player(100, 0);
+        takeItem(player, "torch");
+        takeItem(player, "rope");
+        check(removeItemAt(player, 1).equals("torch") &amp;&amp; player.inventory.size() == 1, "removeItemAt drops by position");
+        boolean threw = false;
+        try {
+            removeItemAt(player, 9);
+        } catch (GameException e) {
+            threw = true;
+        }
+        check(threw, "removeItemAt throws GameException on a bad index");
+    }
+
+    static void testSaveRoundTrip() {
+        Player original = new Player(70, 25);
+        original.roomIndex = 1;
+        takeItem(original, "torch");
+        takeItem(original, "map");
+        Player restored = fromSaveText(toSaveText(original));
+        check(restored.health == 70 &amp;&amp; restored.gold == 25 &amp;&amp; restored.roomIndex == 1, "save round-trip keeps scalars");
+        check(restored.inventory.equals(original.inventory), "save round-trip keeps the inventory");
+    }
+
+    static void testWorldGraph() {
+        check(WORLD.get(0).get(Direction.NORTH) == 1, "cave mouth leads north to the tunnel");
+        check(WORLD.get(1).get(Direction.SOUTH) == 0, "the tunnel leads back south");
+        check(WORLD.get(2).get(Direction.NORTH) == null, "the lake has no north exit");
+    }
+
+    static void testVisitedSet() {
+        Player player = new Player(100, 0);
+        boolean firstAdd = player.visited.add(1);
+        boolean secondAdd = player.visited.add(1);
+        check(firstAdd &amp;&amp; !secondAdd, "Set.add reports whether the element was new");
+        check(player.visited.size() == 2, "visited counts distinct rooms");
+    }
+
+    static void runTests() {
+        testGreet();
+        testAskName();
+        testRespondTo();
+        testTakeItem();
+        testRoomsAreFixed();
+        testParseCommand();
+        testDirectionFromInput();
+        testVerbFromInput();
+        testRoomPolymorphism();
+        testRemoveItemAt();
+        testSaveRoundTrip();
+        testWorldGraph();
+        testVisitedSet();
+
+        System.out.println(testsFailed == 0
+                ? "All " + testsPassed + " checks passed."
+                : testsPassed + " passed, " + testsFailed + " failed.");
+    }
+}
+
+// A plain data class: the player's stats, position, pack and where they've been.
+class Player {
+    int health;
+    int gold;
+    int roomIndex;
+    ArrayList&lt;String&gt; inventory;
+    Set&lt;Integer&gt; visited;
+
+    Player(int health, int gold) {
+        this.health = health;
+        this.gold = gold;
+        this.roomIndex = 0;
+        this.inventory = new ArrayList&lt;&gt;();
+        this.visited = new HashSet&lt;&gt;();
+        this.visited.add(0);
+    }
+}
+
+// A place the player can be. Two default methods let a room opt in to an
+// entry effect or to being the exit.
+interface Room {
+    String name();
+    String description();
+
+    default String onEnter(Player player) {
+        return "";
+    }
+
+    default boolean isExit() {
+        return false;
+    }
+}
+
+class CaveMouth implements Room {
+    public String name() {
+        return "cave mouth";
+    }
+    public String description() {
+        return "You stand at the mouth of a dark cave. A path leads north.";
+    }
+}
+
+class Tunnel implements Room {
+    private boolean goldFound = false;
+
+    public String name() {
+        return "tunnel";
+    }
+    public String description() {
+        return "A cramped tunnel of dripping stone runs north and south.";
+    }
+    public String onEnter(Player player) {
+        if (goldFound) {
+            return "";
+        }
+        goldFound = true;
+        player.gold += 10;
+        return "You scoop up 10 gold coins from the tunnel floor.";
+    }
+}
+
+class UndergroundLake implements Room {
+    public String name() {
+        return "underground lake";
+    }
+    public String description() {
+        return "A still black lake fills the cavern. A climb north leads toward daylight.";
+    }
+    public boolean isExit() {
+        return true;
+    }
+}
+
+// Unchecked so it doesn't force a throws clause through every caller; its
+// message is written to be shown to the player as-is.
+class GameException extends RuntimeException {
+    GameException(String message) {
+        super(message);
+    }
+}
+
+enum Verb {
+    LOOK, GO, TAKE, DROP, INVENTORY, MAP, SAVE, LOAD, HELP, UNKNOWN;
+
+    static Verb fromInput(String text) {
+        for (Verb v : values()) {
+            if (v != UNKNOWN &amp;&amp; v.name().equalsIgnoreCase(text)) {
+                return v;
+            }
+        }
+        return UNKNOWN;
+    }
+}
+
+enum Direction {
+    NORTH, SOUTH, EAST, WEST;
+
+    static Direction fromInput(String text) {
+        for (Direction d : values()) {
+            if (d.name().equalsIgnoreCase(text)) {
+                return d;
+            }
+        }
+        return null;
+    }
+}
+
+enum GameState {
+    PLAYING, QUIT, WON
+}</code></pre>
+    </details>
+    <p>Build, test, and package it — the same three commands from Steps 2, 16 and 17:</p>
+    <pre><code>javac -d out HelloWorld.java
+java -cp out HelloWorld test
+jar --create --file adventure.jar --main-class HelloWorld -C out .</code></pre>
+    <p>Then play the bundle:</p>
+    <pre><code>java -jar adventure.jar</code></pre>
+    <pre><code>Hello, World!
+What is your name, adventurer? Bta
+Welcome, Bta!
+You stand at the mouth of a dark cave. A path leads north.
+You take the torch.
+&gt; go north
+A cramped tunnel of dripping stone runs north and south.
+You scoop up 10 gold coins from the tunnel floor.
+&gt; inventory
+You are carrying: torch
+&gt; save
+Game saved.
+&gt; go north
+A still black lake fills the cavern. A climb north leads toward daylight.
+You climb into daylight. You have escaped the cave — you win!</code></pre>
+    <details class="explain">
+      <summary>What "the traditional Java way" actually meant</summary>
+      <p>Nothing in this course touched a native compiler or an IDE. <code>javac</code> turned <code>HelloWorld.java</code> into JVM <strong>bytecode</strong> — portable, not machine code — and <code>java</code> ran that bytecode inside a JVM, which JIT-compiles hot methods to native code as the program runs. Debugging was <code>jdb</code>, the JDK's own command-line debugger (Step 5). Packaging was a <code>jar</code> — a ZIP of class files with a manifest (Step 17). The garbage collector reclaimed every <code>Player</code>, <code>ArrayList</code> and <code>Room</code> with no <code>free</code> anywhere. That's the whole toolchain: three commands that ship in every JDK, no build tool, no framework.</p>
+    </details>
+    <details class="explain">
+      <summary>Where a real project goes from here</summary>
+      <p>The single file is a teaching constraint, not a recommendation. A production version would split each class into its own file under a <code>package</code>, let a build tool (Maven or Gradle) manage the compile and pull in dependencies, move the hand-rolled <code>check()</code> tests to JUnit (Step 16), and add a proper save format instead of the <code>key=value</code> sketch from Step 14. The Java concepts underneath — classes, interfaces, enums, generics, collections, exceptions, the JVM — are exactly the same at that scale; only the tooling around them grows.</p>
+    </details>
   </section>
 
 </div>
