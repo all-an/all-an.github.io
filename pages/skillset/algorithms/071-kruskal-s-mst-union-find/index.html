@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kruskal's MST (Union-Find) — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Kruskal's MST (Union-Find)</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Medium–Hard</span>
+    <span class="badge badge-tech">Graph / Union-Find</span>
+  </div>
+
+  <p class="desc">Kruskal's algorithm builds a minimum spanning tree by sorting all edges by weight and adding each one unless it would form a cycle. Detecting cycles quickly is exactly what the <strong>Union-Find</strong> (disjoint set) structure is for.</p>
+
+  <!-- interactive demo: build a minimum spanning tree with Kruskal's algorithm. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type undirected edges "a-b:weight"</label>
+    <input id="demoInput" type="text" value="0-1:4, 0-2:3, 1-2:1, 1-3:2, 2-3:4" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">MST</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>Sort the edges by weight, cheapest first. Walk through them: an edge is <strong>accepted</strong> if its two endpoints are currently in different components (so it cannot close a cycle), and <strong>skipped</strong> otherwise. Union-Find answers "are these two nodes already connected?" via <code>find</code> (the component's representative) and merges components via <code>union</code>. Stop after V − 1 edges.</p>
+  <p>Two optimisations make Union-Find effectively constant time: <em>path compression</em> (flatten the tree during <code>find</code>) and <em>union by rank/size</em> (attach the smaller tree under the larger).</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Union-Find with path compression and union by size.
+static class UnionFind {
+    private final int[] parent;
+    private final int[] size;
+
+    UnionFind(int n) {
+        parent = new int[n];
+        size = new int[n];
+        for (int i = 0; i &lt; n; i++) {
+            parent[i] = i; // every node starts as its own component
+            size[i] = 1;
+        }
+    }
+
+    int find(int node) {
+        if (parent[node] != node) parent[node] = find(parent[node]); // path compression
+        return parent[node];
+    }
+
+    // Merge two components; false if they were already connected.
+    boolean union(int a, int b) {
+        int rootA = find(a), rootB = find(b);
+        if (rootA == rootB) return false;
+        if (size[rootA] &lt; size[rootB]) { int t = rootA; rootA = rootB; rootB = t; }
+        parent[rootB] = rootA; // attach the smaller tree under the larger
+        size[rootA] += size[rootB];
+        return true;
+    }
+}
+
+// Kruskal: edges are {a, b, weight}. Returns the MST total weight.
+static int kruskalMst(int nodeCount, int[][] edges) {
+    int[][] sorted = edges.clone();
+    Arrays.sort(sorted, Comparator.comparingInt(edge -&gt; edge[2]));
+    UnionFind components = new UnionFind(nodeCount);
+    int total = 0;
+    for (int[] edge : sorted) {
+        if (components.union(edge[0], edge[1])) total += edge[2]; // joins two components: keep it
+    }
+    return total;
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Union-Find with path compression and union by size.
+class UnionFind {
+  constructor(n) {
+    this.parent = Array.from({ length: n }, (_, i) =&gt; i); // every node starts as its own component
+    this.size = new Array(n).fill(1);
+  }
+
+  find(node) {
+    if (this.parent[node] !== node) this.parent[node] = this.find(this.parent[node]); // path compression
+    return this.parent[node];
+  }
+
+  // Merge two components; false if they were already connected.
+  union(a, b) {
+    let rootA = this.find(a);
+    let rootB = this.find(b);
+    if (rootA === rootB) return false;
+    if (this.size[rootA] &lt; this.size[rootB]) [rootA, rootB] = [rootB, rootA];
+    this.parent[rootB] = rootA; // attach the smaller tree under the larger
+    this.size[rootA] += this.size[rootB];
+    return true;
+  }
+}
+
+// Kruskal: edges are [a, b, weight]. Returns the MST total weight.
+function kruskalMst(nodeCount, edges) {
+  const sorted = [...edges].sort((x, y) =&gt; x[2] - y[2]);
+  const components = new UnionFind(nodeCount);
+  let total = 0;
+  for (const [a, b, weight] of sorted) {
+    if (components.union(a, b)) total += weight; // joins two components: keep it
+  }
+  return total;
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(E log E)</strong> — dominated by sorting the edges</li>
+    <li>Space <strong>O(V)</strong> — the Union-Find arrays</li>
+  </ul>
+  <p>Union-Find is worth knowing on its own: it also solves "number of connected components", "redundant connection" and "accounts merge" in near-linear time.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Largest rectangle in histogram — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Largest rectangle in histogram</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Hard</span>
+    <span class="badge badge-tech">Stack</span>
+  </div>
+
+  <p class="desc">Given the heights of adjacent bars (each of width 1) forming a histogram, find the area of the largest rectangle that fits inside it — for <code>[2, 1, 5, 6, 2, 3]</code> the answer is <code>10</code> (the two bars of height 5 and 6 give a 5 × 2 rectangle).</p>
+
+  <!-- interactive demo: find the largest rectangle in a histogram. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type bar heights separated by commas</label>
+    <input id="demoInput" type="text" value="2, 1, 5, 6, 2, 3" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Largest area</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>For each bar, the widest rectangle using that bar as its <em>shortest</em> bar extends left and right until it meets a bar that is shorter. The trick is finding those two boundaries for every bar in one pass, with a <strong>monotonic stack</strong> of bar indices whose heights increase.</p>
+  <p>Scan left to right. While the current bar is lower than the bar on top of the stack, that top bar can extend no further right: pop it, and compute its rectangle — height times a width running from just after the new top of the stack (its left boundary) to just before the current index. Then push the current bar. A sentinel of height 0 at the end flushes everything left on the stack.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Monotonic stack of indices with increasing heights.
+static int largestRectangleArea(int[] heights) {
+    Deque&lt;Integer&gt; stack = new ArrayDeque&lt;&gt;();
+    int best = 0;
+    for (int i = 0; i &lt;= heights.length; i++) {
+        int current = i == heights.length ? 0 : heights[i]; // a final 0-height bar flushes the stack
+        while (!stack.isEmpty() &amp;&amp; heights[stack.peek()] &gt;= current) {
+            int height = heights[stack.pop()];
+            int left = stack.isEmpty() ? 0 : stack.peek() + 1; // first bar the rectangle can cover
+            best = Math.max(best, height * (i - left));
+        }
+        stack.push(i);
+    }
+    return best;
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Monotonic stack of indices with increasing heights.
+function largestRectangleArea(heights) {
+  const stack = [];
+  let best = 0;
+  for (let i = 0; i &lt;= heights.length; i++) {
+    const current = i === heights.length ? 0 : heights[i]; // a final 0-height bar flushes the stack
+    while (stack.length &gt; 0 &amp;&amp; heights[stack[stack.length - 1]] &gt;= current) {
+      const height = heights[stack.pop()];
+      const left = stack.length &gt; 0 ? stack[stack.length - 1] + 1 : 0; // first bar the rectangle can cover
+      best = Math.max(best, height * (i - left));
+    }
+    stack.push(i);
+  }
+  return best;
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(n)</strong> — each bar is pushed and popped once</li>
+    <li>Space <strong>O(n)</strong> — the stack can hold every bar</li>
+  </ul>
+  <p>The brute force expands from every bar in O(n²). This problem is the building block for "maximal rectangle" in a binary matrix: treat each row as the base of a histogram and run this on every row.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

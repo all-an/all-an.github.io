@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pascal's triangle — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Pascal's triangle</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Easy–Medium</span>
+    <span class="badge badge-tech">Array / DP</span>
+  </div>
+
+  <p class="desc">Pascal's triangle starts with a single <code>1</code>; every following row begins and ends with <code>1</code>, and each inner number is the sum of the two numbers above it. Given n, return the first n rows.</p>
+
+  <!-- interactive demo: draw the first n rows of Pascal's triangle. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type the number of rows (1–12)</label>
+    <input id="demoInput" type="text" value="5" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Rows</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>Build the triangle row by row. Row <code>r</code> has <code>r + 1</code> entries: put <code>1</code> at both ends and, for each position in between, add the two neighbours from the previous row — <code>row[c] = prev[c − 1] + prev[c]</code>. It is a tiny example of dynamic programming: each row depends only on the one before it.</p>
+  <p>The entries are the binomial coefficients C(r, c), so a single row can also be computed directly without building the rows above it.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Build each row from the previous one by summing adjacent pairs.
+static List&lt;List&lt;Integer&gt;&gt; pascalTriangle(int rowCount) {
+    List&lt;List&lt;Integer&gt;&gt; rows = new ArrayList&lt;&gt;();
+    for (int r = 0; r &lt; rowCount; r++) {
+        List&lt;Integer&gt; row = new ArrayList&lt;&gt;();
+        row.add(1); // every row starts with 1
+        for (int c = 1; c &lt; r; c++) {
+            List&lt;Integer&gt; above = rows.get(r - 1);
+            row.add(above.get(c - 1) + above.get(c));
+        }
+        if (r &gt; 0) row.add(1); // ...and ends with 1 (the first row is just [1])
+        rows.add(row);
+    }
+    return rows;
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Build each row from the previous one by summing adjacent pairs.
+function pascalTriangle(rowCount) {
+  const rows = [];
+  for (let r = 0; r &lt; rowCount; r++) {
+    const row = [1]; // every row starts with 1
+    for (let c = 1; c &lt; r; c++) {
+      row.push(rows[r - 1][c - 1] + rows[r - 1][c]);
+    }
+    if (r &gt; 0) row.push(1); // ...and ends with 1 (the first row is just [1])
+    rows.push(row);
+  }
+  return rows;
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(n²)</strong> — the triangle has about n²/2 entries</li>
+    <li>Space <strong>O(n²)</strong> — all rows are stored (O(n) if you keep only the previous row)</li>
+  </ul>
+  <p>To return only row k, roll a single array: update it from right to left (<code>row[j] += row[j − 1]</code>) so each sum uses the values from the previous row.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rotate an array by k steps — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Rotate an array by k steps</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Easy</span>
+    <span class="badge badge-tech">Array</span>
+  </div>
+
+  <p class="desc">Rotate an array to the right by k steps — <code>[1, 2, 3, 4, 5, 6, 7]</code> rotated by <code>3</code> becomes <code>[5, 6, 7, 1, 2, 3, 4]</code>. The interesting version does it in place, in O(n) time.</p>
+
+  <!-- interactive demo: rotate a list to the right by k steps. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type numbers, then a semicolon and k</label>
+    <input id="demoInput" type="text" value="1, 2, 3, 4, 5, 6, 7; 3" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Rotated</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>First reduce k with <code>k % n</code> — rotating by n is a no-op. The extra-array method copies each element to index <code>(i + k) % n</code> of a new array. The in-place trick uses <strong>three reversals</strong>: reverse the whole array, then reverse the first k elements, then reverse the remaining n − k. Try it on the example: <code>[7,6,5,4,3,2,1]</code> → <code>[5,6,7,4,3,2,1]</code> → <code>[5,6,7,1,2,3,4]</code>.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Approach 1 — extra array: element i lands at (i + k) % n.
+static int[] rotateCopy(int[] numbers, int k) {
+    int n = numbers.length;
+    int[] rotated = new int[n];
+    for (int i = 0; i &lt; n; i++) {
+        rotated[(i + k) % n] = numbers[i];
+    }
+    return rotated;
+}
+
+// Approach 2 — in place: reverse everything, then reverse each part.
+static void rotate(int[] numbers, int k) {
+    int n = numbers.length;
+    k %= n; // rotating by n changes nothing
+    reverse(numbers, 0, n - 1);
+    reverse(numbers, 0, k - 1);
+    reverse(numbers, k, n - 1);
+}
+
+static void reverse(int[] numbers, int from, int to) {
+    while (from &lt; to) {
+        int temp = numbers[from];
+        numbers[from++] = numbers[to];
+        numbers[to--] = temp;
+    }
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Approach 1 — extra array: element i lands at (i + k) % n.
+function rotateCopy(numbers, k) {
+  const n = numbers.length;
+  const rotated = new Array(n);
+  for (let i = 0; i &lt; n; i++) {
+    rotated[(i + k) % n] = numbers[i];
+  }
+  return rotated;
+}
+
+// Approach 2 — in place: reverse everything, then reverse each part.
+function rotate(numbers, k) {
+  const n = numbers.length;
+  k %= n; // rotating by n changes nothing
+  reverse(numbers, 0, n - 1);
+  reverse(numbers, 0, k - 1);
+  reverse(numbers, k, n - 1);
+  return numbers;
+}
+
+function reverse(numbers, from, to) {
+  while (from &lt; to) {
+    [numbers[from], numbers[to]] = [numbers[to], numbers[from]];
+    from++;
+    to--;
+  }
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(n)</strong> — the reversals touch each element a constant number of times</li>
+    <li>Space <strong>O(1)</strong> — in place (the copy version needs O(n))</li>
+  </ul>
+  <p>A rotation to the <em>left</em> by k is the same as a right rotation by <code>n − k</code>. Always normalize k first, or a large or negative k will index out of bounds.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

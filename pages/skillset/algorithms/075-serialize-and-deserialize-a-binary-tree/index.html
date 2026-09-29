@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Serialize and deserialize a binary tree — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Serialize and deserialize a binary tree</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Medium–Hard</span>
+    <span class="badge badge-tech">Tree / Design</span>
+  </div>
+
+  <p class="desc">Turn a binary tree into a string (<strong>serialize</strong>) and rebuild the identical tree from that string (<strong>deserialize</strong>) — the way trees are saved to disk or sent over a network. The encoding must record where the missing children are, or the shape is lost.</p>
+
+  <!-- interactive demo: serialize a tree (given in level order) to a preorder string and rebuild it. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type the tree in level order (use null for gaps)</label>
+    <input id="demoInput" type="text" value="1, 2, 3, null, null, 4, 5" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Serialized string</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p><strong>Serialize</strong> with a preorder traversal, writing each node's value and a marker (here <code>#</code>) for every <code>null</code> child. The markers are what make the string unambiguous — without them, many different trees produce the same list of values.</p>
+  <p><strong>Deserialize</strong> by reading the tokens back in the same order: take the next token; if it is the marker, return <code>null</code>; otherwise create a node and recursively build its left child, then its right child, from the tokens that follow. Because preorder visits a node before its children, the tokens arrive in exactly the order the recursion needs them. A level-order (BFS) encoding works as well and is what LeetCode uses.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">static class TreeNode {
+    int value;
+    TreeNode left, right;
+    TreeNode(int value) { this.value = value; }
+}
+
+// Preorder with "#" for every missing child.
+static String serialize(TreeNode root) {
+    if (root == null) return "#";
+    return root.value + "," + serialize(root.left) + "," + serialize(root.right);
+}
+
+// Consume the tokens in the same preorder to rebuild the tree.
+static TreeNode deserialize(String data) {
+    Deque&lt;String&gt; tokens = new ArrayDeque&lt;&gt;(Arrays.asList(data.split(",")));
+    return build(tokens);
+}
+
+static TreeNode build(Deque&lt;String&gt; tokens) {
+    String token = tokens.poll();
+    if (token.equals("#")) return null;
+    TreeNode node = new TreeNode(Integer.parseInt(token));
+    node.left = build(tokens);  // the left subtree's tokens come first
+    node.right = build(tokens);
+    return node;
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">class TreeNode {
+  constructor(value, left = null, right = null) {
+    this.value = value;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+// Preorder with "#" for every missing child.
+function serialize(root) {
+  if (!root) return '#';
+  return root.value + ',' + serialize(root.left) + ',' + serialize(root.right);
+}
+
+// Consume the tokens in the same preorder to rebuild the tree.
+function deserialize(data) {
+  const tokens = data.split(',');
+  function build() {
+    const token = tokens.shift();
+    if (token === '#') return null;
+    const node = new TreeNode(Number(token));
+    node.left = build();  // the left subtree's tokens come first
+    node.right = build();
+    return node;
+  }
+  return build();
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(n)</strong> — each node is written and read once</li>
+    <li>Space <strong>O(n)</strong> — the string plus the recursion stack</li>
+  </ul>
+  <p>For a BST the markers are unnecessary: a plain preorder list identifies the tree uniquely, because the ordering rule tells you where each value belongs.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

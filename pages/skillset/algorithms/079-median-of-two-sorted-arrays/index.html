@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Median of two sorted arrays — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Median of two sorted arrays</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Medium–Hard</span>
+    <span class="badge badge-tech">Binary Search / Divide &amp; Conquer</span>
+  </div>
+
+  <p class="desc">Given two sorted arrays, find the median of the combined data — <code>[1, 3]</code> and <code>[2]</code> have median <code>2</code>; <code>[1, 2]</code> and <code>[3, 4]</code> have median <code>2.5</code>. Merging is easy and O(n + m); the interview asks for <strong>O(log(min(n, m)))</strong>.</p>
+
+  <!-- interactive demo: find the median of two sorted lists. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type two sorted lists separated by a semicolon</label>
+    <input id="demoInput" type="text" value="1, 3; 2" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Median</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>The median splits the combined sorted data into a left half and a right half of (almost) equal size. Choose a <strong>cut</strong> in the shorter array A; the cut in the longer array B is then forced, so that the two left parts together hold half the elements. The cut is correct exactly when every element on the left is at most every element on the right — and because each array is sorted, that only needs two comparisons: <code>maxLeftA ≤ minRightB</code> and <code>maxLeftB ≤ minRightA</code>.</p>
+  <p>If <code>maxLeftA &gt; minRightB</code>, A's cut is too far right, so move it left; otherwise move it right. That is a binary search on A's cut. Use ±∞ for empty sides. With the correct cut, an odd total gives the median as <code>max(maxLeftA, maxLeftB)</code>, and an even total averages that with <code>min(minRightA, minRightB)</code>.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Binary search the cut in the shorter array so the two halves are balanced and ordered.
+static double findMedianSortedArrays(int[] a, int[] b) {
+    if (a.length &gt; b.length) return findMedianSortedArrays(b, a); // search the shorter array
+    int total = a.length + b.length;
+    int half = (total + 1) / 2; // size of the combined left half
+    int low = 0, high = a.length;
+    while (low &lt;= high) {
+        int cutA = (low + high) / 2;
+        int cutB = half - cutA;
+        int maxLeftA = cutA == 0 ? Integer.MIN_VALUE : a[cutA - 1];
+        int minRightA = cutA == a.length ? Integer.MAX_VALUE : a[cutA];
+        int maxLeftB = cutB == 0 ? Integer.MIN_VALUE : b[cutB - 1];
+        int minRightB = cutB == b.length ? Integer.MAX_VALUE : b[cutB];
+        if (maxLeftA &lt;= minRightB &amp;&amp; maxLeftB &lt;= minRightA) { // a valid partition
+            int maxLeft = Math.max(maxLeftA, maxLeftB);
+            if (total % 2 == 1) return maxLeft;
+            return (maxLeft + Math.min(minRightA, minRightB)) / 2.0;
+        }
+        if (maxLeftA &gt; minRightB) high = cutA - 1; // cut in A is too far right
+        else low = cutA + 1;                       // cut in A is too far left
+    }
+    throw new IllegalArgumentException("Input arrays must be sorted");
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Binary search the cut in the shorter array so the two halves are balanced and ordered.
+function findMedianSortedArrays(a, b) {
+  if (a.length &gt; b.length) return findMedianSortedArrays(b, a); // search the shorter array
+  const total = a.length + b.length;
+  const half = Math.floor((total + 1) / 2); // size of the combined left half
+  let low = 0;
+  let high = a.length;
+  while (low &lt;= high) {
+    const cutA = Math.floor((low + high) / 2);
+    const cutB = half - cutA;
+    const maxLeftA = cutA === 0 ? -Infinity : a[cutA - 1];
+    const minRightA = cutA === a.length ? Infinity : a[cutA];
+    const maxLeftB = cutB === 0 ? -Infinity : b[cutB - 1];
+    const minRightB = cutB === b.length ? Infinity : b[cutB];
+    if (maxLeftA &lt;= minRightB &amp;&amp; maxLeftB &lt;= minRightA) { // a valid partition
+      const maxLeft = Math.max(maxLeftA, maxLeftB);
+      if (total % 2 === 1) return maxLeft;
+      return (maxLeft + Math.min(minRightA, minRightB)) / 2;
+    }
+    if (maxLeftA &gt; minRightB) high = cutA - 1; // cut in A is too far right
+    else low = cutA + 1;                       // cut in A is too far left
+  }
+  throw new Error('Input arrays must be sorted');
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(log(min(n, m)))</strong> — binary search over the shorter array only</li>
+    <li>Space <strong>O(1)</strong> — a handful of variables</li>
+  </ul>
+  <p>Say the simple version first (merge, or two pointers up to the middle — O(n + m)), then improve on it. Searching the <em>shorter</em> array both minimises the steps and keeps <code>cutB</code> from going negative.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

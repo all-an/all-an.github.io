@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Factorial (iterative) — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Factorial (iterative)</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Beginner</span>
+    <span class="badge badge-tech">Math</span>
+  </div>
+
+  <p class="desc">The factorial of <code>n</code>, written <code>n!</code>, is the product of every integer from 1 to n — <code>5! = 5 × 4 × 3 × 2 × 1 = 120</code>. By convention <code>0! = 1</code>. Here we compute it with a loop; the recursive version comes later in the list.</p>
+
+  <!-- interactive demo: compute the factorial of the typed number. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type n (0–20)</label>
+    <input id="demoInput" type="text" value="5" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">n!</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>Start a running product at <code>1</code> and multiply it by each integer from 2 up to n. Starting at 1 (not 0) makes <code>0!</code> and <code>1!</code> come out right without a special case. Reject negative input, because the factorial is not defined for it.</p>
+  <p>Factorials grow explosively: <code>21!</code> already overflows a 64-bit <code>long</code>, so mention <code>BigInteger</code> (Java) or <code>BigInt</code> (JavaScript) if the interviewer asks for large n.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Iterative factorial with a long; exact up to 20!.
+static long factorial(int n) {
+    if (n &lt; 0) {
+        throw new IllegalArgumentException("n cannot be negative");
+    }
+    long result = 1;
+    for (int i = 2; i &lt;= n; i++) {
+        result *= i;
+    }
+    return result;
+}
+
+// Arbitrary size: BigInteger never overflows.
+static java.math.BigInteger factorialBig(int n) {
+    java.math.BigInteger result = java.math.BigInteger.ONE;
+    for (int i = 2; i &lt;= n; i++) {
+        result = result.multiply(java.math.BigInteger.valueOf(i));
+    }
+    return result;
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Iterative factorial with a Number; exact only up to 18!.
+function factorial(n) {
+  if (n &lt; 0) {
+    throw new Error('n cannot be negative');
+  }
+  let result = 1;
+  for (let i = 2; i &lt;= n; i++) {
+    result *= i;
+  }
+  return result;
+}
+
+// Arbitrary size: BigInt never loses precision.
+function factorialBig(n) {
+  let result = 1n;
+  for (let i = 2n; i &lt;= BigInt(n); i++) {
+    result *= i;
+  }
+  return result;
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(n)</strong> — n − 1 multiplications</li>
+    <li>Space <strong>O(1)</strong> — a single running product (the BigInteger result itself grows with n)</li>
+  </ul>
+  <p>The loop uses constant stack space, unlike the recursive version, which adds one stack frame per step and can hit a <code>StackOverflowError</code> for large n.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

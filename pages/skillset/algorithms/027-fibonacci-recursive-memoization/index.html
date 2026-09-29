@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fibonacci (recursive + memoization) — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Fibonacci (recursive + memoization)</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Easy–Medium</span>
+    <span class="badge badge-tech">Recursion / DP</span>
+  </div>
+
+  <p class="desc">The recursive definition <code>F(n) = F(n − 1) + F(n − 2)</code> is elegant but, written naively, painfully slow — it recomputes the same values again and again. Adding <strong>memoization</strong> (caching results) turns an exponential algorithm into a linear one.</p>
+
+  <!-- interactive demo: compare how many calls plain and memoized recursion make. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type n (0–30)</label>
+    <input id="demoInput" type="text" value="20" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Result and number of calls</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>The call tree of naive <code>fib(n)</code> branches twice at every level, so <code>fib(30)</code> makes over 2 million calls, almost all repeats. Memoization stores each result the first time it is computed — in a map or array — and every later request for the same n is a lookup. Each value is now computed once, so only about 2n calls happen.</p>
+  <p>This "recursion + cache" recipe is top-down dynamic programming, and it applies to any recursion with overlapping subproblems.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Naive recursion: exponential, because it recomputes the same values.
+static long fibNaive(int n) {
+    return n &lt; 2 ? n : fibNaive(n - 1) + fibNaive(n - 2);
+}
+
+// Memoized recursion: each F(k) is computed once and cached.
+static long fibonacci(int n) {
+    return fibonacci(n, new HashMap&lt;&gt;());
+}
+
+static long fibonacci(int n, Map&lt;Integer, Long&gt; cache) {
+    if (n &lt; 2) return n; // base cases: F(0) = 0, F(1) = 1
+    Long cached = cache.get(n);
+    if (cached != null) return cached;
+    long result = fibonacci(n - 1, cache) + fibonacci(n - 2, cache);
+    cache.put(n, result);
+    return result;
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Naive recursion: exponential, because it recomputes the same values.
+function fibNaive(n) {
+  return n &lt; 2 ? n : fibNaive(n - 1) + fibNaive(n - 2);
+}
+
+// Memoized recursion: each F(k) is computed once and cached.
+function fibonacci(n, cache = new Map()) {
+  if (n &lt; 2) return n; // base cases: F(0) = 0, F(1) = 1
+  if (cache.has(n)) return cache.get(n);
+  const result = fibonacci(n - 1, cache) + fibonacci(n - 2, cache);
+  cache.set(n, result);
+  return result;
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(n)</strong> — memoized: each value computed once (naive: O(2ⁿ))</li>
+    <li>Space <strong>O(n)</strong> — the cache plus the recursion stack</li>
+  </ul>
+  <p>Recursion depth is still n, so very large n overflows the stack — at that point switch to the iterative loop, which needs only O(1) space.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

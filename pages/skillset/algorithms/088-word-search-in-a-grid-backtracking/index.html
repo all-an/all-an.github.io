@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Word search in a grid (backtracking) — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Word search in a grid (backtracking)</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Hard</span>
+    <span class="badge badge-tech">Backtracking</span>
+  </div>
+
+  <p class="desc">Given a grid of letters and a word, decide whether the word can be traced through <em>adjacent</em> cells (up, down, left, right) without using any cell twice. It is backtracking on a grid: try a path, and undo it if it dead-ends.</p>
+
+  <!-- interactive demo: search a grid for a word. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type grid rows separated by slashes, a semicolon, then the word</label>
+    <input id="demoInput" type="text" value="ABCE/SFCS/ADEE; ABCCED" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Word found?</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>Try every cell as a starting point. From a cell whose letter matches the next needed letter of the word, mark the cell as visited, then explore its four neighbours for the following letter, recursively. If any neighbour finishes the word, report success. If none does, <strong>backtrack</strong>: un-mark the cell (restore its letter) so other paths may use it, and return false.</p>
+  <p>Reuse the grid itself as the visited marker by temporarily overwriting the cell with a sentinel such as <code>'#'</code> — no separate visited array is needed. Prune early: stop the moment a letter fails to match.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Try every cell as a start; DFS with backtracking.
+static boolean exist(char[][] grid, String word) {
+    for (int r = 0; r &lt; grid.length; r++) {
+        for (int c = 0; c &lt; grid[r].length; c++) {
+            if (search(grid, word, r, c, 0)) return true;
+        }
+    }
+    return false;
+}
+
+static boolean search(char[][] grid, String word, int r, int c, int index) {
+    if (index == word.length()) return true; // every letter matched
+    if (r &lt; 0 || c &lt; 0 || r &gt;= grid.length || c &gt;= grid[r].length || grid[r][c] != word.charAt(index)) {
+        return false;
+    }
+    char saved = grid[r][c];
+    grid[r][c] = '#'; // mark visited so this path cannot reuse the cell
+    boolean found = search(grid, word, r + 1, c, index + 1)
+                 || search(grid, word, r - 1, c, index + 1)
+                 || search(grid, word, r, c + 1, index + 1)
+                 || search(grid, word, r, c - 1, index + 1);
+    grid[r][c] = saved; // backtrack: free the cell for other paths
+    return found;
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Try every cell as a start; DFS with backtracking.
+function exist(grid, word) {
+  for (let r = 0; r &lt; grid.length; r++) {
+    for (let c = 0; c &lt; grid[r].length; c++) {
+      if (search(grid, word, r, c, 0)) return true;
+    }
+  }
+  return false;
+}
+
+function search(grid, word, r, c, index) {
+  if (index === word.length) return true; // every letter matched
+  if (r &lt; 0 || c &lt; 0 || r &gt;= grid.length || c &gt;= grid[r].length || grid[r][c] !== word[index]) {
+    return false;
+  }
+  const saved = grid[r][c];
+  grid[r][c] = '#'; // mark visited so this path cannot reuse the cell
+  const found = search(grid, word, r + 1, c, index + 1)
+             || search(grid, word, r - 1, c, index + 1)
+             || search(grid, word, r, c + 1, index + 1)
+             || search(grid, word, r, c - 1, index + 1);
+  grid[r][c] = saved; // backtrack: free the cell for other paths
+  return found;
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(R × C × 3ᴸ)</strong> — L is the word length; each step has at most 3 new directions</li>
+    <li>Space <strong>O(L)</strong> — recursion depth equals the word length</li>
+  </ul>
+  <p>To search for many words at once ("Word Search II"), build a trie of the words and walk it during the DFS so every path is checked against all words simultaneously.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

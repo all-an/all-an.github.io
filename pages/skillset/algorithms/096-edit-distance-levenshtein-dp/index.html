@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Edit distance (Levenshtein, DP) — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Edit distance (Levenshtein, DP)</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Hard</span>
+    <span class="badge badge-tech">Dynamic Programming</span>
+  </div>
+
+  <p class="desc">The edit (Levenshtein) distance between two strings is the minimum number of single-character insertions, deletions and substitutions needed to turn one into the other — <code>"horse"</code> → <code>"ros"</code> takes 3. It powers spell checkers, fuzzy search and DNA alignment.</p>
+
+  <!-- interactive demo: compute the edit distance between two words. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type two strings separated by a comma</label>
+    <input id="demoInput" type="text" value="horse, ros" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Edit distance</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>Let <code>table[i][j]</code> be the edit distance between the first i characters of A and the first j characters of B. The base cases: turning a prefix into the empty string takes as many deletions as its length, and building a prefix from nothing takes as many insertions — so <code>table[i][0] = i</code> and <code>table[0][j] = j</code>.</p>
+  <p>For the general cell: if the current characters match, no edit is needed — copy the diagonal, <code>table[i − 1][j − 1]</code>. Otherwise take one edit plus the best of three options: <strong>replace</strong> (diagonal), <strong>delete</strong> from A (the cell above) or <strong>insert</strong> into A (the cell to the left). The bottom-right cell is the answer.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// DP table: table[i][j] = edit distance between a[0..i) and b[0..j).
+static int minDistance(String a, String b) {
+    int[][] table = new int[a.length() + 1][b.length() + 1];
+    for (int i = 0; i &lt;= a.length(); i++) table[i][0] = i; // delete all i characters
+    for (int j = 0; j &lt;= b.length(); j++) table[0][j] = j; // insert all j characters
+    for (int i = 1; i &lt;= a.length(); i++) {
+        for (int j = 1; j &lt;= b.length(); j++) {
+            if (a.charAt(i - 1) == b.charAt(j - 1)) {
+                table[i][j] = table[i - 1][j - 1]; // characters match: no edit
+            } else {
+                table[i][j] = 1 + Math.min(table[i - 1][j - 1],             // replace
+                                  Math.min(table[i - 1][j], table[i][j - 1])); // delete / insert
+            }
+        }
+    }
+    return table[a.length()][b.length()];
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// DP table: table[i][j] = edit distance between a[0..i) and b[0..j).
+function minDistance(a, b) {
+  const table = Array.from({ length: a.length + 1 }, () =&gt; new Array(b.length + 1).fill(0));
+  for (let i = 0; i &lt;= a.length; i++) table[i][0] = i; // delete all i characters
+  for (let j = 0; j &lt;= b.length; j++) table[0][j] = j; // insert all j characters
+  for (let i = 1; i &lt;= a.length; i++) {
+    for (let j = 1; j &lt;= b.length; j++) {
+      if (a[i - 1] === b[j - 1]) {
+        table[i][j] = table[i - 1][j - 1]; // characters match: no edit
+      } else {
+        table[i][j] = 1 + Math.min(
+          table[i - 1][j - 1], // replace
+          table[i - 1][j],     // delete
+          table[i][j - 1]      // insert
+        );
+      }
+    }
+  }
+  return table[a.length][b.length];
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(m × n)</strong> — one cell per pair of prefixes</li>
+    <li>Space <strong>O(m × n)</strong> — the full table (O(min(m, n)) with two rolling rows if you only need the number)</li>
+  </ul>
+  <p>To list the actual edits, walk back from the bottom-right cell following whichever neighbour produced each value. The structure matches the longest common subsequence table, only with three edit operations instead of two.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

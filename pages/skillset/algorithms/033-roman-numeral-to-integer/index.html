@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Roman numeral to integer — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Roman numeral to integer</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Easy–Medium</span>
+    <span class="badge badge-tech">String / Math</span>
+  </div>
+
+  <p class="desc">Convert a Roman numeral to an integer — <code>"III"</code> is 3, <code>"LVIII"</code> is 58, <code>"MCMXCIV"</code> is 1994. Symbols are usually added left to right, except that a smaller value before a larger one is subtracted (<code>IV</code> = 4, <code>IX</code> = 9).</p>
+
+  <!-- interactive demo: convert a Roman numeral to a number. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type a Roman numeral</label>
+    <input id="demoInput" type="text" value="MCMXCIV" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Integer</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>Map each symbol to its value: I=1, V=5, X=10, L=50, C=100, D=500, M=1000. Scan left to right. If the current symbol is smaller than the one after it, it is part of a subtractive pair, so <em>subtract</em> it; otherwise <em>add</em> it. For <code>MCMXCIV</code>: +1000, −100, +1000, −10, +100, −1, +5 = 1994.</p>
+  <p>An equivalent trick scans right to left, subtracting a symbol only when it is smaller than the one you just processed.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Left to right: subtract a symbol that precedes a larger one, otherwise add it.
+static int romanToInt(String roman) {
+    Map&lt;Character, Integer&gt; values = Map.of(
+        'I', 1, 'V', 5, 'X', 10, 'L', 50, 'C', 100, 'D', 500, 'M', 1000);
+    int total = 0;
+    for (int i = 0; i &lt; roman.length(); i++) {
+        int current = values.get(roman.charAt(i));
+        boolean subtractive = i + 1 &lt; roman.length() &amp;&amp; current &lt; values.get(roman.charAt(i + 1));
+        total += subtractive ? -current : current;
+    }
+    return total;
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Left to right: subtract a symbol that precedes a larger one, otherwise add it.
+function romanToInt(roman) {
+  const values = { I: 1, V: 5, X: 10, L: 50, C: 100, D: 500, M: 1000 };
+  let total = 0;
+  for (let i = 0; i &lt; roman.length; i++) {
+    const current = values[roman[i]];
+    const next = values[roman[i + 1]]; // undefined at the end, so the comparison is false
+    total += next &gt; current ? -current : current;
+  }
+  return total;
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(n)</strong> — one pass over the numeral</li>
+    <li>Space <strong>O(1)</strong> — the symbol table has a fixed size</li>
+  </ul>
+  <p>The reverse problem — integer to Roman — is a common follow-up: walk a table of values from 1000 down to 1 (including 900, 400, 90, 40, 9, 4) and repeatedly subtract, appending the symbol each time.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

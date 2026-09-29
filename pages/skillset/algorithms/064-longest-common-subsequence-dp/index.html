@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Longest common subsequence (DP) — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Longest common subsequence (DP)</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Medium</span>
+    <span class="badge badge-tech">Dynamic Programming</span>
+  </div>
+
+  <p class="desc">A subsequence keeps the original order but may skip characters. Given two strings, find the length of their longest common subsequence — for <code>"abcde"</code> and <code>"ace"</code> it is <code>3</code> ("ace"). It is the engine behind diff tools.</p>
+
+  <!-- interactive demo: find the longest common subsequence of two strings. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type two strings separated by a comma</label>
+    <input id="demoInput" type="text" value="abcde, ace" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">LCS</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>Let <code>table[i][j]</code> be the LCS length of the first i characters of A and the first j of B. If the current characters match, they extend the best of the shorter prefixes: <code>table[i − 1][j − 1] + 1</code>. Otherwise the answer is the better of dropping a character from either string: <code>max(table[i − 1][j], table[i][j − 1])</code>. The bottom-right cell is the answer.</p>
+  <p>To recover the subsequence itself, walk backwards from the bottom-right: on a match take the character and move diagonally; otherwise move toward the neighbour with the larger value.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// DP table of prefix answers: table[i][j] = LCS of a[0..i) and b[0..j).
+static int longestCommonSubsequence(String a, String b) {
+    int[][] table = new int[a.length() + 1][b.length() + 1];
+    for (int i = 1; i &lt;= a.length(); i++) {
+        for (int j = 1; j &lt;= b.length(); j++) {
+            if (a.charAt(i - 1) == b.charAt(j - 1)) {
+                table[i][j] = table[i - 1][j - 1] + 1; // match extends the diagonal
+            } else {
+                table[i][j] = Math.max(table[i - 1][j], table[i][j - 1]); // drop one character
+            }
+        }
+    }
+    return table[a.length()][b.length()];
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// DP table of prefix answers: table[i][j] = LCS of a[0..i) and b[0..j).
+function longestCommonSubsequence(a, b) {
+  const table = Array.from({ length: a.length + 1 }, () =&gt; new Array(b.length + 1).fill(0));
+  for (let i = 1; i &lt;= a.length; i++) {
+    for (let j = 1; j &lt;= b.length; j++) {
+      if (a[i - 1] === b[j - 1]) {
+        table[i][j] = table[i - 1][j - 1] + 1; // match extends the diagonal
+      } else {
+        table[i][j] = Math.max(table[i - 1][j], table[i][j - 1]); // drop one character
+      }
+    }
+  }
+  return table[a.length][b.length];
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(m × n)</strong> — one cell per pair of prefixes</li>
+    <li>Space <strong>O(m × n)</strong> — the full table (O(min(m, n)) if only the length is needed)</li>
+  </ul>
+  <p>Do not confuse a subsequence (gaps allowed) with a substring (contiguous); the longest common <em>substring</em> uses a similar table but resets to 0 on a mismatch. Edit distance is the same table with different transitions.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

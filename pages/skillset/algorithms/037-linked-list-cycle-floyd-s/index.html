@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Linked list cycle (Floyd's) — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Linked list cycle (Floyd's)</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Easy–Medium</span>
+    <span class="badge badge-tech">Linked List / Two Pointers</span>
+  </div>
+
+  <p class="desc">Given the head of a linked list, decide whether it contains a cycle — some node's <code>next</code> pointer leads back to an earlier node, so walking the list never ends. Floyd's "tortoise and hare" detects it using no extra memory.</p>
+
+  <!-- interactive demo: detect a cycle in a linked list built from your input. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type node values, then a semicolon and the index the tail links back to (or -1)</label>
+    <input id="demoInput" type="text" value="3, 2, 0, -4; 1" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Cycle?</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>Storing every visited node in a set finds a cycle (a revisit means a loop) but costs O(n) memory. Floyd's algorithm uses two pointers: <strong>slow</strong> moves one node per step and <strong>fast</strong> moves two. If the list has no cycle, fast reaches <code>null</code> and you return false. If it has a cycle, fast eventually laps slow inside the loop and they land on the same node — like two runners on a circular track.</p>
+  <p>Always check both <code>fast</code> and <code>fast.next</code> for null before advancing, or you dereference a null pointer on lists with an even length.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">static class ListNode {
+    int value;
+    ListNode next;
+    ListNode(int value) { this.value = value; }
+}
+
+// Approach 1 — remember every visited node in a set (O(n) memory).
+static boolean hasCycleWithSet(ListNode head) {
+    Set&lt;ListNode&gt; visited = new HashSet&lt;&gt;();
+    for (ListNode node = head; node != null; node = node.next) {
+        if (!visited.add(node)) return true; // add() is false when already present
+    }
+    return false;
+}
+
+// Approach 2 — Floyd's tortoise and hare: O(1) memory.
+static boolean hasCycle(ListNode head) {
+    ListNode slow = head;
+    ListNode fast = head;
+    while (fast != null &amp;&amp; fast.next != null) {
+        slow = slow.next;       // one step
+        fast = fast.next.next;  // two steps
+        if (slow == fast) return true; // the hare lapped the tortoise
+    }
+    return false; // the hare reached the end
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">class ListNode {
+  constructor(value, next = null) {
+    this.value = value;
+    this.next = next;
+  }
+}
+
+// Approach 1 — remember every visited node in a set (O(n) memory).
+function hasCycleWithSet(head) {
+  const visited = new Set();
+  for (let node = head; node; node = node.next) {
+    if (visited.has(node)) return true;
+    visited.add(node);
+  }
+  return false;
+}
+
+// Approach 2 — Floyd's tortoise and hare: O(1) memory.
+function hasCycle(head) {
+  let slow = head;
+  let fast = head;
+  while (fast &amp;&amp; fast.next) {
+    slow = slow.next;       // one step
+    fast = fast.next.next;  // two steps
+    if (slow === fast) return true; // the hare lapped the tortoise
+  }
+  return false; // the hare reached the end
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(n)</strong> — fast catches slow within a couple of laps of the cycle</li>
+    <li>Space <strong>O(1)</strong> — two pointers, no extra structure (the set version is O(n))</li>
+  </ul>
+  <p>A frequent follow-up is finding <em>where</em> the cycle starts: after the pointers meet, restart one at the head and advance both one step at a time — they meet again at the cycle's first node.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

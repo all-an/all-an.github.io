@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>First non-repeating character — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>First non-repeating character</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Easy</span>
+    <span class="badge badge-tech">String / Hashing</span>
+  </div>
+
+  <p class="desc">Return the first character in a string that appears only once — in <code>"swiss"</code> that is <code>'w'</code>, in <code>"aabb"</code> there is none. It needs two things at once: counting, and remembering order.</p>
+
+  <!-- interactive demo: find the first non-repeating character. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type a string</label>
+    <input id="demoInput" type="text" value="swiss" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">First unique character</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>Do two passes. First pass: count how often each character occurs in a hash map. Second pass: walk the string again in its original order and return the first character whose count is <code>1</code>. The second pass over the string (not over the map) is what gives you "first" — a plain <code>HashMap</code> does not remember insertion order.</p>
+  <p>Decide what to return when every character repeats: <code>null</code>, an empty string or a sentinel such as <code>'\0'</code>.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Two passes: count every character, then find the first with count 1.
+static Character firstNonRepeating(String text) {
+    Map&lt;Character, Integer&gt; counts = new HashMap&lt;&gt;();
+    for (char c : text.toCharArray()) counts.merge(c, 1, Integer::sum);
+    for (char c : text.toCharArray()) {
+        if (counts.get(c) == 1) return c; // first in original order
+    }
+    return null; // every character repeats
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Two passes: count every character, then find the first with count 1.
+function firstNonRepeating(text) {
+  const counts = new Map();
+  for (const char of text) counts.set(char, (counts.get(char) || 0) + 1);
+  for (const char of text) {
+    if (counts.get(char) === 1) return char; // first in original order
+  }
+  return null; // every character repeats
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(n)</strong> — two linear passes</li>
+    <li>Space <strong>O(k)</strong> — k distinct characters — O(1) for a fixed alphabet</li>
+  </ul>
+  <p>When the input is a stream you cannot re-read, keep a <code>LinkedHashMap</code> (Java) or a <code>Map</code> (JavaScript, insertion-ordered) of counts and take the first entry with count 1.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

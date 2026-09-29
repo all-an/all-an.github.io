@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Product of array except self — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Product of array except self</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Medium</span>
+    <span class="badge badge-tech">Array / Prefix</span>
+  </div>
+
+  <p class="desc">Given an array, return a new array where each element is the product of all the <em>other</em> elements — <code>[1, 2, 3, 4]</code> gives <code>[24, 12, 8, 6]</code>. The catch: no division, and O(n) time.</p>
+
+  <!-- interactive demo: compute the product of all other elements for each position. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type numbers separated by commas</label>
+    <input id="demoInput" type="text" value="1, 2, 3, 4" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Product except self</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>The product of everything except <code>numbers[i]</code> equals <em>(product of everything to its left) × (product of everything to its right)</em>. Build the answer in two sweeps. <strong>Left to right:</strong> store in <code>result[i]</code> the running product of the elements before i. <strong>Right to left:</strong> keep a running product of the elements after i and multiply it into <code>result[i]</code>.</p>
+  <p>Using division (total product ÷ each element) fails as soon as the array contains a zero, which is why the problem forbids it. The two-sweep method handles zeroes naturally, and the output array doubles as the working storage, so no extra arrays are needed.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Two sweeps: prefix products left to right, then suffix products right to left.
+static int[] productExceptSelf(int[] numbers) {
+    int n = numbers.length;
+    int[] result = new int[n];
+    int left = 1;
+    for (int i = 0; i &lt; n; i++) {
+        result[i] = left;   // product of everything before i
+        left *= numbers[i];
+    }
+    int right = 1;
+    for (int i = n - 1; i &gt;= 0; i--) {
+        result[i] *= right; // multiply by the product of everything after i
+        right *= numbers[i];
+    }
+    return result;
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Two sweeps: prefix products left to right, then suffix products right to left.
+function productExceptSelf(numbers) {
+  const n = numbers.length;
+  const result = new Array(n).fill(1);
+  let left = 1;
+  for (let i = 0; i &lt; n; i++) {
+    result[i] = left;   // product of everything before i
+    left *= numbers[i];
+  }
+  let right = 1;
+  for (let i = n - 1; i &gt;= 0; i--) {
+    result[i] *= right; // multiply by the product of everything after i
+    right *= numbers[i];
+  }
+  return result;
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(n)</strong> — two linear sweeps</li>
+    <li>Space <strong>O(1)</strong> — extra space beyond the required output array</li>
+  </ul>
+  <p>A simpler variant keeps separate <code>prefix[]</code> and <code>suffix[]</code> arrays (O(n) extra space); the running-variable version above is the space-optimized form of the same idea. Mind integer overflow when the values are large.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

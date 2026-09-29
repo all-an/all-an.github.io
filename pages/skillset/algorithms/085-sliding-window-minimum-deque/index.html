@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sliding window minimum (deque) — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Sliding window minimum (deque)</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Hard</span>
+    <span class="badge badge-tech">Sliding Window / Deque</span>
+  </div>
+
+  <p class="desc">Slide a window of size k across an array and report the <em>minimum</em> of every window — the mirror image of "sliding window maximum". For <code>[4, 2, 12, 3, 8, 1]</code> and <code>k = 3</code> the answer is <code>[2, 2, 3, 1]</code>.</p>
+
+  <!-- interactive demo: compute the minimum of every sliding window. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type numbers, then a semicolon and the window size k</label>
+    <input id="demoInput" type="text" value="4, 2, 12, 3, 8, 1; 3" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Window minimums</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>Use a <strong>monotonic deque</strong> of indices whose values are in <em>increasing</em> order. For each new element: drop the front index if it has left the window; pop from the back every index whose value is greater than or equal to the new element (they can never be a minimum while the new, smaller one is in the window); push the new index. The front of the deque is the index of the minimum of the current window, so once the first k elements are in, record it after every step.</p>
+  <p>It is the same code as the sliding window maximum with the comparison reversed. Each index is added and removed at most once, so the loop is linear.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Monotonic deque of indices (values increasing): the front is the window minimum.
+static int[] minSlidingWindow(int[] numbers, int k) {
+    int n = numbers.length;
+    if (n == 0) return new int[0];
+    int[] minimums = new int[n - k + 1];
+    Deque&lt;Integer&gt; deque = new ArrayDeque&lt;&gt;();
+    for (int i = 0; i &lt; n; i++) {
+        if (!deque.isEmpty() &amp;&amp; deque.peekFirst() &lt;= i - k) {
+            deque.pollFirst(); // the front index left the window
+        }
+        while (!deque.isEmpty() &amp;&amp; numbers[deque.peekLast()] &gt;= numbers[i]) {
+            deque.pollLast();  // larger values can never be the minimum again
+        }
+        deque.offerLast(i);
+        if (i &gt;= k - 1) {
+            minimums[i - k + 1] = numbers[deque.peekFirst()];
+        }
+    }
+    return minimums;
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Monotonic deque of indices (values increasing): the front is the window minimum.
+function minSlidingWindow(numbers, k) {
+  const deque = []; // indices; shift() from the front, pop() from the back
+  const minimums = [];
+  for (let i = 0; i &lt; numbers.length; i++) {
+    if (deque.length &gt; 0 &amp;&amp; deque[0] &lt;= i - k) {
+      deque.shift(); // the front index left the window
+    }
+    while (deque.length &gt; 0 &amp;&amp; numbers[deque[deque.length - 1]] &gt;= numbers[i]) {
+      deque.pop();   // larger values can never be the minimum again
+    }
+    deque.push(i);
+    if (i &gt;= k - 1) {
+      minimums.push(numbers[deque[0]]);
+    }
+  }
+  return minimums;
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(n)</strong> — each index enters and leaves the deque once</li>
+    <li>Space <strong>O(k)</strong> — the deque holds at most k indices</li>
+  </ul>
+  <p>A related trick: a queue that supports "get minimum" in O(1) can be built from two stacks that each track a running minimum — handy when the window slides over a stream.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

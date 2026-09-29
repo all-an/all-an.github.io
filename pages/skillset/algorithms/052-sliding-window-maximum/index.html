@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sliding window maximum — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Sliding window maximum</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Medium</span>
+    <span class="badge badge-tech">Sliding Window / Deque</span>
+  </div>
+
+  <p class="desc">Given an array and a window size k, slide the window one step at a time from left to right and report the maximum of each window — for <code>[1, 3, -1, -3, 5, 3, 6, 7]</code> and <code>k = 3</code> the answer is <code>[3, 3, 5, 5, 6, 7]</code>. A monotonic deque makes it O(n).</p>
+
+  <!-- interactive demo: compute the maximum of every sliding window. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type numbers, then a semicolon and the window size k</label>
+    <input id="demoInput" type="text" value="1, 3, -1, -3, 5, 3, 6, 7; 3" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Window maximums</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>Recomputing each window's maximum costs O(n·k). Instead keep a <strong>deque of indices</strong> whose values are in decreasing order. For each new element: (1) drop the front index if it has slid out of the window; (2) pop from the back every index whose value is <em>not larger</em> than the new element — those can never be a maximum while the new one is in the window; (3) push the new index. The front of the deque is now always the index of the current window's maximum.</p>
+  <p>Every index is pushed once and popped at most once, which is why the total work is linear despite the inner <code>while</code> loop.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Monotonic deque of indices (values decreasing): the front is the window max.
+static int[] maxSlidingWindow(int[] numbers, int k) {
+    int n = numbers.length;
+    if (n == 0) return new int[0];
+    int[] maximums = new int[n - k + 1];
+    Deque&lt;Integer&gt; deque = new ArrayDeque&lt;&gt;();
+    for (int i = 0; i &lt; n; i++) {
+        if (!deque.isEmpty() &amp;&amp; deque.peekFirst() &lt;= i - k) {
+            deque.pollFirst(); // the front index left the window
+        }
+        while (!deque.isEmpty() &amp;&amp; numbers[deque.peekLast()] &lt;= numbers[i]) {
+            deque.pollLast();  // smaller values can never be the maximum again
+        }
+        deque.offerLast(i);
+        if (i &gt;= k - 1) {
+            maximums[i - k + 1] = numbers[deque.peekFirst()];
+        }
+    }
+    return maximums;
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Monotonic deque of indices (values decreasing): the front is the window max.
+function maxSlidingWindow(numbers, k) {
+  const deque = []; // indices; shift() from the front, pop() from the back
+  const maximums = [];
+  for (let i = 0; i &lt; numbers.length; i++) {
+    if (deque.length &gt; 0 &amp;&amp; deque[0] &lt;= i - k) {
+      deque.shift(); // the front index left the window
+    }
+    while (deque.length &gt; 0 &amp;&amp; numbers[deque[deque.length - 1]] &lt;= numbers[i]) {
+      deque.pop();   // smaller values can never be the maximum again
+    }
+    deque.push(i);
+    if (i &gt;= k - 1) {
+      maximums.push(numbers[deque[0]]);
+    }
+  }
+  return maximums;
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(n)</strong> — each index enters and leaves the deque once</li>
+    <li>Space <strong>O(k)</strong> — the deque holds at most k indices</li>
+  </ul>
+  <p>A max-heap also works (O(n log n)), removing stale entries lazily. The deque approach is the classic answer, and mirroring it with "greater" flipped gives the sliding-window <em>minimum</em>.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

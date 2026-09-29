@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Maximum flow (Ford-Fulkerson / Edmonds-Karp) — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Maximum flow (Ford-Fulkerson / Edmonds-Karp)</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Hard</span>
+    <span class="badge badge-tech">Graph / Max Flow</span>
+  </div>
+
+  <p class="desc">In a network where each edge has a capacity, the <strong>maximum flow</strong> is the most that can be pushed from a source to a sink. Ford-Fulkerson repeatedly finds a path with spare capacity and pushes flow along it; choosing the paths with BFS gives the Edmonds-Karp variant with a guaranteed running time.</p>
+
+  <!-- interactive demo: compute the maximum flow of a network. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type edges "from>to:capacity", a semicolon, then "source, sink"</label>
+    <input id="demoInput" type="text" value="0&gt;1:16, 0&gt;2:13, 1&gt;2:10, 2&gt;1:4, 1&gt;3:12, 3&gt;2:9, 2&gt;4:14, 4&gt;3:7, 3&gt;5:20, 4&gt;5:4; 0, 5" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Maximum flow</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>Keep a <strong>residual graph</strong>: for each edge, the capacity still available forward, plus a reverse edge holding the flow already sent (which lets a later path "undo" part of an earlier choice). Repeat: find any path from source to sink using only edges with residual capacity &gt; 0 (an <em>augmenting path</em>); its <strong>bottleneck</strong> is the smallest residual capacity along it; push that amount — subtract it from each forward edge and add it to each reverse edge — and add it to the total flow. When no augmenting path exists, the flow is maximum.</p>
+  <p>Finding the path with DFS is plain Ford-Fulkerson (running time depends on the capacities); using BFS — the shortest path in edges — is Edmonds-Karp, whose O(V·E²) bound does not depend on the capacity values. By the max-flow min-cut theorem, the answer also equals the capacity of the smallest cut separating source from sink.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Edmonds-Karp on an adjacency matrix of residual capacities. The matrix is modified in place.
+static int maxFlow(int[][] residual, int source, int sink) {
+    int n = residual.length;
+    int flow = 0;
+    while (true) {
+        int[] parent = new int[n]; // BFS tree: how each node was reached
+        Arrays.fill(parent, -1);
+        parent[source] = source;
+        Queue&lt;Integer&gt; queue = new ArrayDeque&lt;&gt;();
+        queue.add(source);
+        while (!queue.isEmpty() &amp;&amp; parent[sink] == -1) {
+            int node = queue.remove();
+            for (int next = 0; next &lt; n; next++) {
+                if (parent[next] == -1 &amp;&amp; residual[node][next] &gt; 0) { // spare capacity
+                    parent[next] = node;
+                    queue.add(next);
+                }
+            }
+        }
+        if (parent[sink] == -1) return flow; // no augmenting path left
+
+        int bottleneck = Integer.MAX_VALUE;  // the smallest spare capacity on the path
+        for (int node = sink; node != source; node = parent[node]) {
+            bottleneck = Math.min(bottleneck, residual[parent[node]][node]);
+        }
+        for (int node = sink; node != source; node = parent[node]) {
+            residual[parent[node]][node] -= bottleneck; // use up forward capacity
+            residual[node][parent[node]] += bottleneck; // allow the flow to be undone later
+        }
+        flow += bottleneck;
+    }
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Edmonds-Karp on an adjacency matrix of residual capacities. The matrix is modified in place.
+function maxFlow(residual, source, sink) {
+  const n = residual.length;
+  let flow = 0;
+  for (;;) {
+    const parent = new Array(n).fill(-1); // BFS tree: how each node was reached
+    parent[source] = source;
+    const queue = [source];
+    while (queue.length &gt; 0 &amp;&amp; parent[sink] === -1) {
+      const node = queue.shift();
+      for (let next = 0; next &lt; n; next++) {
+        if (parent[next] === -1 &amp;&amp; residual[node][next] &gt; 0) { // spare capacity
+          parent[next] = node;
+          queue.push(next);
+        }
+      }
+    }
+    if (parent[sink] === -1) return flow; // no augmenting path left
+
+    let bottleneck = Infinity; // the smallest spare capacity on the path
+    for (let node = sink; node !== source; node = parent[node]) {
+      bottleneck = Math.min(bottleneck, residual[parent[node]][node]);
+    }
+    for (let node = sink; node !== source; node = parent[node]) {
+      residual[parent[node]][node] -= bottleneck; // use up forward capacity
+      residual[node][parent[node]] += bottleneck; // allow the flow to be undone later
+    }
+    flow += bottleneck;
+  }
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(V × E²)</strong> — Edmonds-Karp: at most V·E augmentations, each a BFS of O(E)</li>
+    <li>Space <strong>O(V²)</strong> — the residual matrix (O(V + E) with adjacency lists)</li>
+  </ul>
+  <p>Max flow models more than pipes: bipartite matching (assign jobs to workers), project selection and image segmentation all reduce to it. Dinic's algorithm is the faster choice for large instances.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

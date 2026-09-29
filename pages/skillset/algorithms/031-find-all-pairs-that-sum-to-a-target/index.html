@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Find all pairs that sum to a target — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Find all pairs that sum to a target</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Easy–Medium</span>
+    <span class="badge badge-tech">Hashing / Two Pointers</span>
+  </div>
+
+  <p class="desc">Find <em>all</em> pairs of numbers in an array that add up to a target — in <code>[1, 5, 7, -1, 5]</code> with target <code>6</code> the pairs are <code>(1, 5)</code>, <code>(7, -1)</code> and <code>(1, 5)</code> again. Unlike Two Sum you must report every pair, not just one.</p>
+
+  <!-- interactive demo: list all pairs that sum to a target (using two pointers on the sorted list). (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type numbers, then a semicolon and the target</label>
+    <input id="demoInput" type="text" value="1, 5, 7, -1, 5; 6" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Pairs</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p><strong>Hash map:</strong> count each value; for every number <code>x</code>, its partner is <code>target − x</code>. Look the partner up and add the number of ways to combine the two counts (careful when x equals its own partner — then you need <code>c × (c − 1) / 2</code> pairs). <strong>Two pointers:</strong> sort, then put a pointer at each end; if the sum is too small move the left one up, if too big move the right one down, and record a pair when it matches.</p>
+  <p>Decide up front how duplicates are handled: pairs by value, pairs by index, or unique pairs only. The version below collects unique value pairs, skipping repeated values after a match.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Two pointers on a sorted copy: close in from both ends.
+static List&lt;int[]&gt; findPairs(int[] numbers, int target) {
+    int[] sorted = numbers.clone();
+    Arrays.sort(sorted);
+    List&lt;int[]&gt; pairs = new ArrayList&lt;&gt;();
+    int left = 0, right = sorted.length - 1;
+    while (left &lt; right) {
+        int sum = sorted[left] + sorted[right];
+        if (sum == target) {
+            pairs.add(new int[] { sorted[left], sorted[right] });
+            int leftValue = sorted[left], rightValue = sorted[right];
+            while (left &lt; right &amp;&amp; sorted[left] == leftValue) left++;    // skip repeated values
+            while (left &lt; right &amp;&amp; sorted[right] == rightValue) right--;
+        } else if (sum &lt; target) {
+            left++;  // need a bigger sum
+        } else {
+            right--; // need a smaller sum
+        }
+    }
+    return pairs;
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Two pointers on a sorted copy: close in from both ends.
+function findPairs(numbers, target) {
+  const sorted = [...numbers].sort((a, b) =&gt; a - b);
+  const pairs = [];
+  let left = 0;
+  let right = sorted.length - 1;
+  while (left &lt; right) {
+    const sum = sorted[left] + sorted[right];
+    if (sum === target) {
+      pairs.push([sorted[left], sorted[right]]);
+      const leftValue = sorted[left];
+      const rightValue = sorted[right];
+      while (left &lt; right &amp;&amp; sorted[left] === leftValue) left++;    // skip repeated values
+      while (left &lt; right &amp;&amp; sorted[right] === rightValue) right--;
+    } else if (sum &lt; target) {
+      left++;  // need a bigger sum
+    } else {
+      right--; // need a smaller sum
+    }
+  }
+  return pairs;
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(n log n)</strong> — dominated by the sort; the two-pointer sweep is O(n)</li>
+    <li>Space <strong>O(1)</strong> — beyond the sorted copy (the hash-map version is O(n) time, O(n) space)</li>
+  </ul>
+  <p>Pick the hash map when the data is unsorted and you want linear time; pick two pointers when it is already sorted or memory is tight. This pattern extends to 3Sum and 4Sum.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

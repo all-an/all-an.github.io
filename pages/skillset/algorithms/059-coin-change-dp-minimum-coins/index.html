@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Coin change (DP – minimum coins) — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Coin change (DP – minimum coins)</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Medium</span>
+    <span class="badge badge-tech">Dynamic Programming</span>
+  </div>
+
+  <p class="desc">Given coin denominations and a target amount, find the fewest coins that make the amount exactly, or −1 if impossible — with coins <code>[1, 2, 5]</code> and amount <code>11</code> the answer is <code>3</code> (5 + 5 + 1). A greedy "biggest coin first" is <em>not</em> always right, which is why this is dynamic programming.</p>
+
+  <!-- interactive demo: find the minimum number of coins for an amount. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type coin values, then a semicolon and the amount</label>
+    <input id="demoInput" type="text" value="1, 2, 5; 11" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Minimum coins</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>Let <code>best[a]</code> be the fewest coins that sum to amount <code>a</code>. <code>best[0] = 0</code>. For any other amount, try each coin: if the coin fits, one option is <code>best[a − coin] + 1</code> — use the coin, then solve the smaller remainder. Take the minimum over all coins. Initialise the table with "infinity" (any number bigger than the possible answer), and if <code>best[amount]</code> is still infinity at the end, return −1.</p>
+  <p>Why not greedy? With coins <code>[1, 3, 4]</code> and amount 6, taking the biggest coin first gives 4 + 1 + 1 (3 coins), but 3 + 3 is just 2.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Bottom-up DP: best[a] = fewest coins that make amount a.
+static int coinChange(int[] coins, int amount) {
+    int[] best = new int[amount + 1];
+    Arrays.fill(best, amount + 1); // amount + 1 acts as "infinity": more coins than could ever be needed
+    best[0] = 0;
+    for (int a = 1; a &lt;= amount; a++) {
+        for (int coin : coins) {
+            if (coin &lt;= a) {
+                best[a] = Math.min(best[a], best[a - coin] + 1);
+            }
+        }
+    }
+    return best[amount] &gt; amount ? -1 : best[amount];
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Bottom-up DP: best[a] = fewest coins that make amount a.
+function coinChange(coins, amount) {
+  const best = new Array(amount + 1).fill(Infinity);
+  best[0] = 0;
+  for (let a = 1; a &lt;= amount; a++) {
+    for (const coin of coins) {
+      if (coin &lt;= a) {
+        best[a] = Math.min(best[a], best[a - coin] + 1);
+      }
+    }
+  }
+  return best[amount] === Infinity ? -1 : best[amount];
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(amount × coins)</strong> — each table cell tries every coin</li>
+    <li>Space <strong>O(amount)</strong> — the one-dimensional table</li>
+  </ul>
+  <p>A variant asks for the <em>number of ways</em> to make the amount (loop the coins on the outside to avoid counting permutations). Both are instances of unbounded knapsack.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

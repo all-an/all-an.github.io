@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Maximum product subarray — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Maximum product subarray</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Medium–Hard</span>
+    <span class="badge badge-tech">Array / DP</span>
+  </div>
+
+  <p class="desc">Find the contiguous subarray with the largest <em>product</em> — in <code>[2, 3, -2, 4]</code> it is <code>[2, 3]</code> with product <code>6</code>. It looks like Kadane's algorithm, but negatives change everything: a very negative product can become the largest after multiplying by another negative.</p>
+
+  <!-- interactive demo: find the maximum product of a contiguous subarray. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type numbers separated by commas</label>
+    <input id="demoInput" type="text" value="2, 3, -2, 4" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Maximum product</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>With only non-negative numbers, a running product would be enough. But multiplying by a negative flips the order: the most negative product so far becomes the most positive one. So at every position keep <strong>two</strong> values — the <code>largest</code> and the <code>smallest</code> product of a subarray ending here. For the next number x, the new largest and smallest are the max and min of <code>x</code> (start fresh), <code>largest × x</code> and <code>smallest × x</code>. A zero resets both, since starting fresh at x always beats extending a product of 0.</p>
+  <p>The answer is the largest <code>largest</code> seen anywhere. Compute both candidates from the <em>old</em> values before overwriting them.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Track the largest and smallest product of a subarray ending at each index.
+static int maxProduct(int[] numbers) {
+    int largest = numbers[0];  // best product ending here
+    int smallest = numbers[0]; // worst (most negative) product ending here
+    int best = numbers[0];
+    for (int i = 1; i &lt; numbers.length; i++) {
+        int x = numbers[i];
+        int fromLargest = largest * x;
+        int fromSmallest = smallest * x; // a negative x turns this into a candidate for the maximum
+        largest = Math.max(x, Math.max(fromLargest, fromSmallest));
+        smallest = Math.min(x, Math.min(fromLargest, fromSmallest));
+        best = Math.max(best, largest);
+    }
+    return best;
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Track the largest and smallest product of a subarray ending at each index.
+function maxProduct(numbers) {
+  let largest = numbers[0];  // best product ending here
+  let smallest = numbers[0]; // worst (most negative) product ending here
+  let best = numbers[0];
+  for (let i = 1; i &lt; numbers.length; i++) {
+    const x = numbers[i];
+    const fromLargest = largest * x;
+    const fromSmallest = smallest * x; // a negative x turns this into a candidate for the maximum
+    largest = Math.max(x, fromLargest, fromSmallest);
+    smallest = Math.min(x, fromLargest, fromSmallest);
+    best = Math.max(best, largest);
+  }
+  return best;
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(n)</strong> — a single pass</li>
+    <li>Space <strong>O(1)</strong> — three variables</li>
+  </ul>
+  <p>A frequent slip is updating <code>largest</code> and then using the new value to compute <code>smallest</code>; both must be derived from the previous pair. Products can overflow quickly — clarify the value range.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

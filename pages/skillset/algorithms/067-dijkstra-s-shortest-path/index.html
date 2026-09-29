@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dijkstra's shortest path — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Dijkstra's shortest path</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Medium–Hard</span>
+    <span class="badge badge-tech">Graph / Shortest Path</span>
+  </div>
+
+  <p class="desc">Dijkstra's algorithm finds the shortest path from one source node to every other node in a graph whose edge weights are all <strong>non-negative</strong> — the algorithm behind route planners and network routing.</p>
+
+  <!-- interactive demo: compute shortest distances from a source node. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type edges "from>to:weight", a semicolon, then the source</label>
+    <input id="demoInput" type="text" value="0&gt;1:4, 0&gt;2:1, 2&gt;1:2, 1&gt;3:1, 2&gt;3:5; 0" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Distances from the source</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>Keep the best-known distance to every node (∞ at first, 0 for the source) and a priority queue of nodes ordered by distance. Repeatedly take the closest unsettled node — because all weights are non-negative, no later path can improve on its distance, so it is final — and <strong>relax</strong> each outgoing edge: if going through this node gives a shorter route to a neighbour, update the neighbour and queue it.</p>
+  <p>A negative edge breaks the "closest node is final" argument; use Bellman-Ford there. Stale queue entries (a node queued twice with different distances) are simply skipped when popped with a distance larger than the recorded one.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Dijkstra with a min-heap of {node, distance}. graph.get(u) holds {v, weight} edges.
+static int[] dijkstra(List&lt;List&lt;int[]&gt;&gt; graph, int source) {
+    int[] distance = new int[graph.size()];
+    Arrays.fill(distance, Integer.MAX_VALUE);
+    distance[source] = 0;
+    PriorityQueue&lt;int[]&gt; queue = new PriorityQueue&lt;&gt;(Comparator.comparingInt(entry -&gt; entry[1]));
+    queue.add(new int[] { source, 0 });
+    while (!queue.isEmpty()) {
+        int[] closest = queue.poll();
+        int node = closest[0];
+        if (closest[1] &gt; distance[node]) continue; // stale entry: a shorter route was found later
+        for (int[] edge : graph.get(node)) {
+            int next = edge[0];
+            int candidate = distance[node] + edge[1];
+            if (candidate &lt; distance[next]) {      // relax the edge
+                distance[next] = candidate;
+                queue.add(new int[] { next, candidate });
+            }
+        }
+    }
+    return distance;
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// A minimal binary min-heap of [priority, node] pairs.
+class MinHeap {
+  constructor() { this.items = []; }
+  get size() { return this.items.length; }
+  push(item) {
+    this.items.push(item);
+    let i = this.items.length - 1;
+    while (i &gt; 0) { // sift up
+      const parent = (i - 1) &gt;&gt; 1;
+      if (this.items[parent][0] &lt;= this.items[i][0]) break;
+      [this.items[parent], this.items[i]] = [this.items[i], this.items[parent]];
+      i = parent;
+    }
+  }
+  pop() {
+    const top = this.items[0];
+    const last = this.items.pop();
+    if (this.items.length &gt; 0) {
+      this.items[0] = last;
+      let i = 0;
+      for (;;) { // sift down
+        const left = 2 * i + 1;
+        const right = left + 1;
+        let smallest = i;
+        if (left &lt; this.items.length &amp;&amp; this.items[left][0] &lt; this.items[smallest][0]) smallest = left;
+        if (right &lt; this.items.length &amp;&amp; this.items[right][0] &lt; this.items[smallest][0]) smallest = right;
+        if (smallest === i) break;
+        [this.items[i], this.items[smallest]] = [this.items[smallest], this.items[i]];
+        i = smallest;
+      }
+    }
+    return top;
+  }
+}
+
+// Dijkstra with a min-heap. graph[u] holds [v, weight] edges.
+function dijkstra(graph, source) {
+  const distance = new Array(graph.length).fill(Infinity);
+  distance[source] = 0;
+  const heap = new MinHeap();
+  heap.push([0, source]);
+  while (heap.size &gt; 0) {
+    const [dist, node] = heap.pop();
+    if (dist &gt; distance[node]) continue; // stale entry: a shorter route was found later
+    for (const [next, weight] of graph[node]) {
+      const candidate = dist + weight;
+      if (candidate &lt; distance[next]) {   // relax the edge
+        distance[next] = candidate;
+        heap.push([candidate, next]);
+      }
+    }
+  }
+  return distance;
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O((V + E) log V)</strong> — each edge may push one heap entry</li>
+    <li>Space <strong>O(V + E)</strong> — the graph, distances and heap</li>
+  </ul>
+  <p>Without a heap (scanning for the closest node each round) it is O(V²), which is actually better for very dense graphs. To recover the actual path, remember each node's predecessor whenever you relax an edge.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reconstruct binary tree from traversals — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Reconstruct binary tree from traversals</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Medium–Hard</span>
+    <span class="badge badge-tech">Tree / Recursion</span>
+  </div>
+
+  <p class="desc">Given a tree's <strong>preorder</strong> and <strong>inorder</strong> traversals (all values distinct), rebuild the tree — preorder <code>[3, 9, 20, 15, 7]</code> with inorder <code>[9, 3, 15, 20, 7]</code> is the tree with root 3, left child 9, and right subtree rooted at 20.</p>
+
+  <!-- interactive demo: rebuild a tree from its preorder and inorder traversals. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type preorder, a semicolon, then inorder</label>
+    <input id="demoInput" type="text" value="3, 9, 20, 15, 7; 9, 3, 15, 20, 7" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Rebuilt tree (level order)</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>The first element of the preorder list is always the root. Find that value in the inorder list: everything to its left belongs to the left subtree, everything to its right to the right subtree — and you also learn the <em>size</em> of each. Then recurse: the next preorder elements (as many as the left subtree has) describe the left subtree, and the rest describe the right subtree.</p>
+  <p>To avoid the O(n) search for the root in every call, first store each value's inorder index in a hash map. Then consume the preorder list with a single moving index, and pass around the inorder bounds instead of slicing arrays.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">static class TreeNode {
+    int value;
+    TreeNode left, right;
+    TreeNode(int value) { this.value = value; }
+}
+
+private static int preorderIndex; // next root to consume from the preorder list
+
+static TreeNode buildTree(int[] preorder, int[] inorder) {
+    Map&lt;Integer, Integer&gt; inorderIndex = new HashMap&lt;&gt;(); // value -&gt; position, for O(1) lookups
+    for (int i = 0; i &lt; inorder.length; i++) inorderIndex.put(inorder[i], i);
+    preorderIndex = 0;
+    return build(preorder, inorderIndex, 0, inorder.length - 1);
+}
+
+// Build the subtree whose inorder values occupy [low, high].
+static TreeNode build(int[] preorder, Map&lt;Integer, Integer&gt; inorderIndex, int low, int high) {
+    if (low &gt; high) return null;
+    TreeNode root = new TreeNode(preorder[preorderIndex++]); // preorder starts with the root
+    int split = inorderIndex.get(root.value);
+    root.left = build(preorder, inorderIndex, low, split - 1);   // left of the root in inorder
+    root.right = build(preorder, inorderIndex, split + 1, high); // right of the root in inorder
+    return root;
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">class TreeNode {
+  constructor(value, left = null, right = null) {
+    this.value = value;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+function buildTree(preorder, inorder) {
+  const inorderIndex = new Map(inorder.map((value, i) =&gt; [value, i])); // value -&gt; position, for O(1) lookups
+  let preorderPosition = 0; // next root to consume from the preorder list
+
+  // Build the subtree whose inorder values occupy [low, high].
+  function build(low, high) {
+    if (low &gt; high) return null;
+    const root = new TreeNode(preorder[preorderPosition++]); // preorder starts with the root
+    const split = inorderIndex.get(root.value);
+    root.left = build(low, split - 1);   // left of the root in inorder
+    root.right = build(split + 1, high); // right of the root in inorder
+    return root;
+  }
+
+  return build(0, inorder.length - 1);
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(n)</strong> — each node is created once, with an O(1) index lookup</li>
+    <li>Space <strong>O(n)</strong> — the index map and the recursion stack</li>
+  </ul>
+  <p>The values must be distinct, or the split point is ambiguous. Preorder with <em>postorder</em> alone is not enough to identify a tree in general, but inorder combined with either preorder or postorder always is; postorder works the same way by reading the list from the end.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Selection sort — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Selection sort</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Easy</span>
+    <span class="badge badge-tech">Sorting</span>
+  </div>
+
+  <p class="desc">Selection sort repeatedly <em>selects</em> the smallest remaining element and swaps it into the next position of the sorted prefix. It is simple, and notable for making at most n − 1 swaps.</p>
+
+  <!-- interactive demo: sort a comma-separated list with selection sort. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type numbers separated by commas</label>
+    <input id="demoInput" type="text" value="64, 25, 12, 22, 11" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Sorted</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>Split the array into a sorted prefix (initially empty) and an unsorted rest. On each step, scan the unsorted part to find the index of its minimum, then swap that element with the first unsorted position — the prefix grows by one. After n − 1 steps the array is sorted.</p>
+  <p>Unlike bubble or insertion sort, it always does the full O(n²) scan, even on sorted input, and the long-distance swap makes it <em>not stable</em>.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Selection sort: swap the minimum of the unsorted part into place.
+static void selectionSort(int[] numbers) {
+    for (int i = 0; i &lt; numbers.length - 1; i++) {
+        int smallest = i;
+        for (int j = i + 1; j &lt; numbers.length; j++) {
+            if (numbers[j] &lt; numbers[smallest]) smallest = j;
+        }
+        int temp = numbers[i];
+        numbers[i] = numbers[smallest];
+        numbers[smallest] = temp;
+    }
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Selection sort: swap the minimum of the unsorted part into place.
+function selectionSort(numbers) {
+  for (let i = 0; i &lt; numbers.length - 1; i++) {
+    let smallest = i;
+    for (let j = i + 1; j &lt; numbers.length; j++) {
+      if (numbers[j] &lt; numbers[smallest]) smallest = j;
+    }
+    [numbers[i], numbers[smallest]] = [numbers[smallest], numbers[i]];
+  }
+  return numbers;
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(n²)</strong> — always about n²/2 comparisons, best case included</li>
+    <li>Space <strong>O(1)</strong> — sorts in place</li>
+  </ul>
+  <p>Because it writes so rarely (at most n − 1 swaps), selection sort is occasionally chosen when writes are far more expensive than reads, e.g. on flash memory.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

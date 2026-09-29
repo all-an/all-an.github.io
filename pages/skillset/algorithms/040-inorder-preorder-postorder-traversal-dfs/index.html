@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inorder / preorder / postorder traversal (DFS) — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Inorder / preorder / postorder traversal (DFS)</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Easy–Medium</span>
+    <span class="badge badge-tech">Tree / DFS</span>
+  </div>
+
+  <p class="desc">Depth-first traversal explores as deep as possible before backing up. For a binary tree there are three orders, named for when the node itself is visited: <strong>preorder</strong> (node, left, right), <strong>inorder</strong> (left, node, right) and <strong>postorder</strong> (left, right, node).</p>
+
+  <!-- interactive demo: show the three depth-first orders of a binary tree given in level order. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type the tree in level order (use null for gaps)</label>
+    <input id="demoInput" type="text" value="1, 2, 3, 4, 5" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Preorder | Inorder | Postorder</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>The recursion is three lines; only the position of the "visit" line changes. <strong>Preorder</strong> visits the node first — useful for copying a tree. <strong>Inorder</strong> visits it between its children — on a binary search tree this yields the values in sorted order. <strong>Postorder</strong> visits it last — useful for deleting a tree, since children go before their parent.</p>
+  <p>Recursion depth equals the tree's height, so a very skewed tree can overflow the stack; the iterative versions use an explicit stack instead (shown for inorder below).</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">static class TreeNode {
+    int value;
+    TreeNode left, right;
+    TreeNode(int value) { this.value = value; }
+}
+
+// Recursive: the position of the "add" line decides the order.
+static void preorder(TreeNode node, List&lt;Integer&gt; out) {
+    if (node == null) return;
+    out.add(node.value);      // node, then children
+    preorder(node.left, out);
+    preorder(node.right, out);
+}
+
+static void inorder(TreeNode node, List&lt;Integer&gt; out) {
+    if (node == null) return;
+    inorder(node.left, out);
+    out.add(node.value);      // left, node, right
+    inorder(node.right, out);
+}
+
+static void postorder(TreeNode node, List&lt;Integer&gt; out) {
+    if (node == null) return;
+    postorder(node.left, out);
+    postorder(node.right, out);
+    out.add(node.value);      // children, then node
+}
+
+// Iterative inorder with an explicit stack.
+static List&lt;Integer&gt; inorderIterative(TreeNode root) {
+    List&lt;Integer&gt; out = new ArrayList&lt;&gt;();
+    Deque&lt;TreeNode&gt; stack = new ArrayDeque&lt;&gt;();
+    TreeNode current = root;
+    while (current != null || !stack.isEmpty()) {
+        while (current != null) {   // go as far left as possible
+            stack.push(current);
+            current = current.left;
+        }
+        current = stack.pop();
+        out.add(current.value);
+        current = current.right;    // then explore the right subtree
+    }
+    return out;
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">class TreeNode {
+  constructor(value, left = null, right = null) {
+    this.value = value;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+// Recursive: the position of the "push" line decides the order.
+function preorder(node, out = []) {
+  if (!node) return out;
+  out.push(node.value);      // node, then children
+  preorder(node.left, out);
+  preorder(node.right, out);
+  return out;
+}
+
+function inorder(node, out = []) {
+  if (!node) return out;
+  inorder(node.left, out);
+  out.push(node.value);      // left, node, right
+  inorder(node.right, out);
+  return out;
+}
+
+function postorder(node, out = []) {
+  if (!node) return out;
+  postorder(node.left, out);
+  postorder(node.right, out);
+  out.push(node.value);      // children, then node
+  return out;
+}
+
+// Iterative inorder with an explicit stack.
+function inorderIterative(root) {
+  const out = [];
+  const stack = [];
+  let current = root;
+  while (current || stack.length &gt; 0) {
+    while (current) {          // go as far left as possible
+      stack.push(current);
+      current = current.left;
+    }
+    current = stack.pop();
+    out.push(current.value);
+    current = current.right;   // then explore the right subtree
+  }
+  return out;
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(n)</strong> — each node is visited exactly once</li>
+    <li>Space <strong>O(h)</strong> — h is the tree height — the recursion or explicit stack (O(n) worst case for a skewed tree)</li>
+  </ul>
+  <p>Level-order (BFS) is the counterpart when you need to go level by level. Pairing two of these orders (e.g. preorder + inorder) uniquely identifies a tree, which is the basis of "reconstruct a tree from traversals".</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Burst balloons (interval DP) — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Burst balloons (interval DP)</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Hard</span>
+    <span class="badge badge-tech">Dynamic Programming</span>
+  </div>
+
+  <p class="desc">You have balloons with numbers on them. Bursting balloon <code>i</code> earns <code>nums[left] × nums[i] × nums[right]</code>, where left and right are its current neighbours (out-of-range neighbours count as 1). What is the most coins you can collect by bursting them all? For <code>[3, 1, 5, 8]</code> the answer is <code>167</code>.</p>
+
+  <!-- interactive demo: find the maximum coins from bursting all balloons. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type the balloon values separated by commas</label>
+    <input id="demoInput" type="text" value="3, 1, 5, 8" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Maximum coins</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>Thinking about which balloon to burst <em>first</em> is a trap: bursting it makes its neighbours adjacent, so the sub-problems on each side stop being independent. Flip the question — which balloon is burst <strong>last</strong> in a range? If balloon <code>k</code> is last in the open interval <code>(left, right)</code>, then when it is burst its neighbours are exactly <code>left</code> and <code>right</code>, and everything else in the interval has already gone — and the left part and right part are now independent sub-problems.</p>
+  <p>So <code>best[left][right] = max over k of best[left][k] + nums[left]·nums[k]·nums[right] + best[k][right]</code>. Pad the array with a 1 at each end, and fill the table for increasing interval widths, since each cell depends on shorter intervals.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Interval DP: best[l][r] = most coins from bursting everything strictly between l and r.
+static int maxCoins(int[] balloons) {
+    int n = balloons.length + 2;
+    int[] nums = new int[n];
+    nums[0] = nums[n - 1] = 1; // virtual balloons worth 1 at both ends
+    System.arraycopy(balloons, 0, nums, 1, balloons.length);
+    int[][] best = new int[n][n];
+    for (int gap = 2; gap &lt; n; gap++) {           // interval width, shortest first
+        for (int left = 0; left + gap &lt; n; left++) {
+            int right = left + gap;
+            for (int last = left + 1; last &lt; right; last++) { // the balloon burst last
+                int coins = best[left][last] + nums[left] * nums[last] * nums[right] + best[last][right];
+                best[left][right] = Math.max(best[left][right], coins);
+            }
+        }
+    }
+    return best[0][n - 1];
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Interval DP: best[l][r] = most coins from bursting everything strictly between l and r.
+function maxCoins(balloons) {
+  const nums = [1, ...balloons, 1]; // virtual balloons worth 1 at both ends
+  const n = nums.length;
+  const best = Array.from({ length: n }, () =&gt; new Array(n).fill(0));
+  for (let gap = 2; gap &lt; n; gap++) {           // interval width, shortest first
+    for (let left = 0; left + gap &lt; n; left++) {
+      const right = left + gap;
+      for (let last = left + 1; last &lt; right; last++) { // the balloon burst last
+        const coins = best[left][last] + nums[left] * nums[last] * nums[right] + best[last][right];
+        best[left][right] = Math.max(best[left][right], coins);
+      }
+    }
+  }
+  return best[0][n - 1];
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(n³)</strong> — n² intervals, each trying up to n last balloons</li>
+    <li>Space <strong>O(n²)</strong> — the interval table</li>
+  </ul>
+  <p>"Choose the last one" is the standard trick for interval DP where removing an element changes its neighbours — you will meet it again in matrix-chain multiplication and "minimum cost to cut a stick".</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

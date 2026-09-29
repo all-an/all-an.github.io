@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kth largest element (quickselect) — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Kth largest element (quickselect)</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Medium</span>
+    <span class="badge badge-tech">Quickselect</span>
+  </div>
+
+  <p class="desc">Find the k-th largest element of an unsorted array — the k-th largest of <code>[3, 2, 1, 5, 6, 4]</code> with <code>k = 2</code> is <code>5</code>. Sorting works, but quickselect finds it in average O(n).</p>
+
+  <!-- interactive demo: find the k-th largest element with quickselect. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type numbers, then a semicolon and k</label>
+    <input id="demoInput" type="text" value="3, 2, 1, 5, 6, 4; 2" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">k-th largest</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>The k-th largest element is the one that would sit at index <code>n − k</code> in the sorted array. <strong>Quickselect</strong> is quick sort that only follows one side: partition around a pivot; the pivot lands at its final sorted index. If that index is the target, done; if it is too low, continue on the right part; if too high, on the left. Half the work of quick sort disappears at every step, so the expected cost is n + n/2 + n/4 + … = O(n).</p>
+  <p>A min-heap of size k is the simpler alternative: push each element and pop whenever the size exceeds k; the top is the answer (O(n log k), and it works on streams). Choosing a random pivot avoids the O(n²) worst case.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Approach 1 — min-heap of size k: the top is the k-th largest.
+static int findKthLargestHeap(int[] numbers, int k) {
+    PriorityQueue&lt;Integer&gt; heap = new PriorityQueue&lt;&gt;();
+    for (int n : numbers) {
+        heap.add(n);
+        if (heap.size() &gt; k) heap.poll(); // drop the smallest of the k+1
+    }
+    return heap.peek();
+}
+
+// Approach 2 — quickselect: partition, then follow only the side holding index n - k.
+static int findKthLargest(int[] numbers, int k) {
+    int[] work = numbers.clone();
+    int target = work.length - k;
+    int low = 0, high = work.length - 1;
+    Random random = new Random();
+    while (low &lt; high) {
+        swap(work, low + random.nextInt(high - low + 1), high); // random pivot to the end
+        int pivot = work[high];
+        int boundary = low;
+        for (int i = low; i &lt; high; i++) {
+            if (work[i] &lt; pivot) swap(work, i, boundary++);
+        }
+        swap(work, boundary, high);
+        if (boundary == target) return work[boundary];
+        if (boundary &lt; target) low = boundary + 1;
+        else high = boundary - 1;
+    }
+    return work[target];
+}
+
+static void swap(int[] a, int i, int j) {
+    int temp = a[i];
+    a[i] = a[j];
+    a[j] = temp;
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Quickselect: partition, then follow only the side holding index n - k.
+function findKthLargest(numbers, k) {
+  const work = [...numbers];
+  const target = work.length - k;
+  let low = 0;
+  let high = work.length - 1;
+  while (low &lt; high) {
+    const randomIndex = low + Math.floor(Math.random() * (high - low + 1));
+    [work[randomIndex], work[high]] = [work[high], work[randomIndex]]; // random pivot to the end
+    const pivot = work[high];
+    let boundary = low;
+    for (let i = low; i &lt; high; i++) {
+      if (work[i] &lt; pivot) {
+        [work[i], work[boundary]] = [work[boundary], work[i]];
+        boundary++;
+      }
+    }
+    [work[boundary], work[high]] = [work[high], work[boundary]];
+    if (boundary === target) return work[boundary];
+    if (boundary &lt; target) low = boundary + 1;
+    else high = boundary - 1;
+  }
+  return work[target];
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(n)</strong> — average case for quickselect; O(n²) worst case (heap: O(n log k))</li>
+    <li>Space <strong>O(1)</strong> — partitions in place on a copy (heap: O(k))</li>
+  </ul>
+  <p>Duplicates count: the k-th largest of <code>[3,3,2]</code> with k = 2 is 3, not 2 — you want the k-th in sorted order, not the k-th distinct value.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

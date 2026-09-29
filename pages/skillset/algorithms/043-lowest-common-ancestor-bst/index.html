@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lowest common ancestor (BST) — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Lowest common ancestor (BST)</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Medium</span>
+    <span class="badge badge-tech">Tree / BST</span>
+  </div>
+
+  <p class="desc">The lowest common ancestor (LCA) of two nodes is the deepest node that has both as descendants (a node counts as its own descendant). In a binary search tree the ordering lets you find it without searching the whole tree.</p>
+
+  <!-- interactive demo: find the LCA of two values in a BST built from your input. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type BST values (inserted in order), then a semicolon and two values</label>
+    <input id="demoInput" type="text" value="6, 2, 8, 0, 4, 7, 9; 2, 8" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Lowest common ancestor</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>Start at the root and compare both target values with the current node. If <em>both</em> are smaller, the LCA lies in the left subtree — move left. If both are larger, move right. Otherwise the values are on different sides (or one of them equals the current node), so this node is where the paths split: it is the LCA.</p>
+  <p>No recursion or extra memory is required, and it only ever descends one path. For a general binary tree (no ordering) you must search both subtrees and return the node where the two targets were found on different sides.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">static class TreeNode {
+    int value;
+    TreeNode left, right;
+    TreeNode(int value) { this.value = value; }
+}
+
+// Walk down until p and q fall on different sides of the current node.
+static TreeNode lowestCommonAncestor(TreeNode root, int p, int q) {
+    TreeNode node = root;
+    while (node != null) {
+        if (p &lt; node.value &amp;&amp; q &lt; node.value) node = node.left;        // both in the left subtree
+        else if (p &gt; node.value &amp;&amp; q &gt; node.value) node = node.right;  // both in the right subtree
+        else return node;                                               // the paths split here
+    }
+    return null;
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">class TreeNode {
+  constructor(value, left = null, right = null) {
+    this.value = value;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+// Walk down until p and q fall on different sides of the current node.
+function lowestCommonAncestor(root, p, q) {
+  let node = root;
+  while (node) {
+    if (p &lt; node.value &amp;&amp; q &lt; node.value) node = node.left;        // both in the left subtree
+    else if (p &gt; node.value &amp;&amp; q &gt; node.value) node = node.right;  // both in the right subtree
+    else return node;                                               // the paths split here
+  }
+  return null;
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(h)</strong> — one root-to-node path — O(log n) for a balanced tree</li>
+    <li>Space <strong>O(1)</strong> — iterative, no stack</li>
+  </ul>
+  <p>Both target values must actually exist in the tree; if they might not, verify with a search first. The general-tree version runs in O(n) because without ordering there is no way to skip a subtree.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Decode ways (DP) — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Decode ways (DP)</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Medium</span>
+    <span class="badge badge-tech">Dynamic Programming</span>
+  </div>
+
+  <p class="desc">A message of digits encodes letters with <code>1 = A, 2 = B, …, 26 = Z</code>. Count the ways to decode a digit string — <code>"12"</code> decodes as "AB" (1, 2) or "L" (12), so there are <code>2</code> ways; <code>"06"</code> has none, since a leading zero is invalid.</p>
+
+  <!-- interactive demo: count the ways to decode a digit string. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type a string of digits</label>
+    <input id="demoInput" type="text" value="226" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Number of decodings</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>Let <code>ways[i]</code> be the number of decodings of the first i digits. The last digit can be decoded alone, if it is not <code>'0'</code>, adding <code>ways[i − 1]</code>. The last two digits can be decoded together, if they form a number from 10 to 26, adding <code>ways[i − 2]</code>. A <code>'0'</code> can only ever be part of <code>10</code> or <code>20</code>.</p>
+  <p>Like Fibonacci and climbing stairs, each value needs only the previous two, so two variables replace the array. Start with <code>ways[0] = 1</code> (the empty prefix) and handle a leading zero explicitly.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// DP with two rolling counts over the digits.
+static int numDecodings(String digits) {
+    if (digits.isEmpty() || digits.charAt(0) == '0') return 0; // a leading zero cannot be decoded
+    int twoBack = 1; // decodings of the empty prefix
+    int oneBack = 1; // decodings of the first digit
+    for (int i = 1; i &lt; digits.length(); i++) {
+        int current = 0;
+        if (digits.charAt(i) != '0') current += oneBack;    // last digit alone (1-9)
+        int pair = Integer.parseInt(digits.substring(i - 1, i + 1));
+        if (pair &gt;= 10 &amp;&amp; pair &lt;= 26) current += twoBack;   // last two digits together
+        twoBack = oneBack;
+        oneBack = current;
+    }
+    return oneBack;
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// DP with two rolling counts over the digits.
+function numDecodings(digits) {
+  if (digits === '' || digits[0] === '0') return 0; // a leading zero cannot be decoded
+  let twoBack = 1; // decodings of the empty prefix
+  let oneBack = 1; // decodings of the first digit
+  for (let i = 1; i &lt; digits.length; i++) {
+    let current = 0;
+    if (digits[i] !== '0') current += oneBack;         // last digit alone (1-9)
+    const pair = Number(digits.slice(i - 1, i + 1));
+    if (pair &gt;= 10 &amp;&amp; pair &lt;= 26) current += twoBack;  // last two digits together
+    [twoBack, oneBack] = [oneBack, current];
+  }
+  return oneBack;
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(n)</strong> — one pass over the digits</li>
+    <li>Space <strong>O(1)</strong> — two rolling counts</li>
+  </ul>
+  <p>Test the zeroes carefully: <code>"10"</code> → 1, <code>"100"</code> → 0, <code>"301"</code> → 0. Most wrong answers to this problem come from a stray <code>'0'</code>.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LRU Cache — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>LRU Cache</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Medium–Hard</span>
+    <span class="badge badge-tech">Design</span>
+  </div>
+
+  <p class="desc">Design a cache with a fixed capacity that evicts the <strong>least recently used</strong> entry when full. <code>get</code> and <code>put</code> must both run in O(1). It is one of the most frequently asked design questions.</p>
+
+  <!-- interactive demo: simulate an LRU cache and see what gets evicted. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type the capacity, a semicolon, then operations "put k v" / "get k"</label>
+    <input id="demoInput" type="text" value="2; put 1 1, put 2 2, get 1, put 3 3, get 2, get 3" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Results of each get</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>You need two things at once: O(1) lookup by key (a hash map) and O(1) "move to most recent" and "remove least recent" (a <strong>doubly linked list</strong>, ordered from least to most recently used). The map stores key → list node. On <code>get</code>: look up the node and move it to the most-recent end. On <code>put</code>: update and move if the key exists; otherwise insert at the most-recent end and, if over capacity, remove the node at the least-recent end (and its map entry).</p>
+  <p>Sentinel head and tail nodes remove all the null checks from the list operations. In Java, <code>LinkedHashMap</code> in access order does the same thing in a few lines; JavaScript's <code>Map</code> remembers insertion order, so deleting and re-inserting a key makes it "most recent".</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Approach 1 — built-in: LinkedHashMap in access order evicts the eldest entry.
+static class LruCacheSimple&lt;K, V&gt; extends LinkedHashMap&lt;K, V&gt; {
+    private final int capacity;
+
+    LruCacheSimple(int capacity) {
+        super(16, 0.75f, true); // true = order by access, not insertion
+        this.capacity = capacity;
+    }
+
+    @Override
+    protected boolean removeEldestEntry(Map.Entry&lt;K, V&gt; eldest) {
+        return size() &gt; capacity; // evict the least recently used when over capacity
+    }
+}
+
+// Approach 2 — by hand: a hash map plus a doubly linked list (least recent next to head).
+static class LruCache {
+    private static class Node {
+        int key, value;
+        Node prev, next;
+        Node(int key, int value) { this.key = key; this.value = value; }
+    }
+
+    private final int capacity;
+    private final Map&lt;Integer, Node&gt; nodes = new HashMap&lt;&gt;();
+    private final Node head = new Node(0, 0); // sentinel: least recent side
+    private final Node tail = new Node(0, 0); // sentinel: most recent side
+
+    LruCache(int capacity) {
+        this.capacity = capacity;
+        head.next = tail;
+        tail.prev = head;
+    }
+
+    int get(int key) {
+        Node node = nodes.get(key);
+        if (node == null) return -1;
+        unlink(node);
+        appendMostRecent(node); // reading counts as a use
+        return node.value;
+    }
+
+    void put(int key, int value) {
+        Node existing = nodes.get(key);
+        if (existing != null) unlink(existing);
+        Node node = new Node(key, value);
+        nodes.put(key, node);
+        appendMostRecent(node);
+        if (nodes.size() &gt; capacity) {
+            Node eldest = head.next; // the least recently used node
+            unlink(eldest);
+            nodes.remove(eldest.key);
+        }
+    }
+
+    private void unlink(Node node) {
+        node.prev.next = node.next;
+        node.next.prev = node.prev;
+    }
+
+    private void appendMostRecent(Node node) {
+        node.prev = tail.prev;
+        node.next = tail;
+        tail.prev.next = node;
+        tail.prev = node;
+    }
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Approach 1 — Map: its insertion order doubles as the recency order.
+class LruCache {
+  constructor(capacity) {
+    this.capacity = capacity;
+    this.entries = new Map(); // oldest (least recently used) first
+  }
+
+  get(key) {
+    if (!this.entries.has(key)) return -1;
+    const value = this.entries.get(key);
+    this.entries.delete(key);       // re-insert to mark it most recent
+    this.entries.set(key, value);
+    return value;
+  }
+
+  put(key, value) {
+    this.entries.delete(key);       // drop the old position if the key exists
+    this.entries.set(key, value);
+    if (this.entries.size &gt; this.capacity) {
+      this.entries.delete(this.entries.keys().next().value); // evict the oldest key
+    }
+  }
+}
+
+// Approach 2 — by hand: a hash map plus a doubly linked list (least recent next to head).
+class LruCacheManual {
+  constructor(capacity) {
+    this.capacity = capacity;
+    this.nodes = new Map();
+    this.head = { key: null, value: null, prev: null, next: null }; // sentinel: least recent side
+    this.tail = { key: null, value: null, prev: null, next: null }; // sentinel: most recent side
+    this.head.next = this.tail;
+    this.tail.prev = this.head;
+  }
+
+  get(key) {
+    const node = this.nodes.get(key);
+    if (!node) return -1;
+    this.unlink(node);
+    this.appendMostRecent(node); // reading counts as a use
+    return node.value;
+  }
+
+  put(key, value) {
+    const existing = this.nodes.get(key);
+    if (existing) this.unlink(existing);
+    const node = { key, value, prev: null, next: null };
+    this.nodes.set(key, node);
+    this.appendMostRecent(node);
+    if (this.nodes.size &gt; this.capacity) {
+      const eldest = this.head.next; // the least recently used node
+      this.unlink(eldest);
+      this.nodes.delete(eldest.key);
+    }
+  }
+
+  unlink(node) {
+    node.prev.next = node.next;
+    node.next.prev = node.prev;
+  }
+
+  appendMostRecent(node) {
+    node.prev = this.tail.prev;
+    node.next = this.tail;
+    this.tail.prev.next = node;
+    this.tail.prev = node;
+  }
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(1)</strong> — per get and put — hash lookups plus constant-time list splices</li>
+    <li>Space <strong>O(capacity)</strong> — one map entry and one list node per cached item</li>
+  </ul>
+  <p>Interviewers usually want approach 2, since it shows you know <em>why</em> the structure works. Remember that a plain <code>HashMap</code> plus an array scan would make eviction O(n).</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quick sort — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Quick sort</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Easy–Medium</span>
+    <span class="badge badge-tech">Sorting / Divide &amp; Conquer</span>
+  </div>
+
+  <p class="desc">Quick sort picks a <em>pivot</em>, partitions the array into elements smaller and larger than it, and recursively sorts the two sides. It is usually the fastest general-purpose sort in practice, and sorts in place.</p>
+
+  <!-- interactive demo: sort a comma-separated list with quick sort. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type numbers separated by commas</label>
+    <input id="demoInput" type="text" value="10, 7, 8, 9, 1, 5" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Sorted</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p><strong>Partition:</strong> choose a pivot (here the last element). Sweep through the range, moving every element smaller than the pivot to the left part; finally swap the pivot into the slot right after them. The pivot is now in its final sorted position. <strong>Recurse:</strong> sort the part to its left and the part to its right independently.</p>
+  <p>Pivot choice is the whole game. Always taking the last element degrades to O(n²) on already-sorted input; picking a random element (or median of three) makes the bad case vanishingly unlikely.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Quick sort in place, using the Lomuto partition scheme.
+static void quickSort(int[] numbers, int low, int high) {
+    if (low &gt;= high) return; // zero or one element: sorted
+    int pivotIndex = partition(numbers, low, high);
+    quickSort(numbers, low, pivotIndex - 1);
+    quickSort(numbers, pivotIndex + 1, high);
+}
+
+// Move everything smaller than the pivot (last element) to the left; return the pivot's final index.
+static int partition(int[] numbers, int low, int high) {
+    int pivot = numbers[high];
+    int boundary = low; // everything before boundary is &lt; pivot
+    for (int i = low; i &lt; high; i++) {
+        if (numbers[i] &lt; pivot) {
+            swap(numbers, i, boundary++);
+        }
+    }
+    swap(numbers, boundary, high); // put the pivot in its final place
+    return boundary;
+}
+
+static void swap(int[] numbers, int a, int b) {
+    int temp = numbers[a];
+    numbers[a] = numbers[b];
+    numbers[b] = temp;
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Quick sort in place, using the Lomuto partition scheme.
+function quickSort(numbers, low = 0, high = numbers.length - 1) {
+  if (low &gt;= high) return numbers; // zero or one element: sorted
+  const pivotIndex = partition(numbers, low, high);
+  quickSort(numbers, low, pivotIndex - 1);
+  quickSort(numbers, pivotIndex + 1, high);
+  return numbers;
+}
+
+// Move everything smaller than the pivot (last element) to the left; return the pivot's final index.
+function partition(numbers, low, high) {
+  const pivot = numbers[high];
+  let boundary = low; // everything before boundary is &lt; pivot
+  for (let i = low; i &lt; high; i++) {
+    if (numbers[i] &lt; pivot) {
+      [numbers[i], numbers[boundary]] = [numbers[boundary], numbers[i]];
+      boundary++;
+    }
+  }
+  [numbers[boundary], numbers[high]] = [numbers[high], numbers[boundary]]; // pivot to its final place
+  return boundary;
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(n log n)</strong> — on average; O(n²) in the worst case</li>
+    <li>Space <strong>O(log n)</strong> — recursion stack on average (in-place partitioning)</li>
+  </ul>
+  <p>Quick sort is not stable. Many equal keys also slow the Lomuto scheme, so production versions use three-way partitioning (less / equal / greater). Java's primitive <code>Arrays.sort</code> uses a dual-pivot quick sort.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>0/1 Knapsack (DP) — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>0/1 Knapsack (DP)</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Medium</span>
+    <span class="badge badge-tech">Dynamic Programming</span>
+  </div>
+
+  <p class="desc">You have items with weights and values and a bag of limited capacity. Choose a set of items — each used at most once — to maximise total value without exceeding the capacity. The "0/1" means each item is taken whole or not at all.</p>
+
+  <!-- interactive demo: solve a 0/1 knapsack. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type weight:value pairs, then a semicolon and the capacity</label>
+    <input id="demoInput" type="text" value="1:1, 3:4, 4:5, 5:7; 7" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Best value</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>Let <code>best[i][w]</code> be the maximum value using the first i items with capacity w. For item i, either skip it (<code>best[i − 1][w]</code>) or, if it fits, take it (<code>best[i − 1][w − weight] + value</code>); keep the larger.</p>
+  <p>Because row i only reads row i − 1, the table collapses to a single array — but you must loop the capacity <strong>downward</strong> (from capacity to the item's weight). Going upward would let an item be reused within the same round, turning it into the unbounded knapsack.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// 1-D DP: best[w] = max value with capacity w. Loop w downward so each item is used once.
+static int knapsack(int[] weights, int[] values, int capacity) {
+    int[] best = new int[capacity + 1];
+    for (int item = 0; item &lt; weights.length; item++) {
+        for (int w = capacity; w &gt;= weights[item]; w--) {
+            best[w] = Math.max(best[w], best[w - weights[item]] + values[item]);
+        }
+    }
+    return best[capacity];
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// 1-D DP: best[w] = max value with capacity w. Loop w downward so each item is used once.
+function knapsack(weights, values, capacity) {
+  const best = new Array(capacity + 1).fill(0);
+  for (let item = 0; item &lt; weights.length; item++) {
+    for (let w = capacity; w &gt;= weights[item]; w--) {
+      best[w] = Math.max(best[w], best[w - weights[item]] + values[item]);
+    }
+  }
+  return best[capacity];
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(n × W)</strong> — n items, capacity W — pseudo-polynomial</li>
+    <li>Space <strong>O(W)</strong> — the single-row table</li>
+  </ul>
+  <p>The running time depends on the <em>numeric value</em> of the capacity, so it is called pseudo-polynomial; the general problem is NP-hard. Related problems — subset sum, partition equal subset sum, target sum — are knapsack in disguise.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

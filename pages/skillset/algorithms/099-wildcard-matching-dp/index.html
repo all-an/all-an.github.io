@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wildcard matching (DP) — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Wildcard matching (DP)</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Hard</span>
+    <span class="badge badge-tech">Dynamic Programming</span>
+  </div>
+
+  <p class="desc">Match a string against a pattern where <code>?</code> matches exactly one character and <code>*</code> matches <em>any sequence</em>, including the empty one — <code>"adceb"</code> matches <code>"*a*b"</code>. Unlike regular-expression <code>*</code>, here the star stands on its own.</p>
+
+  <!-- interactive demo: match a string against a wildcard pattern. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type the string, a semicolon, then the pattern</label>
+    <input id="demoInput" type="text" value="adceb; *a*b" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Matches?</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p><strong>Greedy two pointers (O(1) space):</strong> walk the text and the pattern together. On a match (equal characters or <code>?</code>) advance both. On a <code>*</code>, remember its position and the current text position, and tentatively let the star match nothing — advance only the pattern. On a mismatch, if there was an earlier star, backtrack: let that star swallow one more text character (advance the remembered text position by one) and resume the pattern just after the star. With no star to fall back on, the match fails. After the text is consumed, any remaining pattern must be all stars.</p>
+  <p><strong>DP (easier to justify):</strong> <code>table[i][j]</code> is true if the first i text characters match the first j pattern characters. A <code>*</code> gives <code>table[i][j − 1]</code> (matches empty) or <code>table[i − 1][j]</code> (absorbs one more character); <code>?</code> or an equal character gives <code>table[i − 1][j − 1]</code>.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Greedy two pointers with backtracking to the most recent star.
+static boolean isMatch(String text, String pattern) {
+    int t = 0, p = 0;
+    int starAt = -1;  // position of the latest '*' in the pattern
+    int resumeAt = 0; // text position where that star started matching
+    while (t &lt; text.length()) {
+        if (p &lt; pattern.length() &amp;&amp; (pattern.charAt(p) == '?' || pattern.charAt(p) == text.charAt(t))) {
+            t++;
+            p++;
+        } else if (p &lt; pattern.length() &amp;&amp; pattern.charAt(p) == '*') {
+            starAt = p++;   // the star matches nothing, for now
+            resumeAt = t;
+        } else if (starAt != -1) {
+            p = starAt + 1; // let the star swallow one more character
+            t = ++resumeAt;
+        } else {
+            return false;   // mismatch with no star to fall back on
+        }
+    }
+    while (p &lt; pattern.length() &amp;&amp; pattern.charAt(p) == '*') p++; // trailing stars match empty
+    return p == pattern.length();
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Greedy two pointers with backtracking to the most recent star.
+function isMatch(text, pattern) {
+  let t = 0;
+  let p = 0;
+  let starAt = -1;  // position of the latest '*' in the pattern
+  let resumeAt = 0; // text position where that star started matching
+  while (t &lt; text.length) {
+    if (p &lt; pattern.length &amp;&amp; (pattern[p] === '?' || pattern[p] === text[t])) {
+      t++;
+      p++;
+    } else if (p &lt; pattern.length &amp;&amp; pattern[p] === '*') {
+      starAt = p++;   // the star matches nothing, for now
+      resumeAt = t;
+    } else if (starAt !== -1) {
+      p = starAt + 1; // let the star swallow one more character
+      t = ++resumeAt;
+    } else {
+      return false;   // mismatch with no star to fall back on
+    }
+  }
+  while (p &lt; pattern.length &amp;&amp; pattern[p] === '*') p++; // trailing stars match empty
+  return p === pattern.length;
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(m × n)</strong> — worst case for the greedy version (typically near-linear); the DP is O(m × n) always</li>
+    <li>Space <strong>O(1)</strong> — greedy needs only pointers (DP: O(m × n))</li>
+  </ul>
+  <p>Only the <em>most recent</em> star ever needs remembering: an earlier star can always be kept matching what it matched, so re-expanding the latest one is enough. That is why the greedy version is correct.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alien dictionary (topological sort) — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Alien dictionary (topological sort)</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Hard</span>
+    <span class="badge badge-tech">Graph / Topological Sort</span>
+  </div>
+
+  <p class="desc">An alien language uses the same letters in an unknown order. You are given words sorted by that language's dictionary order; deduce a possible order of the letters. For <code>["wrt", "wrf", "er", "ett", "rftt"]</code> a valid order is <code>"wertf"</code>. It is topological sorting with a string-comparison twist.</p>
+
+  <!-- interactive demo: derive the alien alphabet from sorted words. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type the sorted words separated by commas</label>
+    <input id="demoInput" type="text" value="wrt, wrf, er, ett, rftt" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Letter order</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>Every letter that appears is a node. Comparing two <em>adjacent</em> words, find the first position where they differ: the letter in the earlier word must come before the letter in the later word — that is one directed edge. Only that first difference tells you anything; later letters are unconstrained. Also watch for the invalid case where a longer word comes before its own prefix (<code>"abc"</code> before <code>"ab"</code>).</p>
+  <p>Then run a topological sort (Kahn's algorithm: repeatedly take letters with no unmet predecessors). If it consumes every letter, the order it produced is valid; if letters remain, the rules contain a cycle and no alphabet exists. When several orders are valid, any one is accepted.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Build edges from adjacent words, then topologically sort the letters (Kahn's algorithm).
+static String alienOrder(String[] words) {
+    Map&lt;Character, Set&lt;Character&gt;&gt; after = new HashMap&lt;&gt;(); // letter -&gt; letters that must follow it
+    Map&lt;Character, Integer&gt; waiting = new HashMap&lt;&gt;();      // letter -&gt; unmet predecessors
+    for (String word : words) {
+        for (char c : word.toCharArray()) {
+            after.putIfAbsent(c, new HashSet&lt;&gt;());
+            waiting.putIfAbsent(c, 0);
+        }
+    }
+    for (int i = 0; i + 1 &lt; words.length; i++) {
+        String first = words[i], second = words[i + 1];
+        if (first.length() &gt; second.length() &amp;&amp; first.startsWith(second)) return ""; // "abc" before "ab"
+        for (int j = 0; j &lt; Math.min(first.length(), second.length()); j++) {
+            char a = first.charAt(j), b = second.charAt(j);
+            if (a != b) { // the first difference gives one rule: a comes before b
+                if (after.get(a).add(b)) waiting.merge(b, 1, Integer::sum);
+                break;
+            }
+        }
+    }
+    Queue&lt;Character&gt; ready = new ArrayDeque&lt;&gt;();
+    for (Map.Entry&lt;Character, Integer&gt; entry : waiting.entrySet()) {
+        if (entry.getValue() == 0) ready.add(entry.getKey());
+    }
+    StringBuilder order = new StringBuilder();
+    while (!ready.isEmpty()) {
+        char c = ready.remove();
+        order.append(c);
+        for (char next : after.get(c)) {
+            if (waiting.merge(next, -1, Integer::sum) == 0) ready.add(next);
+        }
+    }
+    return order.length() == after.size() ? order.toString() : ""; // "" signals a cycle
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Build edges from adjacent words, then topologically sort the letters (Kahn's algorithm).
+function alienOrder(words) {
+  const after = new Map();   // letter -&gt; letters that must follow it
+  const waiting = new Map(); // letter -&gt; unmet predecessors
+  for (const word of words) {
+    for (const char of word) {
+      if (!after.has(char)) after.set(char, new Set());
+      if (!waiting.has(char)) waiting.set(char, 0);
+    }
+  }
+  for (let i = 0; i + 1 &lt; words.length; i++) {
+    const [first, second] = [words[i], words[i + 1]];
+    if (first.length &gt; second.length &amp;&amp; first.startsWith(second)) return ''; // "abc" before "ab"
+    for (let j = 0; j &lt; Math.min(first.length, second.length); j++) {
+      if (first[j] !== second[j]) { // the first difference gives one rule: first[j] comes before second[j]
+        if (!after.get(first[j]).has(second[j])) {
+          after.get(first[j]).add(second[j]);
+          waiting.set(second[j], waiting.get(second[j]) + 1);
+        }
+        break;
+      }
+    }
+  }
+  const ready = [...waiting].filter(([, count]) =&gt; count === 0).map(([char]) =&gt; char);
+  let order = '';
+  while (ready.length &gt; 0) {
+    const char = ready.shift();
+    order += char;
+    for (const next of after.get(char)) {
+      waiting.set(next, waiting.get(next) - 1);
+      if (waiting.get(next) === 0) ready.push(next);
+    }
+  }
+  return order.length === after.size ? order : ''; // '' signals a cycle
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(C)</strong> — C is the total number of characters across all words</li>
+    <li>Space <strong>O(1)</strong> — the alphabet is finite, so the graph has a bounded number of nodes and edges (O(U + min(U², N)) in general)</li>
+  </ul>
+  <p>The two easily-missed cases are the prefix rule and letters that appear in words but are never compared — they still belong in the answer, which is why every letter is registered as a node up front.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

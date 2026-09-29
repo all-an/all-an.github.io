@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Middle of a linked list — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Middle of a linked list</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Easy–Medium</span>
+    <span class="badge badge-tech">Linked List / Two Pointers</span>
+  </div>
+
+  <p class="desc">Return the middle node of a singly linked list in a single pass — for <code>1 → 2 → 3 → 4 → 5</code> it is <code>3</code>; for an even-length list of <code>1 → 2 → 3 → 4</code> return the second middle, <code>3</code>. A linked list has no length field and no indexing, which is what makes it interesting.</p>
+
+  <!-- interactive demo: find the middle node of a linked list. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type node values separated by commas</label>
+    <input id="demoInput" type="text" value="1, 2, 3, 4, 5" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Middle node</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>The naive route counts the nodes in one pass, then walks n/2 steps in a second. The two-pointer trick does it in one: move <code>slow</code> one node per step and <code>fast</code> two. When fast reaches the end, slow has covered exactly half the distance — it is on the middle node.</p>
+  <p>Stopping condition <code>fast != null &amp;&amp; fast.next != null</code> returns the <em>second</em> middle for even lengths; use <code>fast.next != null &amp;&amp; fast.next.next != null</code> if you need the first.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">static class ListNode {
+    int value;
+    ListNode next;
+    ListNode(int value) { this.value = value; }
+}
+
+// Slow/fast pointers: when fast reaches the end, slow is in the middle.
+static ListNode middleNode(ListNode head) {
+    ListNode slow = head;
+    ListNode fast = head;
+    while (fast != null &amp;&amp; fast.next != null) {
+        slow = slow.next;       // one step
+        fast = fast.next.next;  // two steps
+    }
+    return slow;
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">class ListNode {
+  constructor(value, next = null) {
+    this.value = value;
+    this.next = next;
+  }
+}
+
+// Slow/fast pointers: when fast reaches the end, slow is in the middle.
+function middleNode(head) {
+  let slow = head;
+  let fast = head;
+  while (fast &amp;&amp; fast.next) {
+    slow = slow.next;       // one step
+    fast = fast.next.next;  // two steps
+  }
+  return slow;
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(n)</strong> — fast traverses the list once</li>
+    <li>Space <strong>O(1)</strong> — two pointers</li>
+  </ul>
+  <p>This slow/fast idea is reused all over linked-list problems: it is the first half of "palindrome linked list", "reorder list" and merge sort on a list.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

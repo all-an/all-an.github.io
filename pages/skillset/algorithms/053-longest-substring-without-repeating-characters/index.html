@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Longest substring without repeating characters — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Longest substring without repeating characters</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Medium</span>
+    <span class="badge badge-tech">Sliding Window</span>
+  </div>
+
+  <p class="desc">Find the length of the longest substring that contains no repeated character — in <code>"abcabcbb"</code> it is <code>"abc"</code>, length 3. The textbook sliding-window problem.</p>
+
+  <!-- interactive demo: find the longest substring without repeating characters. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type a string</label>
+    <input id="demoInput" type="text" value="abcabcbb" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Longest unique substring</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>Keep a window <code>[start, end]</code> that always holds distinct characters. Extend <code>end</code> one character at a time; remember the last index at which each character was seen. If the new character was last seen <em>inside</em> the window, jump <code>start</code> to just after that earlier occurrence, so the window is duplicate-free again. After each step, the window length is a candidate for the answer.</p>
+  <p>The check that the previous index is at least <code>start</code> matters: an old occurrence that is already left of the window must be ignored (see <code>"abba"</code>).</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Sliding window with a map of each character's last index.
+static int lengthOfLongestSubstring(String text) {
+    Map&lt;Character, Integer&gt; lastSeen = new HashMap&lt;&gt;();
+    int start = 0;
+    int best = 0;
+    for (int end = 0; end &lt; text.length(); end++) {
+        char c = text.charAt(end);
+        Integer previous = lastSeen.get(c);
+        if (previous != null &amp;&amp; previous &gt;= start) {
+            start = previous + 1; // move past the earlier duplicate
+        }
+        lastSeen.put(c, end);
+        best = Math.max(best, end - start + 1);
+    }
+    return best;
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Sliding window with a map of each character's last index.
+function lengthOfLongestSubstring(text) {
+  const lastSeen = new Map();
+  let start = 0;
+  let best = 0;
+  for (let end = 0; end &lt; text.length; end++) {
+    const char = text[end];
+    if (lastSeen.has(char) &amp;&amp; lastSeen.get(char) &gt;= start) {
+      start = lastSeen.get(char) + 1; // move past the earlier duplicate
+    }
+    lastSeen.set(char, end);
+    best = Math.max(best, end - start + 1);
+  }
+  return best;
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(n)</strong> — each character is handled once as the window grows</li>
+    <li>Space <strong>O(k)</strong> — k is the size of the character set</li>
+  </ul>
+  <p>A set-based variant removes characters from the left one by one until the duplicate is gone — the same O(n) overall, but slightly more code. The pattern "expand right, shrink left while invalid" solves many window problems.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

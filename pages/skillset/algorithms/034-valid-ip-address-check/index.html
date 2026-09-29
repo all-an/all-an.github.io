@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Valid IP address check — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Valid IP address check</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Easy–Medium</span>
+    <span class="badge badge-tech">String</span>
+  </div>
+
+  <p class="desc">Decide whether a string is a valid IPv4 address: four decimal numbers from 0 to 255, separated by dots, with no leading zeroes — <code>"192.168.1.1"</code> is valid; <code>"256.1.1.1"</code>, <code>"1.1.1"</code> and <code>"01.1.1.1"</code> are not.</p>
+
+  <!-- interactive demo: check whether the typed text is a valid IPv4 address. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type an IP address</label>
+    <input id="demoInput" type="text" value="192.168.1.1" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Valid IPv4?</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>Split the string on <code>.</code> and require exactly four parts. Each part must be non-empty, contain only digits, be at most three characters, have no leading zero unless it is the single digit <code>"0"</code>, and be numerically at most 255. Check the characters <em>before</em> parsing, because <code>Integer.parseInt</code> happily accepts things like <code>"+1"</code> or <code>"-0"</code>.</p>
+  <p>Watch the split edge cases: in Java <code>"1.1.1.1.".split("\\.")</code> drops the trailing empty string, so use a negative limit — <code>split("\\.", -1)</code> — to keep it and reject the input.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Split on dots and validate each of the four parts.
+static boolean isValidIPv4(String address) {
+    String[] parts = address.split("\\.", -1); // -1 keeps trailing empty parts
+    if (parts.length != 4) return false;
+    for (String part : parts) {
+        if (part.isEmpty() || part.length() &gt; 3) return false;
+        for (char c : part.toCharArray()) {
+            if (!Character.isDigit(c)) return false; // digits only
+        }
+        if (part.length() &gt; 1 &amp;&amp; part.charAt(0) == '0') return false; // no leading zeroes
+        if (Integer.parseInt(part) &gt; 255) return false;
+    }
+    return true;
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Split on dots and validate each of the four parts.
+function isValidIPv4(address) {
+  const parts = address.split('.');
+  if (parts.length !== 4) return false;
+  return parts.every(part =&gt;
+    /^\d{1,3}$/.test(part) &amp;&amp;            // 1-3 digits, nothing else
+    (part === '0' || part[0] !== '0') &amp;&amp;  // no leading zeroes
+    Number(part) &lt;= 255
+  );
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(n)</strong> — n is the string length; each character is checked a constant number of times</li>
+    <li>Space <strong>O(1)</strong> — at most four short parts</li>
+  </ul>
+  <p>In real code prefer the platform parser (<code>InetAddress</code> in Java) over hand-rolled checks. IPv6 is a follow-up variant: eight groups of 1–4 hex digits separated by colons, with <code>::</code> as a shorthand for a run of zero groups.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

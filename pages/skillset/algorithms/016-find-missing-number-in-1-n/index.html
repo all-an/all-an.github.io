@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Find missing number in 1..n — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Find missing number in 1..n</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Easy</span>
+    <span class="badge badge-tech">Math / Bit Manipulation</span>
+  </div>
+
+  <p class="desc">An array holds n distinct numbers taken from the range <code>0..n</code> (or <code>1..n+1</code>), so exactly one number is missing. Find it — for <code>[3, 0, 1]</code> the missing number is <code>2</code>.</p>
+
+  <!-- interactive demo: find the missing number in a list drawn from 0..n. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type numbers from 0..n with one missing</label>
+    <input id="demoInput" type="text" value="3, 0, 1" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Missing number</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>Three classic routes. <strong>Sum:</strong> the numbers 0..n add up to <code>n(n+1)/2</code>; subtract the array's actual sum and the difference is the missing number. <strong>XOR:</strong> XOR every index and every value — pairs cancel (<code>x ^ x = 0</code>) and only the missing number survives, with no overflow risk. <strong>Hash set:</strong> put everything in a set and check which of 0..n is absent (simple, but O(n) space).</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Approach 1 — sum: expected total minus actual total.
+static int missingNumberSum(int[] numbers) {
+    int n = numbers.length;
+    int expected = n * (n + 1) / 2;
+    int actual = 0;
+    for (int number : numbers) actual += number;
+    return expected - actual;
+}
+
+// Approach 2 — XOR: matching values cancel out, leaving the missing one.
+static int missingNumber(int[] numbers) {
+    int result = numbers.length; // start with n, since indices only reach n - 1
+    for (int i = 0; i &lt; numbers.length; i++) {
+        result ^= i ^ numbers[i];
+    }
+    return result;
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Approach 1 — sum: expected total minus actual total.
+function missingNumberSum(numbers) {
+  const n = numbers.length;
+  const expected = n * (n + 1) / 2;
+  const actual = numbers.reduce((total, number) =&gt; total + number, 0);
+  return expected - actual;
+}
+
+// Approach 2 — XOR: matching values cancel out, leaving the missing one.
+function missingNumber(numbers) {
+  let result = numbers.length; // start with n, since indices only reach n - 1
+  for (let i = 0; i &lt; numbers.length; i++) {
+    result ^= i ^ numbers[i];
+  }
+  return result;
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(n)</strong> — a single pass over the array</li>
+    <li>Space <strong>O(1)</strong> — the sum and XOR versions use one variable</li>
+  </ul>
+  <p>The sum formula can overflow a 32-bit <code>int</code> for very large n; the XOR version cannot, which is why interviewers like it. If the range is <code>1..n+1</code> instead, use <code>(n+1)(n+2)/2</code> as the expected total.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

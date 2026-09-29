@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Longest increasing subsequence (DP + binary search, O(n log n)) — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Longest increasing subsequence (DP + binary search, O(n log n))</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Hard</span>
+    <span class="badge badge-tech">DP / Binary Search</span>
+  </div>
+
+  <p class="desc">Find the length of the longest strictly increasing subsequence of an array (elements need not be adjacent) — for <code>[10, 9, 2, 5, 3, 7, 101, 18]</code> it is <code>4</code> (for example 2, 3, 7, 101). A simple O(n²) DP exists; patience sorting with binary search brings it to O(n log n).</p>
+
+  <!-- interactive demo: find the length of the longest increasing subsequence. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type numbers separated by commas</label>
+    <input id="demoInput" type="text" value="10, 9, 2, 5, 3, 7, 101, 18" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">LIS length and tails array</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p><strong>O(n²) DP:</strong> let <code>length[i]</code> be the longest increasing subsequence ending at index i. It is 1 plus the best <code>length[j]</code> over all earlier <code>j</code> with a smaller value. The answer is the maximum entry.</p>
+  <p><strong>O(n log n):</strong> keep an array <code>tails</code>, where <code>tails[k]</code> is the smallest possible last value of an increasing subsequence of length k + 1. It is always sorted. For each number, binary-search the first entry that is <em>greater than or equal</em> to it and overwrite that entry (or append if none exists). Overwriting keeps the tails as small as possible, which leaves the most room to extend later. The final length of <code>tails</code> is the answer — although <code>tails</code> itself is not necessarily a real subsequence.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Approach 1 — O(n^2) DP: best length of a subsequence ending at each index.
+static int lisQuadratic(int[] numbers) {
+    int[] length = new int[numbers.length];
+    int best = 0;
+    for (int i = 0; i &lt; numbers.length; i++) {
+        length[i] = 1; // the number alone
+        for (int j = 0; j &lt; i; j++) {
+            if (numbers[j] &lt; numbers[i]) length[i] = Math.max(length[i], length[j] + 1);
+        }
+        best = Math.max(best, length[i]);
+    }
+    return best;
+}
+
+// Approach 2 — O(n log n): tails[k] = smallest last value of an increasing subsequence of length k + 1.
+static int lengthOfLIS(int[] numbers) {
+    int[] tails = new int[numbers.length];
+    int size = 0;
+    for (int number : numbers) {
+        int low = 0, high = size;
+        while (low &lt; high) { // first position whose tail is &gt;= number
+            int middle = (low + high) &gt;&gt;&gt; 1;
+            if (tails[middle] &lt; number) low = middle + 1;
+            else high = middle;
+        }
+        tails[low] = number;         // replace, or extend when low == size
+        if (low == size) size++;
+    }
+    return size;
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Approach 1 — O(n^2) DP: best length of a subsequence ending at each index.
+function lisQuadratic(numbers) {
+  const length = new Array(numbers.length).fill(1); // each number alone
+  let best = 0;
+  for (let i = 0; i &lt; numbers.length; i++) {
+    for (let j = 0; j &lt; i; j++) {
+      if (numbers[j] &lt; numbers[i]) length[i] = Math.max(length[i], length[j] + 1);
+    }
+    best = Math.max(best, length[i]);
+  }
+  return best;
+}
+
+// Approach 2 — O(n log n): tails[k] = smallest last value of an increasing subsequence of length k + 1.
+function lengthOfLIS(numbers) {
+  const tails = [];
+  for (const number of numbers) {
+    let low = 0;
+    let high = tails.length;
+    while (low &lt; high) { // first position whose tail is &gt;= number
+      const middle = (low + high) &gt;&gt; 1;
+      if (tails[middle] &lt; number) low = middle + 1;
+      else high = middle;
+    }
+    tails[low] = number; // replace, or extend when low === tails.length
+  }
+  return tails.length;
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(n log n)</strong> — one binary search per element (the DP version is O(n²))</li>
+    <li>Space <strong>O(n)</strong> — the tails array</li>
+  </ul>
+  <p>Searching for the first tail <em>≥</em> the number (not just &gt;) is what makes the sequence <em>strictly</em> increasing; using &gt; instead would compute the longest non-decreasing subsequence.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

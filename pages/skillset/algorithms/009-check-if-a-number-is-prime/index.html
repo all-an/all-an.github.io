@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Check if a number is prime — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Check if a number is prime</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Beginner</span>
+    <span class="badge badge-tech">Math</span>
+  </div>
+
+  <p class="desc">A prime is a number greater than 1 whose only divisors are 1 and itself — <code>2, 3, 5, 7, 11, …</code>. Given n, decide whether it is prime. The interview point is knowing you only have to test divisors up to <code>√n</code>.</p>
+
+  <!-- interactive demo: test whether the typed number is prime. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type an integer</label>
+    <input id="demoInput" type="text" value="97" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Prime?</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>Numbers below 2 are not prime, and 2 is the only even prime. For everything else, try dividing by 3, 5, 7, … — if any divisor works, n is composite. You can stop at <code>√n</code> because divisors come in pairs: if <code>n = a × b</code> then one of them is at most <code>√n</code>. Written as <code>divisor * divisor &lt;= n</code> it avoids computing a square root.</p>
+  <p>Skipping even divisors after handling 2 halves the work again.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Trial division up to the square root, skipping even divisors.
+static boolean isPrime(int n) {
+    if (n &lt; 2) return false;
+    if (n % 2 == 0) return n == 2; // 2 is the only even prime
+    for (long divisor = 3; divisor * divisor &lt;= n; divisor += 2) {
+        if (n % divisor == 0) {
+            return false; // found a factor
+        }
+    }
+    return true;
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Trial division up to the square root, skipping even divisors.
+function isPrime(n) {
+  if (!Number.isInteger(n) || n &lt; 2) return false;
+  if (n % 2 === 0) return n === 2; // 2 is the only even prime
+  for (let divisor = 3; divisor * divisor &lt;= n; divisor += 2) {
+    if (n % divisor === 0) {
+      return false; // found a factor
+    }
+  }
+  return true;
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(√n)</strong> — at most √n / 2 divisions</li>
+    <li>Space <strong>O(1)</strong> — only a loop counter</li>
+  </ul>
+  <p>To find <em>every</em> prime up to n, the Sieve of Eratosthenes does it in <strong>O(n log log n)</strong> — far cheaper than testing each number separately.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

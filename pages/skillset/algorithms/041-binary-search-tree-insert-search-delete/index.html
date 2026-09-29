@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Binary search tree: insert, search, delete — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Binary search tree: insert, search, delete</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Medium</span>
+    <span class="badge badge-tech">Tree / BST</span>
+  </div>
+
+  <p class="desc">A binary search tree (BST) keeps every node's left subtree smaller and its right subtree larger than the node itself, so <strong>insert</strong>, <strong>search</strong> and <strong>delete</strong> can discard half the tree at each step. Implementing all three — especially delete — is the standard tree-coding interview.</p>
+
+  <!-- interactive demo: insert values into a BST, then delete one and show the sorted contents. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type values to insert, then a semicolon and a value to delete</label>
+    <input id="demoInput" type="text" value="50, 30, 70, 20, 40, 60, 80; 30" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Inorder before → after delete</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p><strong>Search / insert:</strong> compare the key with the current node — go left if smaller, right if larger, and stop when you find it (search) or reach an empty spot (insert there).</p>
+  <p><strong>Delete</strong> has three cases. A <em>leaf</em>: just remove it. A node with <em>one child</em>: replace the node with that child. A node with <em>two children</em>: copy in its inorder successor (the smallest value in the right subtree), then delete that successor from the right subtree — the successor has at most one child, so it falls into an easy case.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">static class Node {
+    int key;
+    Node left, right;
+    Node(int key) { this.key = key; }
+}
+
+// Insert: walk down to the empty spot where the key belongs.
+static Node insert(Node node, int key) {
+    if (node == null) return new Node(key);
+    if (key &lt; node.key) node.left = insert(node.left, key);
+    else if (key &gt; node.key) node.right = insert(node.right, key); // duplicates are ignored
+    return node;
+}
+
+// Search: discard half the tree at every step.
+static boolean contains(Node node, int key) {
+    while (node != null) {
+        if (key == node.key) return true;
+        node = key &lt; node.key ? node.left : node.right;
+    }
+    return false;
+}
+
+// Delete: leaf, one child, or two children (use the inorder successor).
+static Node delete(Node node, int key) {
+    if (node == null) return null;
+    if (key &lt; node.key) {
+        node.left = delete(node.left, key);
+    } else if (key &gt; node.key) {
+        node.right = delete(node.right, key);
+    } else {
+        if (node.left == null) return node.right; // leaf or only a right child
+        if (node.right == null) return node.left; // only a left child
+        Node successor = node.right;
+        while (successor.left != null) successor = successor.left; // smallest in the right subtree
+        node.key = successor.key;
+        node.right = delete(node.right, successor.key);
+    }
+    return node;
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">class Node {
+  constructor(key) {
+    this.key = key;
+    this.left = null;
+    this.right = null;
+  }
+}
+
+// Insert: walk down to the empty spot where the key belongs.
+function insert(node, key) {
+  if (!node) return new Node(key);
+  if (key &lt; node.key) node.left = insert(node.left, key);
+  else if (key &gt; node.key) node.right = insert(node.right, key); // duplicates are ignored
+  return node;
+}
+
+// Search: discard half the tree at every step.
+function contains(node, key) {
+  while (node) {
+    if (key === node.key) return true;
+    node = key &lt; node.key ? node.left : node.right;
+  }
+  return false;
+}
+
+// Delete: leaf, one child, or two children (use the inorder successor).
+function remove(node, key) {
+  if (!node) return null;
+  if (key &lt; node.key) {
+    node.left = remove(node.left, key);
+  } else if (key &gt; node.key) {
+    node.right = remove(node.right, key);
+  } else {
+    if (!node.left) return node.right; // leaf or only a right child
+    if (!node.right) return node.left; // only a left child
+    let successor = node.right;
+    while (successor.left) successor = successor.left; // smallest in the right subtree
+    node.key = successor.key;
+    node.right = remove(node.right, successor.key);
+  }
+  return node;
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(h)</strong> — h is the tree height — O(log n) when balanced, O(n) when skewed</li>
+    <li>Space <strong>O(h)</strong> — recursion depth (the iterative search needs O(1))</li>
+  </ul>
+  <p>Inserting already-sorted keys builds a linked-list-shaped tree with O(n) operations. Self-balancing trees (AVL, red-black — behind Java's <code>TreeMap</code>) rotate nodes after updates to keep the height at O(log n).</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

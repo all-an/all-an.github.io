@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Word ladder (BFS) — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Word ladder (BFS)</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Hard</span>
+    <span class="badge badge-tech">Graph / BFS</span>
+  </div>
+
+  <p class="desc">Transform a start word into an end word by changing one letter at a time, where every intermediate word must be in a given dictionary. Return the length of the shortest transformation sequence — <code>"hit" → "hot" → "dot" → "dog" → "cog"</code> has length 5. Shortest path in an unweighted graph means <strong>BFS</strong>.</p>
+
+  <!-- interactive demo: find the shortest word ladder. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type begin word, end word, then the dictionary, separated by semicolons</label>
+    <input id="demoInput" type="text" value="hit; cog; hot, dot, dog, lot, log, cog" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Shortest ladder length</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>Treat every word as a node, with an edge between two words that differ in exactly one letter. The fewest transformations is the shortest path from the start to the end, and BFS finds shortest paths in unweighted graphs level by level.</p>
+  <p>Generating neighbours by trying <code>26 × length</code> single-letter changes and checking the dictionary is far cheaper than comparing the current word with every dictionary word. Removing a word from the dictionary the moment it is first reached doubles as the visited set. A bidirectional BFS, searching from both ends until the frontiers meet, is a good optimisation.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// BFS from beginWord; each level is one more transformation step.
+static int ladderLength(String beginWord, String endWord, List&lt;String&gt; wordList) {
+    Set&lt;String&gt; unvisited = new HashSet&lt;&gt;(wordList);
+    if (!unvisited.contains(endWord)) return 0;
+    Queue&lt;String&gt; queue = new ArrayDeque&lt;&gt;();
+    queue.add(beginWord);
+    int steps = 1;
+    while (!queue.isEmpty()) {
+        for (int size = queue.size(); size &gt; 0; size--) { // process one whole level
+            String word = queue.remove();
+            if (word.equals(endWord)) return steps;
+            char[] letters = word.toCharArray();
+            for (int i = 0; i &lt; letters.length; i++) {
+                char original = letters[i];
+                for (char c = 'a'; c &lt;= 'z'; c++) {
+                    letters[i] = c;
+                    String candidate = new String(letters);
+                    if (unvisited.remove(candidate)) queue.add(candidate); // remove = mark visited
+                }
+                letters[i] = original; // restore before changing the next position
+            }
+        }
+        steps++;
+    }
+    return 0; // no ladder exists
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// BFS from beginWord; each level is one more transformation step.
+function ladderLength(beginWord, endWord, wordList) {
+  const unvisited = new Set(wordList);
+  if (!unvisited.has(endWord)) return 0;
+  let level = [beginWord];
+  let steps = 1;
+  while (level.length &gt; 0) {
+    const nextLevel = [];
+    for (const word of level) {
+      if (word === endWord) return steps;
+      for (let i = 0; i &lt; word.length; i++) {
+        for (let code = 97; code &lt;= 122; code++) { // 'a'..'z'
+          const candidate = word.slice(0, i) + String.fromCharCode(code) + word.slice(i + 1);
+          if (unvisited.delete(candidate)) nextLevel.push(candidate); // delete = mark visited
+        }
+      }
+    }
+    level = nextLevel;
+    steps++;
+  }
+  return 0; // no ladder exists
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(N × L × 26)</strong> — N dictionary words of length L, each expanded once</li>
+    <li>Space <strong>O(N × L)</strong> — the dictionary set and the queue</li>
+  </ul>
+  <p>The begin word does not have to be in the dictionary; the end word must be. To return the ladders themselves ("Word Ladder II"), record each word's parents during BFS and rebuild all shortest paths afterwards.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

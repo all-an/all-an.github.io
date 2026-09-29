@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>N-Queens problem — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>N-Queens problem</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Hard</span>
+    <span class="badge badge-tech">Backtracking</span>
+  </div>
+
+  <p class="desc">Place n queens on an n × n chessboard so that no two attack each other — no two share a row, column or diagonal. Count the solutions or print the boards; for n = 4 there are 2, for n = 8 there are 92.</p>
+
+  <!-- interactive demo: count the N-Queens solutions and show the first board. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type the board size n (1–9)</label>
+    <input id="demoInput" type="text" value="6" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Solutions and first board (column of the queen in each row)</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>Place one queen per row, top to bottom. For the current row, try each column: a square is safe if no earlier queen shares its column or either diagonal. Recurse to the next row; if a row has no safe square, <strong>backtrack</strong> — undo the previous placement and try its next column.</p>
+  <p>Checking safety in O(1) needs three sets: occupied <em>columns</em>, occupied <em>diagonals</em> (cells on the same "↘" diagonal share <code>row − column</code>) and occupied <em>anti-diagonals</em> (cells on the same "↙" diagonal share <code>row + column</code>). Because you place exactly one queen per row, rows never clash.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Count the N-Queens solutions by placing one queen per row.
+static int solveNQueens(int n) {
+    return place(0, n, new boolean[n], new boolean[2 * n], new boolean[2 * n]);
+}
+
+static int place(int row, int n, boolean[] columns, boolean[] diagonals, boolean[] antiDiagonals) {
+    if (row == n) return 1; // all queens placed: one solution
+    int count = 0;
+    for (int column = 0; column &lt; n; column++) {
+        int diagonal = row - column + n; // shifted so the index is never negative
+        int antiDiagonal = row + column;
+        if (columns[column] || diagonals[diagonal] || antiDiagonals[antiDiagonal]) continue;
+        columns[column] = diagonals[diagonal] = antiDiagonals[antiDiagonal] = true;   // place
+        count += place(row + 1, n, columns, diagonals, antiDiagonals);
+        columns[column] = diagonals[diagonal] = antiDiagonals[antiDiagonal] = false;  // remove
+    }
+    return count;
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Count the N-Queens solutions by placing one queen per row.
+function solveNQueens(n) {
+  const columns = new Set();
+  const diagonals = new Set();     // cells sharing row - column
+  const antiDiagonals = new Set(); // cells sharing row + column
+  let count = 0;
+
+  function place(row) {
+    if (row === n) {
+      count++; // all queens placed: one solution
+      return;
+    }
+    for (let column = 0; column &lt; n; column++) {
+      if (columns.has(column) || diagonals.has(row - column) || antiDiagonals.has(row + column)) continue;
+      columns.add(column);                // place
+      diagonals.add(row - column);
+      antiDiagonals.add(row + column);
+      place(row + 1);
+      columns.delete(column);             // remove
+      diagonals.delete(row - column);
+      antiDiagonals.delete(row + column);
+    }
+  }
+
+  place(0);
+  return count;
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(n!)</strong> — roughly — pruning cuts the tree far below n^n</li>
+    <li>Space <strong>O(n)</strong> — recursion depth and the three lookup structures</li>
+  </ul>
+  <p>To print the boards, keep the queen's column for each row and render them at the leaf. A bitmask version — three integers whose set bits mark attacked columns — is the fastest and a favourite follow-up.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

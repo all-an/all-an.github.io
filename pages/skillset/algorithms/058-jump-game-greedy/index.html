@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jump game (greedy) — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Jump game (greedy)</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Medium</span>
+    <span class="badge badge-tech">Greedy</span>
+  </div>
+
+  <p class="desc">Each array element is the maximum jump length from that position. Starting at index 0, can you reach the last index? <code>[2, 3, 1, 1, 4]</code> — yes; <code>[3, 2, 1, 0, 4]</code> — no, you always get stuck at the 0.</p>
+
+  <!-- interactive demo: check whether the last index is reachable. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type the jump lengths separated by commas</label>
+    <input id="demoInput" type="text" value="2, 3, 1, 1, 4" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Can reach the end?</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>You do not need to explore every path. Sweep left to right keeping <code>farthest</code>, the furthest index you could possibly reach so far. At index <code>i</code>: if <code>i &gt; farthest</code>, that position is unreachable, so the answer is false. Otherwise update <code>farthest = max(farthest, i + jumps[i])</code>. If the sweep completes, the last index was reachable.</p>
+  <p>This is a <strong>greedy</strong> solution: reachable positions always form a contiguous range starting at 0, so a single number summarises everything you need. The brute-force alternatives (recursion, or DP over reachable indices) are O(2ⁿ) and O(n²).</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Greedy: track the farthest index reachable so far.
+static boolean canJump(int[] jumps) {
+    int farthest = 0;
+    for (int i = 0; i &lt; jumps.length; i++) {
+        if (i &gt; farthest) return false;            // stuck: index i can never be reached
+        farthest = Math.max(farthest, i + jumps[i]);
+    }
+    return true;
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Greedy: track the farthest index reachable so far.
+function canJump(jumps) {
+  let farthest = 0;
+  for (let i = 0; i &lt; jumps.length; i++) {
+    if (i &gt; farthest) return false;            // stuck: index i can never be reached
+    farthest = Math.max(farthest, i + jumps[i]);
+  }
+  return true;
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(n)</strong> — a single left-to-right pass</li>
+    <li>Space <strong>O(1)</strong> — one variable</li>
+  </ul>
+  <p>The follow-up "Jump Game II" asks for the <em>minimum number of jumps</em>; it uses the same reach idea, counting a jump each time the sweep passes the end of the current range.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Merge sort — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Merge sort</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Easy–Medium</span>
+    <span class="badge badge-tech">Sorting / Divide &amp; Conquer</span>
+  </div>
+
+  <p class="desc">Merge sort splits the array in half, sorts each half recursively, then merges the two sorted halves. It is the standard example of divide and conquer, and it guarantees O(n log n) time on every input.</p>
+
+  <!-- interactive demo: sort a comma-separated list with merge sort. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type numbers separated by commas</label>
+    <input id="demoInput" type="text" value="38, 27, 43, 3, 9, 82, 10" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Sorted</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p><strong>Divide:</strong> split the array at its midpoint. <strong>Conquer:</strong> sort each half by calling merge sort on it — an array of length 0 or 1 is already sorted, which is the base case. <strong>Combine:</strong> merge the two sorted halves with the two-pointer merge from "merge two sorted arrays".</p>
+  <p>The array is halved log₂ n times, and each level of the recursion does O(n) merging work — hence O(n log n). The merge takes the left element on ties, so the sort is <em>stable</em>.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Merge sort: split, sort each half, merge. Returns a new sorted array.
+static int[] mergeSort(int[] numbers) {
+    if (numbers.length &lt;= 1) return numbers; // base case: already sorted
+    int middle = numbers.length / 2;
+    int[] left = mergeSort(Arrays.copyOfRange(numbers, 0, middle));
+    int[] right = mergeSort(Arrays.copyOfRange(numbers, middle, numbers.length));
+    return merge(left, right);
+}
+
+// Merge two sorted arrays into one sorted array.
+static int[] merge(int[] left, int[] right) {
+    int[] merged = new int[left.length + right.length];
+    int i = 0, j = 0, k = 0;
+    while (i &lt; left.length &amp;&amp; j &lt; right.length) {
+        merged[k++] = left[i] &lt;= right[j] ? left[i++] : right[j++]; // &lt;= keeps it stable
+    }
+    while (i &lt; left.length) merged[k++] = left[i++];
+    while (j &lt; right.length) merged[k++] = right[j++];
+    return merged;
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Merge sort: split, sort each half, merge. Returns a new sorted array.
+function mergeSort(numbers) {
+  if (numbers.length &lt;= 1) return numbers; // base case: already sorted
+  const middle = Math.floor(numbers.length / 2);
+  const left = mergeSort(numbers.slice(0, middle));
+  const right = mergeSort(numbers.slice(middle));
+  return merge(left, right);
+}
+
+// Merge two sorted arrays into one sorted array.
+function merge(left, right) {
+  const merged = [];
+  let i = 0;
+  let j = 0;
+  while (i &lt; left.length &amp;&amp; j &lt; right.length) {
+    merged.push(left[i] &lt;= right[j] ? left[i++] : right[j++]); // &lt;= keeps it stable
+  }
+  return merged.concat(left.slice(i), right.slice(j));
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(n log n)</strong> — best, average and worst case alike</li>
+    <li>Space <strong>O(n)</strong> — the merge needs auxiliary arrays</li>
+  </ul>
+  <p>Its predictable speed and stability make merge sort the basis of library sorts for objects (Java's <code>Collections.sort</code> uses Timsort, a merge-sort hybrid). It also works well on linked lists and data too big for memory (external sorting).</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

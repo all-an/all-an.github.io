@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Count occurrences of a character in a string — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Count occurrences of a character in a string</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Beginner</span>
+    <span class="badge badge-tech">String / Hashing</span>
+  </div>
+
+  <p class="desc">Given a string and a character, count how many times the character appears — <code>'l'</code> appears <code>3</code> times in <code>"hello world"</code>. The natural extension is counting <em>every</em> character at once, which is the doorway to hashing.</p>
+
+  <!-- interactive demo: count how often each character appears in the typed text. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type a string</label>
+    <input id="demoInput" type="text" value="hello world" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Character counts</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>For a single character, loop over the string and increment a counter each time the character matches. To count every character in one pass, keep a hash map from character to count: read the current count (defaulting to <code>0</code>), add one, and store it back.</p>
+  <p>Decide about case up front — is <code>'H'</code> the same as <code>'h'</code>? — and normalize with <code>toLowerCase()</code> if it is.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Approach 1 — one character: scan and count the matches.
+static int countChar(String text, char target) {
+    int count = 0;
+    for (int i = 0; i &lt; text.length(); i++) {
+        if (text.charAt(i) == target) count++;
+    }
+    return count;
+}
+
+// Approach 2 — every character: a map from character to its count.
+static Map&lt;Character, Integer&gt; countAllChars(String text) {
+    Map&lt;Character, Integer&gt; counts = new LinkedHashMap&lt;&gt;();
+    for (char c : text.toCharArray()) {
+        counts.merge(c, 1, Integer::sum); // insert 1, or add 1 to the existing count
+    }
+    return counts;
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Approach 1 — one character: scan and count the matches.
+function countChar(text, target) {
+  let count = 0;
+  for (const char of text) {
+    if (char === target) count++;
+  }
+  return count;
+}
+
+// Approach 2 — every character: a Map from character to its count.
+function countAllChars(text) {
+  const counts = new Map();
+  for (const char of text) {
+    counts.set(char, (counts.get(char) || 0) + 1); // default to 0 on first sight
+  }
+  return counts;
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(n)</strong> — each character is visited once</li>
+    <li>Space <strong>O(k)</strong> — k is the number of distinct characters; O(1) for a single-character count</li>
+  </ul>
+  <p>For a fixed alphabet such as lowercase ASCII, an <code>int[26]</code> array replaces the map and is faster, since indexing an array beats hashing.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

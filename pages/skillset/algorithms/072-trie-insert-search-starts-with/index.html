@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trie: insert, search, starts-with — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Trie: insert, search, starts-with</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Medium–Hard</span>
+    <span class="badge badge-tech">Trie / Design</span>
+  </div>
+
+  <p class="desc">A trie (prefix tree) stores strings character by character along the edges of a tree, so words that share a prefix share a path. It supports <code>insert</code>, <code>search</code> (whole word) and <code>startsWith</code> (any word with this prefix) in time proportional to the word's length.</p>
+
+  <!-- interactive demo: insert words into a trie and query it. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type words to insert, a semicolon, then a query</label>
+    <input id="demoInput" type="text" value="apple, app, bat; app" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Query result</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>Each node holds its children (keyed by character) and a flag <code>isWord</code> marking where a stored word ends. <strong>Insert:</strong> walk the word's characters from the root, creating missing child nodes, and set <code>isWord</code> on the last node. <strong>Search:</strong> follow the characters; the word exists only if the path exists <em>and</em> the last node has <code>isWord</code>. <strong>startsWith:</strong> the same walk, but only the existence of the path matters.</p>
+  <p>Children can be an array of 26 slots (fast, but wasteful when sparse) or a hash map (flexible, works for any alphabet). Tries excel at autocomplete, spell-check and longest-prefix matching.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// A trie node with 26 child slots (lowercase a-z).
+static class TrieNode {
+    TrieNode[] children = new TrieNode[26];
+    boolean isWord; // true if a stored word ends here
+}
+
+static class Trie {
+    private final TrieNode root = new TrieNode();
+
+    // Walk the word, creating missing nodes, and mark the last one as a word end.
+    void insert(String word) {
+        TrieNode node = root;
+        for (char c : word.toCharArray()) {
+            int slot = c - 'a';
+            if (node.children[slot] == null) node.children[slot] = new TrieNode();
+            node = node.children[slot];
+        }
+        node.isWord = true;
+    }
+
+    // True only if the exact word was inserted.
+    boolean search(String word) {
+        TrieNode node = find(word);
+        return node != null &amp;&amp; node.isWord;
+    }
+
+    // True if any inserted word begins with the prefix.
+    boolean startsWith(String prefix) {
+        return find(prefix) != null;
+    }
+
+    // Follow the characters; null when the path does not exist.
+    private TrieNode find(String text) {
+        TrieNode node = root;
+        for (char c : text.toCharArray()) {
+            node = node.children[c - 'a'];
+            if (node == null) return null;
+        }
+        return node;
+    }
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// A trie node: children keyed by character, plus an end-of-word flag.
+class TrieNode {
+  constructor() {
+    this.children = new Map();
+    this.isWord = false; // true if a stored word ends here
+  }
+}
+
+class Trie {
+  constructor() {
+    this.root = new TrieNode();
+  }
+
+  // Walk the word, creating missing nodes, and mark the last one as a word end.
+  insert(word) {
+    let node = this.root;
+    for (const char of word) {
+      if (!node.children.has(char)) node.children.set(char, new TrieNode());
+      node = node.children.get(char);
+    }
+    node.isWord = true;
+  }
+
+  // True only if the exact word was inserted.
+  search(word) {
+    const node = this.find(word);
+    return node !== null &amp;&amp; node.isWord;
+  }
+
+  // True if any inserted word begins with the prefix.
+  startsWith(prefix) {
+    return this.find(prefix) !== null;
+  }
+
+  // Follow the characters; null when the path does not exist.
+  find(text) {
+    let node = this.root;
+    for (const char of text) {
+      node = node.children.get(char);
+      if (!node) return null;
+    }
+    return node;
+  }
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(L)</strong> — per operation, where L is the length of the word or prefix</li>
+    <li>Space <strong>O(N × L)</strong> — worst case for N words with no shared prefixes</li>
+  </ul>
+  <p>A hash set answers <code>search</code> just as fast, but it cannot answer <code>startsWith</code> without scanning every word — that prefix query is the whole reason to use a trie.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

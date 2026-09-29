@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Insertion sort — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Insertion sort</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Easy</span>
+    <span class="badge badge-tech">Sorting</span>
+  </div>
+
+  <p class="desc">Insertion sort builds the sorted array one element at a time, the way you sort a hand of playing cards: take the next card and slide it left until it sits in the right place among the cards you already hold.</p>
+
+  <!-- interactive demo: sort a comma-separated list with insertion sort. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type numbers separated by commas</label>
+    <input id="demoInput" type="text" value="5, 2, 9, 1, 5, 6" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Sorted</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>Treat the first element as a sorted prefix of length one. For each following element, remember its value (the "key"), then shift every larger element in the sorted prefix one step to the right, and drop the key into the gap that opens up. After processing the last element the whole array is sorted.</p>
+  <p>It shines on small or nearly-sorted inputs, where very few elements need to move — which is why real sort implementations (e.g. Timsort) use it for short runs.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Insertion sort: grow a sorted prefix, inserting one element at a time.
+static void insertionSort(int[] numbers) {
+    for (int i = 1; i &lt; numbers.length; i++) {
+        int key = numbers[i];
+        int j = i - 1;
+        while (j &gt;= 0 &amp;&amp; numbers[j] &gt; key) {
+            numbers[j + 1] = numbers[j]; // shift the larger element right
+            j--;
+        }
+        numbers[j + 1] = key; // drop the key into the gap
+    }
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Insertion sort: grow a sorted prefix, inserting one element at a time.
+function insertionSort(numbers) {
+  for (let i = 1; i &lt; numbers.length; i++) {
+    const key = numbers[i];
+    let j = i - 1;
+    while (j &gt;= 0 &amp;&amp; numbers[j] &gt; key) {
+      numbers[j + 1] = numbers[j]; // shift the larger element right
+      j--;
+    }
+    numbers[j + 1] = key; // drop the key into the gap
+  }
+  return numbers;
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(n²)</strong> — worst case for reversed input; O(n) when already sorted</li>
+    <li>Space <strong>O(1)</strong> — sorts in place</li>
+  </ul>
+  <p>Like bubble sort it is stable and in-place, but it does far fewer writes on nearly-sorted data, so it is the quadratic sort worth actually using — usually inside a faster algorithm for small partitions.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

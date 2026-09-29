@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Greatest common divisor (Euclidean) — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Greatest common divisor (Euclidean)</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Easy</span>
+    <span class="badge badge-tech">Math</span>
+  </div>
+
+  <p class="desc">The greatest common divisor of two integers is the largest number that divides both — <code>gcd(48, 18) = 6</code>. Euclid's 2,000-year-old algorithm finds it without factoring anything.</p>
+
+  <!-- interactive demo: compute the GCD of two numbers and show each step. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type two integers separated by a comma</label>
+    <input id="demoInput" type="text" value="48, 18" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">GCD</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>The key fact: <code>gcd(a, b) = gcd(b, a mod b)</code> — replacing the larger number by the remainder never changes the answer, because any common divisor of a and b also divides the remainder. Repeat until the remainder is <code>0</code>; the last non-zero value is the GCD.</p>
+  <p>Once you have the GCD, the least common multiple falls out: <code>lcm(a, b) = a / gcd(a, b) × b</code> (divide first to avoid overflow).</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Approach 1 — iterative Euclid: replace (a, b) with (b, a mod b).
+static int gcd(int a, int b) {
+    while (b != 0) {
+        int remainder = a % b;
+        a = b;
+        b = remainder;
+    }
+    return Math.abs(a);
+}
+
+// Approach 2 — recursive: the same rule as a self-call.
+static int gcdRecursive(int a, int b) {
+    return b == 0 ? Math.abs(a) : gcdRecursive(b, a % b);
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Approach 1 — iterative Euclid: replace (a, b) with (b, a mod b).
+function gcd(a, b) {
+  while (b !== 0) {
+    [a, b] = [b, a % b];
+  }
+  return Math.abs(a);
+}
+
+// Approach 2 — recursive: the same rule as a self-call.
+function gcdRecursive(a, b) {
+  return b === 0 ? Math.abs(a) : gcdRecursive(b, a % b);
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(log min(a, b))</strong> — the remainder shrinks at least by half every two steps</li>
+    <li>Space <strong>O(1)</strong> — iterative version keeps two variables (recursive: O(log n) stack)</li>
+  </ul>
+  <p>Because the numbers shrink so quickly, even 64-bit inputs finish in under a hundred iterations. Java's <code>BigInteger.gcd</code> provides it for arbitrarily large values.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

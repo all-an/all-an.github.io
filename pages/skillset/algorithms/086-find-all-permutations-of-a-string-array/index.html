@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Find all permutations of a string/array — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Find all permutations of a string/array</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Hard</span>
+    <span class="badge badge-tech">Backtracking</span>
+  </div>
+
+  <p class="desc">Generate every ordering of the elements of a string or array — the permutations of <code>[1, 2, 3]</code> are six: <code>123, 132, 213, 231, 312, 321</code>. It is the introductory <strong>backtracking</strong> problem: build a candidate step by step and undo each choice after exploring it.</p>
+
+  <!-- interactive demo: list all permutations of the typed characters. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type up to 6 distinct characters</label>
+    <input id="demoInput" type="text" value="abc" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Permutations</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>Think of a decision tree. At each level you choose one of the elements not yet used, add it to the current permutation, and recurse to fill the next position. When the permutation is complete, record a copy. Then <strong>backtrack</strong>: remove the element you added and mark it unused, so the next loop iteration can try a different choice at that position.</p>
+  <p>An alternative swaps elements in place: at position <code>start</code>, swap each later element into it, recurse on <code>start + 1</code>, then swap back. For inputs with duplicates, sort first and skip a value equal to its predecessor that was not used, to avoid repeated results.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Backtracking with a "used" flag per element.
+static List&lt;List&lt;Integer&gt;&gt; permutations(int[] numbers) {
+    List&lt;List&lt;Integer&gt;&gt; results = new ArrayList&lt;&gt;();
+    backtrack(numbers, new boolean[numbers.length], new ArrayList&lt;&gt;(), results);
+    return results;
+}
+
+static void backtrack(int[] numbers, boolean[] used, List&lt;Integer&gt; current, List&lt;List&lt;Integer&gt;&gt; results) {
+    if (current.size() == numbers.length) {
+        results.add(new ArrayList&lt;&gt;(current)); // record a copy of the finished permutation
+        return;
+    }
+    for (int i = 0; i &lt; numbers.length; i++) {
+        if (used[i]) continue;
+        used[i] = true;                    // choose
+        current.add(numbers[i]);
+        backtrack(numbers, used, current, results); // explore
+        current.remove(current.size() - 1); // un-choose
+        used[i] = false;
+    }
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Backtracking with a "used" flag per element.
+function permutations(numbers) {
+  const results = [];
+  const used = new Array(numbers.length).fill(false);
+  const current = [];
+
+  function backtrack() {
+    if (current.length === numbers.length) {
+      results.push([...current]); // record a copy of the finished permutation
+      return;
+    }
+    for (let i = 0; i &lt; numbers.length; i++) {
+      if (used[i]) continue;
+      used[i] = true;              // choose
+      current.push(numbers[i]);
+      backtrack();                 // explore
+      current.pop();               // un-choose
+      used[i] = false;
+    }
+  }
+
+  backtrack();
+  return results;
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(n × n!)</strong> — n! permutations, each copied in O(n)</li>
+    <li>Space <strong>O(n)</strong> — recursion depth and the current path (the output itself is n × n!)</li>
+  </ul>
+  <p>The count explodes: 10 elements already give 3,628,800 permutations. Never generate them when you only need the next one — use the "next permutation" algorithm instead.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bellman-Ford algorithm — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Bellman-Ford algorithm</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Medium–Hard</span>
+    <span class="badge badge-tech">Graph / Shortest Path</span>
+  </div>
+
+  <p class="desc">Bellman-Ford also computes single-source shortest paths, but unlike Dijkstra it allows <strong>negative edge weights</strong> — and it can detect a negative cycle, where the "shortest" path would be unbounded below.</p>
+
+  <!-- interactive demo: compute shortest distances with negative edges allowed. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type edges "from>to:weight", a semicolon, then the source</label>
+    <input id="demoInput" type="text" value="0&gt;1:4, 0&gt;2:5, 1&gt;2:-3, 2&gt;3:2; 0" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Distances from the source</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>Start with distance 0 to the source and ∞ elsewhere. Then repeat <code>V − 1</code> times: <strong>relax every edge</strong> — if <code>dist[u] + w &lt; dist[v]</code>, improve <code>dist[v]</code>. The reason V − 1 rounds suffice: a shortest path has at most V − 1 edges, and round k is guaranteed to fix every shortest path of k edges.</p>
+  <p>Then do one extra round. If any edge can still be relaxed, a negative cycle is reachable from the source and no finite shortest path exists. An optimisation is to stop early when a whole round changes nothing.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Bellman-Ford over an edge list {from, to, weight}. Returns null if a negative cycle is reachable.
+static long[] bellmanFord(int nodeCount, int[][] edges, int source) {
+    long[] distance = new long[nodeCount];
+    Arrays.fill(distance, Long.MAX_VALUE);
+    distance[source] = 0;
+    for (int round = 1; round &lt; nodeCount; round++) {
+        boolean changed = false;
+        for (int[] edge : edges) {
+            if (distance[edge[0]] != Long.MAX_VALUE &amp;&amp; distance[edge[0]] + edge[2] &lt; distance[edge[1]]) {
+                distance[edge[1]] = distance[edge[0]] + edge[2];
+                changed = true;
+            }
+        }
+        if (!changed) break; // already stable
+    }
+    for (int[] edge : edges) { // one more round: any improvement means a negative cycle
+        if (distance[edge[0]] != Long.MAX_VALUE &amp;&amp; distance[edge[0]] + edge[2] &lt; distance[edge[1]]) {
+            return null;
+        }
+    }
+    return distance;
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Bellman-Ford over an edge list [from, to, weight]. Returns null if a negative cycle is reachable.
+function bellmanFord(nodeCount, edges, source) {
+  const distance = new Array(nodeCount).fill(Infinity);
+  distance[source] = 0;
+  for (let round = 1; round &lt; nodeCount; round++) {
+    let changed = false;
+    for (const [from, to, weight] of edges) {
+      if (distance[from] + weight &lt; distance[to]) {
+        distance[to] = distance[from] + weight;
+        changed = true;
+      }
+    }
+    if (!changed) break; // already stable
+  }
+  for (const [from, to, weight] of edges) { // one more round: any improvement means a negative cycle
+    if (distance[from] + weight &lt; distance[to]) return null;
+  }
+  return distance;
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(V × E)</strong> — V − 1 rounds over all edges</li>
+    <li>Space <strong>O(V)</strong> — just the distance array</li>
+  </ul>
+  <p>Slower than Dijkstra, so use it only when negative weights are possible. It is the basis of distance-vector routing protocols, and of currency-arbitrage detection (a negative cycle in log-transformed exchange rates).</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

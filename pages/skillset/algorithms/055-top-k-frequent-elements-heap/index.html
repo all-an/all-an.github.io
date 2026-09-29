@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Top K frequent elements (heap) — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Top K frequent elements (heap)</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Medium</span>
+    <span class="badge badge-tech">Heap</span>
+  </div>
+
+  <p class="desc">Return the k most frequent elements of an array — for <code>[1, 1, 1, 2, 2, 3]</code> and <code>k = 2</code> the answer is <code>[1, 2]</code>. The interview point is doing better than sorting everything.</p>
+
+  <!-- interactive demo: find the k most frequent elements. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type numbers, then a semicolon and k</label>
+    <input id="demoInput" type="text" value="1, 1, 1, 2, 2, 3; 2" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Top k (value ×count)</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>First count occurrences with a hash map. Sorting the distinct values by count works in O(m log m), but a <strong>min-heap of size k</strong> does better: push each (value, count) pair, and whenever the heap grows beyond k, pop the entry with the smallest count. What remains are the k most frequent.</p>
+  <p>Even faster is <strong>bucket sort</strong>: since a count can be at most n, make an array of n + 1 buckets indexed by count, drop each value into its count's bucket, and read the buckets from the highest count down until you have k values — O(n) overall.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Count, then keep the k highest counts in a min-heap.
+static int[] topKFrequent(int[] numbers, int k) {
+    Map&lt;Integer, Integer&gt; counts = new HashMap&lt;&gt;();
+    for (int n : numbers) counts.merge(n, 1, Integer::sum);
+
+    // Min-heap ordered by count: the least frequent of the kept values sits on top.
+    PriorityQueue&lt;Integer&gt; heap = new PriorityQueue&lt;&gt;(Comparator.comparingInt(counts::get));
+    for (int value : counts.keySet()) {
+        heap.add(value);
+        if (heap.size() &gt; k) heap.poll(); // evict the least frequent
+    }
+    int[] result = new int[heap.size()];
+    for (int i = result.length - 1; i &gt;= 0; i--) result[i] = heap.poll(); // most frequent first
+    return result;
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Count, then bucket the values by frequency and read from the top.
+function topKFrequent(numbers, k) {
+  const counts = new Map();
+  for (const n of numbers) counts.set(n, (counts.get(n) || 0) + 1);
+
+  // buckets[c] holds every value that occurs exactly c times (c is at most n).
+  const buckets = Array.from({ length: numbers.length + 1 }, () =&gt; []);
+  for (const [value, count] of counts) buckets[count].push(value);
+
+  const result = [];
+  for (let count = buckets.length - 1; count &gt; 0 &amp;&amp; result.length &lt; k; count--) {
+    result.push(...buckets[count]);
+  }
+  return result.slice(0, k);
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(n log k)</strong> — heap version (bucket sort brings it to O(n))</li>
+    <li>Space <strong>O(n)</strong> — the count map and heap or buckets</li>
+  </ul>
+  <p>JavaScript has no built-in heap, which is why the JS version uses bucket sort — a good example of picking the algorithm the language makes easy. Java's <code>PriorityQueue</code> makes the heap version natural.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

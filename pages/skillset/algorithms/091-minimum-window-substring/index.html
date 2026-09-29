@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Minimum window substring — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Minimum window substring</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Hard</span>
+    <span class="badge badge-tech">Sliding Window</span>
+  </div>
+
+  <p class="desc">Given strings <code>s</code> and <code>t</code>, find the shortest substring of <code>s</code> that contains every character of <code>t</code> (with multiplicity) — for <code>s = "ADOBECODEBANC"</code> and <code>t = "ABC"</code> it is <code>"BANC"</code>. The hardest classic sliding-window problem.</p>
+
+  <!-- interactive demo: find the minimum window containing all required characters. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type the text, a semicolon, then the required characters</label>
+    <input id="demoInput" type="text" value="ADOBECODEBANC; ABC" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Minimum window</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>Count how many of each character <code>t</code> needs, and track how many required characters are still <strong>missing</strong>. Expand the right edge of a window one character at a time; a character that is still needed reduces <code>missing</code>. Once <code>missing</code> reaches 0 the window is valid — record it if it is the shortest so far — then <strong>shrink from the left</strong>: drop the leftmost character, and if that makes a needed character short again, <code>missing</code> goes back above 0 and you resume expanding.</p>
+  <p>Each character enters and leaves the window at most once, so the search is linear. The count for a needed character goes negative when the window holds surplus copies, which is what lets the left edge safely skip them.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Sliding window: expand right until valid, then shrink left while it stays valid.
+static String minWindow(String s, String t) {
+    int[] needed = new int[128]; // remaining count needed per ASCII character
+    for (char c : t.toCharArray()) needed[c]++;
+    int missing = t.length();    // required characters not yet covered
+    int left = 0, bestStart = 0, bestLength = Integer.MAX_VALUE;
+    for (int right = 0; right &lt; s.length(); right++) {
+        if (needed[s.charAt(right)]-- &gt; 0) missing--; // a still-needed character was covered
+        while (missing == 0) {                        // the window is valid: try to shrink it
+            if (right - left + 1 &lt; bestLength) {
+                bestLength = right - left + 1;
+                bestStart = left;
+            }
+            if (++needed[s.charAt(left++)] &gt; 0) missing++; // we dropped a needed character
+        }
+    }
+    return bestLength == Integer.MAX_VALUE ? "" : s.substring(bestStart, bestStart + bestLength);
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Sliding window: expand right until valid, then shrink left while it stays valid.
+function minWindow(s, t) {
+  const needed = new Map(); // remaining count needed per character (negative = surplus in the window)
+  for (const char of t) needed.set(char, (needed.get(char) || 0) + 1);
+  let missing = t.length;   // required characters not yet covered
+  let left = 0;
+  let bestStart = 0;
+  let bestLength = Infinity;
+  for (let right = 0; right &lt; s.length; right++) {
+    if (needed.has(s[right])) {
+      if (needed.get(s[right]) &gt; 0) missing--; // a still-needed character was covered
+      needed.set(s[right], needed.get(s[right]) - 1);
+    }
+    while (missing === 0) {                    // the window is valid: try to shrink it
+      if (right - left + 1 &lt; bestLength) {
+        bestLength = right - left + 1;
+        bestStart = left;
+      }
+      if (needed.has(s[left])) {
+        needed.set(s[left], needed.get(s[left]) + 1);
+        if (needed.get(s[left]) &gt; 0) missing++; // we dropped a needed character
+      }
+      left++;
+    }
+  }
+  return bestLength === Infinity ? '' : s.slice(bestStart, bestStart + bestLength);
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(n + m)</strong> — both window edges only ever move right</li>
+    <li>Space <strong>O(k)</strong> — k distinct characters in t (O(1) for ASCII)</li>
+  </ul>
+  <p>The single <code>missing</code> counter is the key optimisation: comparing two full count maps on every step would make each window check O(k) instead of O(1).</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

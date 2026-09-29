@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LFU Cache — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>LFU Cache</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Medium–Hard</span>
+    <span class="badge badge-tech">Design</span>
+  </div>
+
+  <p class="desc">An LFU (least frequently used) cache evicts the entry that has been accessed the <em>fewest</em> times, breaking ties by evicting the least recently used among those. It is a harder cousin of the LRU cache, and <code>get</code> and <code>put</code> must both be O(1).</p>
+
+  <!-- interactive demo: simulate an LFU cache and see what gets evicted. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type the capacity, a semicolon, then operations "put k v" / "get k"</label>
+    <input id="demoInput" type="text" value="2; put 1 1, put 2 2, get 1, put 3 3, get 2, get 3" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Results of each get</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>Keep three structures: a map <code>key → value</code>, a map <code>key → use count</code>, and a map <code>count → ordered set of keys with that count</code> (insertion-ordered, so the front is the least recently used of that count). Also track <code>minCount</code>, the smallest count currently present.</p>
+  <p>On every access, remove the key from its current count's set and add it to the set for <code>count + 1</code>; if the old set was the <code>minCount</code> one and is now empty, increase <code>minCount</code>. On inserting a new key when full, evict the front key of the <code>minCount</code> set, then insert the new key with count 1 and reset <code>minCount = 1</code>.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">static class LfuCache {
+    private final int capacity;
+    private int minCount = 0;
+    private final Map&lt;Integer, Integer&gt; values = new HashMap&lt;&gt;();
+    private final Map&lt;Integer, Integer&gt; counts = new HashMap&lt;&gt;();
+    // count -&gt; keys with that count, oldest first (LinkedHashSet keeps insertion order)
+    private final Map&lt;Integer, LinkedHashSet&lt;Integer&gt;&gt; keysByCount = new HashMap&lt;&gt;();
+
+    LfuCache(int capacity) { this.capacity = capacity; }
+
+    int get(int key) {
+        if (!values.containsKey(key)) return -1;
+        touch(key);
+        return values.get(key);
+    }
+
+    void put(int key, int value) {
+        if (capacity == 0) return;
+        if (values.containsKey(key)) {
+            values.put(key, value);
+            touch(key);
+            return;
+        }
+        if (values.size() == capacity) {
+            int evicted = keysByCount.get(minCount).iterator().next(); // least used, then oldest
+            keysByCount.get(minCount).remove(evicted);
+            values.remove(evicted);
+            counts.remove(evicted);
+        }
+        values.put(key, value);
+        counts.put(key, 1);
+        keysByCount.computeIfAbsent(1, c -&gt; new LinkedHashSet&lt;&gt;()).add(key);
+        minCount = 1; // a brand-new key always has the lowest count
+    }
+
+    // Record one more use: move the key from its count's set to the next count's set.
+    private void touch(int key) {
+        int count = counts.get(key);
+        keysByCount.get(count).remove(key);
+        if (count == minCount &amp;&amp; keysByCount.get(count).isEmpty()) minCount++;
+        counts.put(key, count + 1);
+        keysByCount.computeIfAbsent(count + 1, c -&gt; new LinkedHashSet&lt;&gt;()).add(key);
+    }
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">class LfuCache {
+  constructor(capacity) {
+    this.capacity = capacity;
+    this.minCount = 0;
+    this.values = new Map();
+    this.counts = new Map();
+    this.keysByCount = new Map(); // count -&gt; Set of keys, oldest first (Sets keep insertion order)
+  }
+
+  get(key) {
+    if (!this.values.has(key)) return -1;
+    this.touch(key);
+    return this.values.get(key);
+  }
+
+  put(key, value) {
+    if (this.capacity === 0) return;
+    if (this.values.has(key)) {
+      this.values.set(key, value);
+      this.touch(key);
+      return;
+    }
+    if (this.values.size === this.capacity) {
+      const oldestSet = this.keysByCount.get(this.minCount);
+      const evicted = oldestSet.values().next().value; // least used, then oldest
+      oldestSet.delete(evicted);
+      this.values.delete(evicted);
+      this.counts.delete(evicted);
+    }
+    this.values.set(key, value);
+    this.counts.set(key, 1);
+    if (!this.keysByCount.has(1)) this.keysByCount.set(1, new Set());
+    this.keysByCount.get(1).add(key);
+    this.minCount = 1; // a brand-new key always has the lowest count
+  }
+
+  // Record one more use: move the key from its count's set to the next count's set.
+  touch(key) {
+    const count = this.counts.get(key);
+    const currentSet = this.keysByCount.get(count);
+    currentSet.delete(key);
+    if (count === this.minCount &amp;&amp; currentSet.size === 0) this.minCount++;
+    this.counts.set(key, count + 1);
+    if (!this.keysByCount.has(count + 1)) this.keysByCount.set(count + 1, new Set());
+    this.keysByCount.get(count + 1).add(key);
+  }
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(1)</strong> — per get and put — every step is a hash or ordered-set operation</li>
+    <li>Space <strong>O(capacity)</strong> — three maps sized to the number of cached keys</li>
+  </ul>
+  <p>The tie-breaking rule is the classic trap: among keys with the same lowest count, evict the <em>least recently</em> used — that is why each count owns an ordered set rather than a plain one.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+// Paint the Java and JavaScript code blocks with highlight.js.
+hljs.highlightAll();
+
+// Live "try it" demo: check whether the brackets in the typed text are balanced.
+const demoInput = document.getElementById('demoInput');
+const demoOutput = document.getElementById('demoOutput');
+
+// Push each opener on a stack; each closer must match the opener on top.
+function isBalanced(value) {
+  const closerToOpener = { ')': '(', ']': '[', '}': '{' };
+  const stack = [];
+  for (const char of value) {
+    if ('([{'.includes(char)) stack.push(char);
+    else if (char in closerToOpener && stack.pop() !== closerToOpener[char]) return false;
+  }
+  return stack.length === 0;
+}
+
+// Show a check or cross with a short label, coloured green for yes / red for no.
+// An empty box stays blank rather than claiming a verdict on no input.
+function updateDemo() {
+  const value = demoInput.value;
+  const hasText = value.length > 0;
+  const ok = hasText && isBalanced(value);
+  demoOutput.textContent = !hasText ? '' : (ok ? '✓ balanced' : '✗ not balanced');
+  demoOutput.classList.toggle('yes', ok);
+  demoOutput.classList.toggle('no', hasText && !ok);
+}
+
+demoInput.addEventListener('input', updateDemo);
+updateDemo(); // evaluate the initial example on load

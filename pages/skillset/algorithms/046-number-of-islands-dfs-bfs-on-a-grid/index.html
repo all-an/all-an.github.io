@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Number of islands (DFS/BFS on a grid) — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Number of islands (DFS/BFS on a grid)</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Medium</span>
+    <span class="badge badge-tech">Graph / DFS, BFS</span>
+  </div>
+
+  <p class="desc">Given a grid of <code>1</code>s (land) and <code>0</code>s (water), count the islands — groups of land cells connected horizontally or vertically. It is the entry-level graph problem: a grid is a graph in disguise.</p>
+
+  <!-- interactive demo: count the islands in a grid. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type grid rows (0/1) separated by slashes</label>
+    <input id="demoInput" type="text" value="11000/11000/00100/00011" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Number of islands</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>Scan the grid cell by cell. Each time you meet an unvisited <code>1</code>, you have found a new island: increment the counter, then run a <strong>flood fill</strong> (DFS or BFS) from that cell that visits every connected land cell in the four directions and marks it visited so it is never counted again. Marking is easiest by overwriting the cell with <code>0</code> ("sinking" the island), which avoids a separate visited array — clone the grid first if you must not modify the input.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Count islands: every unvisited land cell starts a new flood fill.
+static int numIslands(char[][] grid) {
+    int islands = 0;
+    for (int r = 0; r &lt; grid.length; r++) {
+        for (int c = 0; c &lt; grid[r].length; c++) {
+            if (grid[r][c] == '1') {
+                islands++;
+                sink(grid, r, c); // erase the whole island so it is not counted again
+            }
+        }
+    }
+    return islands;
+}
+
+// DFS: turn this land cell and all connected land into water.
+static void sink(char[][] grid, int r, int c) {
+    if (r &lt; 0 || c &lt; 0 || r &gt;= grid.length || c &gt;= grid[r].length || grid[r][c] != '1') return;
+    grid[r][c] = '0';
+    sink(grid, r + 1, c);
+    sink(grid, r - 1, c);
+    sink(grid, r, c + 1);
+    sink(grid, r, c - 1);
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Count islands: every unvisited land cell starts a new flood fill.
+function numIslands(grid) {
+  let islands = 0;
+  for (let r = 0; r &lt; grid.length; r++) {
+    for (let c = 0; c &lt; grid[r].length; c++) {
+      if (grid[r][c] === '1') {
+        islands++;
+        sink(grid, r, c); // erase the whole island so it is not counted again
+      }
+    }
+  }
+  return islands;
+}
+
+// DFS: turn this land cell and all connected land into water.
+function sink(grid, r, c) {
+  if (r &lt; 0 || c &lt; 0 || r &gt;= grid.length || c &gt;= grid[r].length || grid[r][c] !== '1') return;
+  grid[r][c] = '0';
+  sink(grid, r + 1, c);
+  sink(grid, r - 1, c);
+  sink(grid, r, c + 1);
+  sink(grid, r, c - 1);
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(R × C)</strong> — every cell is visited a constant number of times</li>
+    <li>Space <strong>O(R × C)</strong> — worst-case recursion depth when the whole grid is one snaking island</li>
+  </ul>
+  <p>On a huge grid, recursive DFS can overflow the stack; use an explicit stack or a BFS queue instead. The same flood-fill skeleton solves "max area of island", "surrounded regions" and "flood fill".</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

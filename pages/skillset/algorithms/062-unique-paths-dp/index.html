@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Unique paths (DP) — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Unique paths (DP)</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Medium</span>
+    <span class="badge badge-tech">Dynamic Programming</span>
+  </div>
+
+  <p class="desc">A robot starts at the top-left of an m × n grid and may only move right or down. How many distinct paths lead to the bottom-right corner? For a 3 × 7 grid there are 28.</p>
+
+  <!-- interactive demo: count the paths across a grid. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type rows and columns separated by a comma</label>
+    <input id="demoInput" type="text" value="3, 7" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Unique paths</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>Any cell is reached either from the cell above or from the cell to its left, so <code>paths[r][c] = paths[r − 1][c] + paths[r][c − 1]</code>. The first row and first column each have exactly one path (straight along the edge).</p>
+  <p>Each row of the table depends only on the previous row, so a single array is enough: when you update <code>paths[c] += paths[c − 1]</code>, <code>paths[c]</code> still holds the value from "above" and <code>paths[c − 1]</code> is already the new value "to the left".</p>
+  <p>Mathematically the answer is the binomial coefficient C(m + n − 2, m − 1): of the m + n − 2 moves, choose which m − 1 go down.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// DP over one row: each cell = paths from above + paths from the left.
+static int uniquePaths(int rows, int columns) {
+    int[] paths = new int[columns];
+    Arrays.fill(paths, 1); // the first row: one way to reach each cell
+    for (int r = 1; r &lt; rows; r++) {
+        for (int c = 1; c &lt; columns; c++) {
+            paths[c] += paths[c - 1]; // paths[c] is "from above", paths[c - 1] "from the left"
+        }
+    }
+    return paths[columns - 1];
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// DP over one row: each cell = paths from above + paths from the left.
+function uniquePaths(rows, columns) {
+  const paths = new Array(columns).fill(1); // the first row: one way to reach each cell
+  for (let r = 1; r &lt; rows; r++) {
+    for (let c = 1; c &lt; columns; c++) {
+      paths[c] += paths[c - 1]; // paths[c] is "from above", paths[c - 1] "from the left"
+    }
+  }
+  return paths[columns - 1];
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(m × n)</strong> — each cell is computed once</li>
+    <li>Space <strong>O(n)</strong> — a single row of the table</li>
+  </ul>
+  <p>The follow-up adds obstacles: set the paths through a blocked cell to 0. The combinatorial formula gives O(min(m, n)) time but needs care with overflow.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

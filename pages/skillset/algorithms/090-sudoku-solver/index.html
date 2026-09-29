@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sudoku solver — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Sudoku solver</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Hard</span>
+    <span class="badge badge-tech">Backtracking</span>
+  </div>
+
+  <p class="desc">Fill a 9 × 9 Sudoku grid so that every row, every column and every 3 × 3 box contains the digits 1–9 exactly once. Backtracking solves it: try a digit in the next empty cell, recurse, and undo it if the rest cannot be completed.</p>
+
+  <!-- interactive demo: solve a Sudoku puzzle. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type the 81 cells row by row (0 or . for empty)</label>
+    <input id="demoInput" type="text" value="530070000600195000098000060800060003400803001700020006060000280000419005000080079" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Solution</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>Find the next empty cell. Try each digit 1–9; a digit is <strong>legal</strong> if it does not already appear in that cell's row, column or 3 × 3 box. Place a legal digit and recurse to solve the rest of the board. If the recursion succeeds, you are done; if not, <strong>erase</strong> the digit (backtrack) and try the next one. If no digit works, return false to the caller, which then revises its own earlier choice.</p>
+  <p>The box containing cell <code>(r, c)</code> starts at <code>(3·⌊r/3⌋, 3·⌊c/3⌋)</code>. Keeping per-row, per-column and per-box "digit used" sets makes each legality check O(1), and choosing the empty cell with the fewest candidates first speeds things up a great deal.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Backtracking solver: board holds digits 1-9, and '.' for empty cells. Solves in place.
+static boolean solveSudoku(char[][] board) {
+    for (int r = 0; r &lt; 9; r++) {
+        for (int c = 0; c &lt; 9; c++) {
+            if (board[r][c] != '.') continue;
+            for (char digit = '1'; digit &lt;= '9'; digit++) {
+                if (isLegal(board, r, c, digit)) {
+                    board[r][c] = digit;                 // try it
+                    if (solveSudoku(board)) return true;
+                    board[r][c] = '.';                   // backtrack
+                }
+            }
+            return false; // no digit fits this cell: an earlier choice was wrong
+        }
+    }
+    return true; // no empty cell left
+}
+
+// A digit is legal if it is absent from the cell's row, column and 3x3 box.
+static boolean isLegal(char[][] board, int r, int c, char digit) {
+    for (int i = 0; i &lt; 9; i++) {
+        if (board[r][i] == digit || board[i][c] == digit) return false;
+        int boxRow = 3 * (r / 3) + i / 3;
+        int boxColumn = 3 * (c / 3) + i % 3;
+        if (board[boxRow][boxColumn] == digit) return false;
+    }
+    return true;
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Backtracking solver: board holds digit characters '1'-'9', and '.' for empty cells. Solves in place.
+function solveSudoku(board) {
+  for (let r = 0; r &lt; 9; r++) {
+    for (let c = 0; c &lt; 9; c++) {
+      if (board[r][c] !== '.') continue;
+      for (let digit = 1; digit &lt;= 9; digit++) {
+        const candidate = String(digit);
+        if (isLegal(board, r, c, candidate)) {
+          board[r][c] = candidate;               // try it
+          if (solveSudoku(board)) return true;
+          board[r][c] = '.';                     // backtrack
+        }
+      }
+      return false; // no digit fits this cell: an earlier choice was wrong
+    }
+  }
+  return true; // no empty cell left
+}
+
+// A digit is legal if it is absent from the cell's row, column and 3x3 box.
+function isLegal(board, r, c, digit) {
+  for (let i = 0; i &lt; 9; i++) {
+    if (board[r][i] === digit || board[i][c] === digit) return false;
+    const boxRow = 3 * Math.floor(r / 3) + Math.floor(i / 3);
+    const boxColumn = 3 * Math.floor(c / 3) + (i % 3);
+    if (board[boxRow][boxColumn] === digit) return false;
+  }
+  return true;
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(9^m)</strong> — m empty cells — a loose bound, since pruning removes almost every branch</li>
+    <li>Space <strong>O(m)</strong> — recursion depth is at most the number of empty cells</li>
+  </ul>
+  <p>Real solvers add constraint propagation (fill cells that have only one candidate) before guessing. The exhaustive backtracking above is what interviews expect, and it solves ordinary puzzles in milliseconds.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

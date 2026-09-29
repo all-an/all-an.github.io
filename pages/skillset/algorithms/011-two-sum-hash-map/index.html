@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Two Sum (hash map) — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Two Sum (hash map)</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Easy</span>
+    <span class="badge badge-tech">Hashing</span>
+  </div>
+
+  <p class="desc">Given an array of integers and a target, return the indices of the two numbers that add up to the target — for <code>[2, 7, 11, 15]</code> and target <code>9</code> the answer is indices <code>0</code> and <code>1</code>. It is the most-asked interview question there is, and the showcase for trading memory for speed with a hash map.</p>
+
+  <!-- interactive demo: find two numbers in a list that add up to a target. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type numbers, then a semicolon and the target</label>
+    <input id="demoInput" type="text" value="2, 7, 11, 15; 9" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Indices of the pair</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>The brute force tries every pair, which is O(n²). The insight: for each number <code>x</code>, the partner you need is <code>target − x</code>. Walk the array once, and for each element ask a hash map "have I already seen the complement?". If yes, you are done; if not, record the current number and its index and move on.</p>
+  <p>Checking the map <em>before</em> inserting the current number guarantees you never pair an element with itself.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Approach 1 — brute force: try every pair.
+static int[] twoSumBruteForce(int[] numbers, int target) {
+    for (int i = 0; i &lt; numbers.length; i++) {
+        for (int j = i + 1; j &lt; numbers.length; j++) {
+            if (numbers[i] + numbers[j] == target) return new int[] { i, j };
+        }
+    }
+    throw new IllegalArgumentException("No two sum solution");
+}
+
+// Approach 2 — hash map: remember each value's index, look up the complement.
+static int[] twoSum(int[] numbers, int target) {
+    Map&lt;Integer, Integer&gt; indexByValue = new HashMap&lt;&gt;();
+    for (int i = 0; i &lt; numbers.length; i++) {
+        Integer partner = indexByValue.get(target - numbers[i]);
+        if (partner != null) return new int[] { partner, i };
+        indexByValue.put(numbers[i], i);
+    }
+    throw new IllegalArgumentException("No two sum solution");
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Approach 1 — brute force: try every pair.
+function twoSumBruteForce(numbers, target) {
+  for (let i = 0; i &lt; numbers.length; i++) {
+    for (let j = i + 1; j &lt; numbers.length; j++) {
+      if (numbers[i] + numbers[j] === target) return [i, j];
+    }
+  }
+  throw new Error('No two sum solution');
+}
+
+// Approach 2 — hash map: remember each value's index, look up the complement.
+function twoSum(numbers, target) {
+  const indexByValue = new Map();
+  for (let i = 0; i &lt; numbers.length; i++) {
+    const complement = target - numbers[i];
+    if (indexByValue.has(complement)) return [indexByValue.get(complement), i];
+    indexByValue.set(numbers[i], i);
+  }
+  throw new Error('No two sum solution');
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(n)</strong> — one pass, constant-time map lookups</li>
+    <li>Space <strong>O(n)</strong> — the map may hold every element</li>
+  </ul>
+  <p>The brute force is <strong>O(n²)</strong> time but <strong>O(1)</strong> space — the classic time/space trade. If the array is sorted, a two-pointer sweep from both ends achieves O(n) time with O(1) space.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

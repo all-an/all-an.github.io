@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Power of a number (fast exponentiation) — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Power of a number (fast exponentiation)</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Easy–Medium</span>
+    <span class="badge badge-tech">Math / Divide &amp; Conquer</span>
+  </div>
+
+  <p class="desc">Compute <code>xⁿ</code> without multiplying x by itself n times. Fast exponentiation (exponentiation by squaring) uses the identity <code>xⁿ = (x²)^(n/2)</code> to finish in about log₂ n multiplications.</p>
+
+  <!-- interactive demo: compute a power by repeated squaring. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type a base and an exponent separated by a comma</label>
+    <input id="demoInput" type="text" value="2, 10" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">x^n</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>Halve the exponent each step. If n is even, <code>xⁿ = (x²)^(n/2)</code>; if it is odd, peel off one factor: <code>xⁿ = x × xⁿ⁻¹</code>. Recursively that is a few lines; iteratively you keep a running <code>result</code> and a <code>square</code>, and for every <em>1</em> bit in n's binary form multiply the current square into the result.</p>
+  <p>Negative exponents: compute the positive power and take the reciprocal. Watch <code>Integer.MIN_VALUE</code> — negating it overflows, so widen n to a <code>long</code> first.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Iterative exponentiation by squaring, one bit of the exponent at a time.
+static double power(double base, int exponent) {
+    long remaining = exponent; // widen so -Integer.MIN_VALUE cannot overflow
+    if (remaining &lt; 0) {
+        base = 1 / base;
+        remaining = -remaining;
+    }
+    double result = 1;
+    while (remaining &gt; 0) {
+        if ((remaining &amp; 1) == 1) result *= base; // odd: take one factor out
+        base *= base;                              // square the base
+        remaining &gt;&gt;= 1;                           // halve the exponent
+    }
+    return result;
+}
+
+// Recursive version: x^n = (x^(n/2))^2, times x when n is odd.
+static double powerRecursive(double base, int exponent) {
+    if (exponent == 0) return 1;
+    double half = powerRecursive(base, exponent / 2);
+    return exponent % 2 == 0 ? half * half : half * half * base;
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Iterative exponentiation by squaring, one bit of the exponent at a time.
+function power(base, exponent) {
+  let remaining = Math.abs(exponent);
+  let square = exponent &lt; 0 ? 1 / base : base;
+  let result = 1;
+  while (remaining &gt; 0) {
+    if (remaining % 2 === 1) result *= square; // odd: take one factor out
+    square *= square;                          // square the base
+    remaining = Math.floor(remaining / 2);     // halve the exponent
+  }
+  return result;
+}
+
+// Recursive version: x^n = (x^(n/2))^2, times x when n is odd.
+function powerRecursive(base, exponent) {
+  if (exponent === 0) return 1;
+  const half = powerRecursive(base, Math.trunc(exponent / 2));
+  return exponent % 2 === 0 ? half * half : half * half * base;
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(log n)</strong> — the exponent is halved every step</li>
+    <li>Space <strong>O(1)</strong> — iterative version (the recursive one uses O(log n) stack)</li>
+  </ul>
+  <p>The same idea underlies modular exponentiation (<code>xⁿ mod m</code>), which is how RSA and many hash schemes work: apply <code>% m</code> after every multiplication so the numbers never grow.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trapping rain water — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>Trapping rain water</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Hard</span>
+    <span class="badge badge-tech">Two Pointers / Stack</span>
+  </div>
+
+  <p class="desc">Given the heights of bars of width 1, compute how much rain water is trapped between them after it rains — for <code>[0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1]</code> the answer is <code>6</code>. Water sits above a bar up to the lower of the tallest walls on its left and right.</p>
+
+  <!-- interactive demo: compute the trapped rain water. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type bar heights separated by commas</label>
+    <input id="demoInput" type="text" value="0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Trapped water</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>The water above bar <code>i</code> is <code>min(tallestLeft, tallestRight) − height[i]</code> (never negative). The direct way precomputes the tallest wall to the left and to the right of every bar in two arrays — O(n) time and O(n) space.</p>
+  <p>Two pointers remove the arrays. Start at both ends, tracking the tallest wall seen from each side. Whichever side currently has the <em>lower</em> bar is the bottleneck: the water above that bar is limited by its own side's wall, since the other side has an even taller wall somewhere. So settle that bar's water, and move that pointer inward.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Approach 1 — prefix and suffix maximum arrays.
+static int trapWithArrays(int[] heights) {
+    int n = heights.length;
+    if (n == 0) return 0;
+    int[] leftWall = new int[n];  // tallest bar at or before i
+    int[] rightWall = new int[n]; // tallest bar at or after i
+    leftWall[0] = heights[0];
+    for (int i = 1; i &lt; n; i++) leftWall[i] = Math.max(leftWall[i - 1], heights[i]);
+    rightWall[n - 1] = heights[n - 1];
+    for (int i = n - 2; i &gt;= 0; i--) rightWall[i] = Math.max(rightWall[i + 1], heights[i]);
+    int water = 0;
+    for (int i = 0; i &lt; n; i++) {
+        water += Math.min(leftWall[i], rightWall[i]) - heights[i];
+    }
+    return water;
+}
+
+// Approach 2 — two pointers, O(1) space.
+static int trap(int[] heights) {
+    int left = 0, right = heights.length - 1;
+    int leftWall = 0, rightWall = 0;
+    int water = 0;
+    while (left &lt; right) {
+        if (heights[left] &lt; heights[right]) { // the left side is the bottleneck
+            leftWall = Math.max(leftWall, heights[left]);
+            water += leftWall - heights[left++];
+        } else {                              // the right side is the bottleneck
+            rightWall = Math.max(rightWall, heights[right]);
+            water += rightWall - heights[right--];
+        }
+    }
+    return water;
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Approach 1 — prefix and suffix maximum arrays.
+function trapWithArrays(heights) {
+  const n = heights.length;
+  if (n === 0) return 0;
+  const leftWall = new Array(n);  // tallest bar at or before i
+  const rightWall = new Array(n); // tallest bar at or after i
+  leftWall[0] = heights[0];
+  for (let i = 1; i &lt; n; i++) leftWall[i] = Math.max(leftWall[i - 1], heights[i]);
+  rightWall[n - 1] = heights[n - 1];
+  for (let i = n - 2; i &gt;= 0; i--) rightWall[i] = Math.max(rightWall[i + 1], heights[i]);
+  let water = 0;
+  for (let i = 0; i &lt; n; i++) {
+    water += Math.min(leftWall[i], rightWall[i]) - heights[i];
+  }
+  return water;
+}
+
+// Approach 2 — two pointers, O(1) space.
+function trap(heights) {
+  let left = 0;
+  let right = heights.length - 1;
+  let leftWall = 0;
+  let rightWall = 0;
+  let water = 0;
+  while (left &lt; right) {
+    if (heights[left] &lt; heights[right]) { // the left side is the bottleneck
+      leftWall = Math.max(leftWall, heights[left]);
+      water += leftWall - heights[left++];
+    } else {                              // the right side is the bottleneck
+      rightWall = Math.max(rightWall, heights[right]);
+      water += rightWall - heights[right--];
+    }
+  }
+  return water;
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(n)</strong> — each bar is processed once</li>
+    <li>Space <strong>O(1)</strong> — two pointers (the array version needs O(n))</li>
+  </ul>
+  <p>A monotonic stack solves it too (compute water layer by layer as taller bars appear). Do not confuse it with "container with most water", which picks just two bars.</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

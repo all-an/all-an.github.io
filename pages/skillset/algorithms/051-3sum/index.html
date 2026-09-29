@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>3Sum — Algorithms</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- syntax-highlighting theme for the Java / JavaScript code blocks -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../algorithms.html">← algorithms</a>
+
+  <h1>3Sum</h1>
+  <div class="meta">
+    <span class="badge badge-difficulty">Medium</span>
+    <span class="badge badge-tech">Two Pointers</span>
+  </div>
+
+  <p class="desc">Find all unique triplets in an array that add up to zero — <code>[-1, 0, 1, 2, -1, -4]</code> gives <code>[-1, -1, 2]</code> and <code>[-1, 0, 1]</code>. It extends Two Sum with sorting and two pointers, and de-duplication is the real challenge.</p>
+
+  <!-- interactive demo: find all unique triplets that sum to zero. (see script.js) -->
+  <h2>Try it</h2>
+  <div class="demo">
+    <label for="demoInput">Type numbers separated by commas</label>
+    <input id="demoInput" type="text" value="-1, 0, 1, 2, -1, -4" autocomplete="off" spellcheck="false" />
+    <div class="arrow">↓</div>
+    <label for="demoOutput">Triplets</label>
+    <div class="output" id="demoOutput"></div>
+  </div>
+
+  <h2>Approach</h2>
+  <p>Sort the array. For each index <code>i</code>, the problem becomes Two Sum on the rest with target <code>−numbers[i]</code>: put <code>left</code> just after i and <code>right</code> at the end, and move them inward — sum too small → advance left, too big → retreat right, exactly zero → record the triplet.</p>
+  <p>Uniqueness comes from skipping duplicates: skip an <code>i</code> equal to the previous <code>i</code>, and after a match skip repeated values on the left side. Sorting is what makes duplicates adjacent and the pointer moves valid.</p>
+
+  <h2>Java</h2>
+  <pre><code class="language-java">// Sort, fix the first number, then two-pointer the remaining pair.
+static List&lt;List&lt;Integer&gt;&gt; threeSum(int[] numbers) {
+    int[] sorted = numbers.clone();
+    Arrays.sort(sorted);
+    List&lt;List&lt;Integer&gt;&gt; triplets = new ArrayList&lt;&gt;();
+    for (int i = 0; i &lt; sorted.length - 2; i++) {
+        if (i &gt; 0 &amp;&amp; sorted[i] == sorted[i - 1]) continue; // skip a repeated first number
+        int left = i + 1;
+        int right = sorted.length - 1;
+        while (left &lt; right) {
+            int sum = sorted[i] + sorted[left] + sorted[right];
+            if (sum &lt; 0) {
+                left++;  // need a larger sum
+            } else if (sum &gt; 0) {
+                right--; // need a smaller sum
+            } else {
+                triplets.add(List.of(sorted[i], sorted[left], sorted[right]));
+                left++;
+                right--;
+                while (left &lt; right &amp;&amp; sorted[left] == sorted[left - 1]) left++; // skip repeats
+            }
+        }
+    }
+    return triplets;
+}</code></pre>
+
+  <h2>JavaScript</h2>
+  <pre><code class="language-javascript">// Sort, fix the first number, then two-pointer the remaining pair.
+function threeSum(numbers) {
+  const sorted = [...numbers].sort((a, b) =&gt; a - b);
+  const triplets = [];
+  for (let i = 0; i &lt; sorted.length - 2; i++) {
+    if (i &gt; 0 &amp;&amp; sorted[i] === sorted[i - 1]) continue; // skip a repeated first number
+    let left = i + 1;
+    let right = sorted.length - 1;
+    while (left &lt; right) {
+      const sum = sorted[i] + sorted[left] + sorted[right];
+      if (sum &lt; 0) {
+        left++;  // need a larger sum
+      } else if (sum &gt; 0) {
+        right--; // need a smaller sum
+      } else {
+        triplets.push([sorted[i], sorted[left], sorted[right]]);
+        left++;
+        right--;
+        while (left &lt; right &amp;&amp; sorted[left] === sorted[left - 1]) left++; // skip repeats
+      }
+    }
+  }
+  return triplets;
+}</code></pre>
+
+  <h2>Complexity</h2>
+  <ul class="complexity">
+    <li>Time <strong>O(n²)</strong> — O(n log n) sort plus n two-pointer sweeps of O(n)</li>
+    <li>Space <strong>O(1)</strong> — beyond the sorted copy and the output</li>
+  </ul>
+  <p>O(n²) is the best known for the general problem. The same skeleton generalises to 4Sum (two nested loops plus two pointers, O(n³)) and to "3Sum closest".</p>
+
+</div>
+
+<!-- highlight.js (bundles Java + JavaScript), then this page's own script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
