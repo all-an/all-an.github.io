@@ -2,7 +2,8 @@
 // in these algorithm exercises (a static method using primitives, String,
 // arrays, StringBuilder and basic control flow). It rewrites Java *syntax* to JS
 // and prepends a tiny runtime shim supplying the Java APIs the exercises lean on
-// (System.out, Objects, Integer, Character, Arrays, StringBuilder).
+// (System.out, Objects, Integer, Character, Arrays, StringBuilder). The ListNode
+// and TreeNode node types are supplied by challenges.js.
 //
 // It supports only a subset on purpose: collections, streams, lambdas, casts and
 // multi-dimensional arrays are rejected with a clear message rather than
@@ -47,7 +48,7 @@ class StringBuilder {
 `;
 
 // Type tokens recognised in declarations (collections are intentionally absent).
-const JAVA_TYPE = '\\b(?:final\\s+)?(?:int|long|short|byte|double|float|boolean|char|var|String|Object|Integer|Long|Double|Boolean|Character|StringBuilder)(?:\\[\\])*';
+const JAVA_TYPE = '\\b(?:final\\s+)?(?:int|long|short|byte|double|float|boolean|char|var|String|Object|Integer|Long|Double|Boolean|Character|StringBuilder|ListNode|TreeNode)(?:\\[\\])*';
 
 // Transpile a Java method (or two) into runnable JavaScript. Throws an Error with
 // a friendly message when it meets a construct outside the supported subset.
@@ -75,7 +76,8 @@ function transpileJava(src) {
 
   // Method header:  ReturnType name(params) {  →  function name(args) {
   js = js.replace(/([A-Za-z_][\w.<>\[\]]*)\s+([A-Za-z_]\w*)\s*\(([^)]*)\)\s*\{/g, (m, retType, name, params) => {
-    if (['if', 'for', 'while', 'switch', 'catch'].includes(retType)) return m;
+    // Control-flow headers (`if (...) {`, `else if (...) {`, `while (...) {`) look like methods; leave them alone.
+    if (['if', 'for', 'while', 'switch', 'catch'].includes(retType) || ['if', 'for', 'while', 'switch', 'catch'].includes(name)) return m;
     const args = params.trim() === '' ? '' : params.split(',').map(p => p.trim().split(/\s+/).pop()).join(', ');
     return `function ${name}(${args}) {`;
   });

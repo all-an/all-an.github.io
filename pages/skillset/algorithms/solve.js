@@ -6,9 +6,13 @@
 // a Run button, an output box, a Solution link, and a per-problem countdown that
 // auto-advances when it hits zero.
 //
-// Real Java cannot run in the browser, so on the Java page Run executes the
-// reference JS implementation "behind the curtains" (see challenges.js) while the
-// learner types Java for practice.
+// Real Java cannot run in the browser, so on the Java page Run transpiles the
+// learner's Java to JavaScript (see java-to-js.js) and runs it against the same
+// tests (see challenges.js). Java outside the transpiler's subset is reported
+// instead of run.
+
+// Longest call text shown in the output box before it is cut short, in characters.
+const MAX_CALL_TEXT = 90;
 
 function initSolvePage(lang) {
   const STORAGE_KEY = 'solve-' + lang + '-checked'; // ticked slugs, per language
@@ -234,33 +238,59 @@ function initSolvePage(lang) {
       return runConsole(jsCode);
     }
 
-    // Build the learner's function and check it against the reference.
-    let userFn;
+    // Build the learner's function (plus any helper functions the spec names).
+    const symbolNames = [spec.fn, ...(spec.helpers || [])];
+    let symbols;
     try {
-      userFn = new Function(jsCode + '\nreturn typeof ' + spec.fn + ' === "function" ? ' + spec.fn + ' : null;')();
+      symbols = new Function(jsCode + '\nreturn [' + symbolNames.map(name => `typeof ${name} === "function" ? ${name} : null`).join(', ') + '];')();
     } catch (err) {
       return 'Error: ' + err.message;
     }
-    if (typeof userFn !== 'function') return `Define a function named ${spec.fn}(...).`;
+    const missing = symbolNames.filter((name, i) => symbols[i] === null);
+    if (missing.length) return `Define ${missing.join(' and ')} (see the starter code).`;
+
+    // The learner's code and the reference are both run through the same pipeline,
+    // so the reference never has to match the learner's function signature.
+    const learner = { fn: symbols[0], helpers: Object.fromEntries(symbolNames.map((name, i) => [name, symbols[i]])) };
+    const reference = spec.helpers
+      ? { fn: spec.reference[spec.fn], helpers: spec.reference }
+      : { fn: spec.reference, helpers: {} };
 
     let passed = 0;
     const lines = spec.tests.map(args => {
-      const expected = spec.reference(...args);
+      const call = callText(spec.fn, args);
+      const expected = runImplementation(spec, reference, args);
       let got;
-      try { got = userFn(...args); }
-      catch (err) { return `✗ ${callText(spec.fn, args)} threw ${err.message}`; }
+      try { got = runImplementation(spec, learner, args); }
+      catch (err) { return `✗ ${call} threw ${err.message}`; }
       const ok = JSON.stringify(got) === JSON.stringify(expected);
       if (ok) passed++;
-      return `${ok ? '✓' : '✗'} ${callText(spec.fn, args)} → ${JSON.stringify(got)}`
+      return `${ok ? '✓' : '✗'} ${call} → ${JSON.stringify(got)}`
            + (ok ? '' : ` (expected ${JSON.stringify(expected)})`);
     });
     const note = lang === 'java' ? '\n(Your Java was transpiled to JavaScript and run.)' : '';
     return lines.join('\n') + `\n\n${passed} / ${spec.tests.length} passed` + note;
   }
 
-  // Render a function call like reverse("hello") for the output lines.
+  // Run one implementation on a fresh copy of the test inputs (so in-place edits
+  // never leak between runs), through the spec's optional adapters:
+  //   prepare   - turn the plain test arguments into the real arguments (e.g. build a tree)
+  //   exec      - call the implementation (default: fn(...args)); also gets the helper functions
+  //   finish    - turn the raw result into plain data (e.g. read a list back into an array)
+  //   normalize - put unordered results into a canonical order before comparing
+  function runImplementation(spec, implementation, args) {
+    const prepare = spec.prepare || (a => a);
+    const exec = spec.exec || ((fn, a) => fn(...a));
+    const finish = spec.finish || (result => result);
+    const normalize = spec.normalize || (result => result);
+    return normalize(finish(exec(implementation.fn, prepare(structuredClone(args)), implementation.helpers)));
+  }
+
+  // Render a call like reverse("hello") for the output lines, shortened when the
+  // arguments are large (a whole Sudoku board, say).
   function callText(fn, args) {
-    return `${fn}(${args.map(a => JSON.stringify(a)).join(', ')})`;
+    const text = `${fn}(${args.map(a => JSON.stringify(a)).join(', ')})`;
+    return text.length > MAX_CALL_TEXT ? text.slice(0, MAX_CALL_TEXT) + '…)' : text;
   }
 
   // Generic JS runner: execute code with a captured console.log.
