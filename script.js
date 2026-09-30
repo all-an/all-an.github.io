@@ -6,6 +6,16 @@ const EYE_TRAVEL_MS = 600;
 const eyes = document.querySelector('.eyes');
 const pupils = document.querySelectorAll('.pupil');
 const gamesLink = document.getElementById('games-link');
+const copyEmailButton = document.getElementById('copy-email');
+const copyToast = document.getElementById('copy-toast');
+const copyToastTitle = document.getElementById('toast-title');
+const copyToastDetail = document.getElementById('toast-detail');
+
+// How long the "copied" alert stays on screen, in milliseconds.
+const COPY_TOAST_MS = 2400;
+
+// Pending timer that hides the alert, so a second click restarts the countdown.
+let copyToastTimer;
 
 // While the eyes are gliding to the Games button, they stop following the cursor.
 let eyesAreTraveling = false;
@@ -55,4 +65,35 @@ gamesLink?.addEventListener('click', (event) => {
 
   // Once the glide finishes, go to the Games page.
   setTimeout(() => { window.location.href = destination; }, EYE_TRAVEL_MS);
+});
+
+// Shows the alert at the bottom of the page for COPY_TOAST_MS. `isError` swaps
+// the green check for a red warning so a failed copy doesn't look like a success.
+function showCopyToast(title, detail, isError) {
+  copyToastTitle.textContent = title;
+  copyToastDetail.textContent = detail;
+  copyToast.classList.toggle('is-error', isError);
+  copyToast.classList.add('is-visible');
+  clearTimeout(copyToastTimer);
+  copyToastTimer = setTimeout(() => copyToast.classList.remove('is-visible'), COPY_TOAST_MS);
+}
+
+// Copy the address shown on the button to the clipboard and tell the visitor.
+// If the browser refuses (insecure context, blocked permission), the alert still
+// shows the address so it can be copied by hand.
+copyEmailButton.addEventListener('click', async () => {
+  const address = copyEmailButton.textContent.trim();
+  // Hide the "Click to copy" tooltip until the pointer leaves, so it doesn't sit beside the alert.
+  copyEmailButton.classList.add('is-copied');
+  try {
+    await navigator.clipboard.writeText(address);
+    showCopyToast('Email address copied', address, false);
+  } catch {
+    showCopyToast('Could not copy automatically', address, true);
+  }
+});
+
+// Bring the tooltip back once the pointer or keyboard focus has left the button.
+['mouseleave', 'blur'].forEach((eventName) => {
+  copyEmailButton.addEventListener(eventName, () => copyEmailButton.classList.remove('is-copied'));
 });

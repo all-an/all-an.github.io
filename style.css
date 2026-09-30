@@ -31,6 +31,30 @@ body { background: var(--color-background-primary); color: var(--color-text-prim
 .link { font-size: 18px; color: var(--color-text-secondary); text-decoration: none; padding: 6px 12px; border: 1px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); }
 .link:hover { color: var(--color-text-primary); border-color: #3a3a44; }
 
+/* the email link is a button that copies the address: reset the button chrome so it matches the other links */
+.copy-link { position: relative; font-family: inherit; background: none; cursor: pointer; }
+
+/* "Click to copy" tooltip: a small dark card with an arrow, floating above the button.
+   Shown on hover and keyboard focus; hidden again right after a click so it doesn't sit under the alert. */
+.copy-link::after, .copy-link::before { position: absolute; left: 50%; opacity: 0; pointer-events: none; transition: opacity 0.15s ease, transform 0.15s ease; }
+.copy-link::after { content: attr(data-tooltip); bottom: calc(100% + 11px); transform: translate(-50%, 4px); white-space: nowrap; padding: 6px 11px; font-size: 13px; font-weight: 500; letter-spacing: 0.01em; color: var(--color-text-primary); background: #1f1f26; border: 1px solid #3a3a44; border-radius: 8px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45); }
+.copy-link::before { content: ''; bottom: calc(100% + 6px); width: 8px; height: 8px; transform: translate(-50%, 4px) rotate(45deg); background: #1f1f26; border-right: 1px solid #3a3a44; border-bottom: 1px solid #3a3a44; z-index: 1; }
+.copy-link:hover:not(.is-copied)::after, .copy-link:focus-visible:not(.is-copied)::after { opacity: 1; transform: translate(-50%, 0); }
+.copy-link:hover:not(.is-copied)::before, .copy-link:focus-visible:not(.is-copied)::before { opacity: 1; transform: translate(-50%, 0) rotate(45deg); }
+
+/* "copied" alert: a frosted card that slides up from the bottom centre of the page */
+.toast { position: fixed; left: 50%; bottom: 28px; display: flex; align-items: center; gap: 12px; padding: 12px 20px 12px 14px; max-width: calc(100vw - 32px); background: rgba(26, 26, 30, 0.92); border: 1px solid rgba(74, 222, 128, 0.35); border-radius: 14px; box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.02) inset; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); opacity: 0; transform: translate(-50%, 16px); pointer-events: none; transition: opacity 0.25s ease, transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.2); z-index: 10; }
+.toast.is-visible { opacity: 1; transform: translate(-50%, 0); }
+.toast-icon { flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; color: #4ade80; background: rgba(74, 222, 128, 0.14); border: 1px solid rgba(74, 222, 128, 0.35); }
+.toast-text { display: flex; flex-direction: column; gap: 2px; }
+.toast-title { font-size: 15px; font-weight: 600; color: var(--color-text-primary); }
+.toast-detail { font-size: 13px; color: var(--color-text-secondary); font-family: var(--font-mono); }
+/* the success and error icons share a slot; the toast's state decides which one shows */
+.toast .icon-error, .toast.is-error .icon-success { display: none; }
+.toast.is-error .icon-error { display: block; }
+.toast.is-error { border-color: rgba(248, 113, 113, 0.4); }
+.toast.is-error .toast-icon { color: #f87171; background: rgba(248, 113, 113, 0.14); border-color: rgba(248, 113, 113, 0.4); }
+
 /* divider — the .divider wrapper owns the vertical spacing so the eyes can sit on the line */
 .divider { position: relative; margin: 2.25rem 0; }
 hr { border: none; border-top: 1px solid var(--color-border-tertiary); margin: 0; }
@@ -41,6 +65,11 @@ hr { border: none; border-top: 1px solid var(--color-border-tertiary); margin: 0
 .eye { position: relative; width: 30px; height: 30px; background: var(--color-text-primary); border: 1px solid var(--color-border-tertiary); border-radius: 50%; }
 /* pupil is centred on the eye via the negative margins; JS translates it toward the cursor */
 .pupil { position: absolute; top: 50%; left: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px; background: var(--color-background-primary); border-radius: 50%; }
+
+/* no sliding or fading for visitors who ask for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .copy-link::after, .copy-link::before, .toast { transition: none; }
+}
 
 /* mobile — there is no cursor for the pupils to follow, so the eyes just sit there staring; hide them */
 @media (max-width: 600px) {
