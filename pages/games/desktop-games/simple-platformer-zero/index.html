@@ -1,0 +1,3380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Little Square Platformer</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; background: #2b2b3d; overflow: hidden; }
+  body { display: flex; align-items: center; justify-content: center; }
+  /* 800x600 backing store, scaled by whole-number steps only, never stretched */
+  canvas { image-rendering: pixelated; background: #2b2b3d; outline: none; }
+</style>
+</head>
+<body>
+<canvas id="game" width="800" height="600" tabindex="0"></canvas>
+<!-- The soundtrack and effects, generated sample by sample (no audio files).
+     Runs inside an AudioWorklet so none of the maths touches the game thread;
+     the game only posts {play, rise} and {muted} messages. A port of Game.Audio. -->
+<script type="text/plain" id="synth-src">
+const SR = sampleRate;                 // the context's rate (Java ran at 44100)
+const RATE_SCALE = SR / 44100;         // keeps reverb delay times the same in seconds
+const MASTER = 0.18, WET = 0.55, DRY = 0.45, NOISE_GAIN = 0.04;
+const COMB_FB = 0.87, COMB_DAMP = 0.25, ALLPASS_FB = 0.5, REVERB_IN = 0.06;
+const COMB_LENS = [1116, 1188, 1277, 1356];
+const ALLPASS_LENS = [556, 441];
+const STEREO_SPREAD = 23;              // the right channel taps later, which widens the tail
+
+// Per-effect levels. The jump fires on every hop, so it sits well under the one-offs.
+const JUMP_GAIN = 0.012, COIN_GAIN = 0.05, WARP_GAIN = 0.05, PUNCH_GAIN = 0.09;
+const SHOT_GAIN = 0.03, TYPE_GAIN = 0.06, PORTAL_GAIN = 0.08;
+
+const NONE = 0, JUMP = 1, COIN = 2, TYPE = 3, WARP = 4, PUNCH = 5, SHOT = 6, PORTAL = 7;
+
+// A minor / Phrygian flavour: frequency, triangle?, volume.
+const DRONE_SPECS = [
+  [55.00, false, 0.30], [82.41, false, 0.18], [110.00, true, 0.14], [130.81, false, 0.10], [164.81, true, 0.07]];
+const GHOST_SCALE = [220, 246.94, 261.63, 293.66, 329.63, 349.23, 392.00, 440.00];
+
+const clampF = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+// ---- A textbook RBJ biquad ----
+class Biquad {
+  constructor() { this.b0 = 0; this.b1 = 0; this.b2 = 0; this.a1 = 0; this.a2 = 0; this.x1 = 0; this.x2 = 0; this.y1 = 0; this.y2 = 0; }
+  lowpass(freq, q) {
+    const w = 2 * Math.PI * freq / SR, c = Math.cos(w), alpha = Math.sin(w) / (2 * q), a0 = 1 + alpha;
+    this.b0 = (1 - c) / 2 / a0; this.b1 = (1 - c) / a0; this.b2 = this.b0;
+    this.a1 = -2 * c / a0; this.a2 = (1 - alpha) / a0;
+  }
+  // Constant peak gain, which is what Web Audio's "bandpass" is.
+  bandpass(freq, q) {
+    const w = 2 * Math.PI * freq / SR, c = Math.cos(w), alpha = Math.sin(w) / (2 * q), a0 = 1 + alpha;
+    this.b0 = alpha / a0; this.b1 = 0; this.b2 = -alpha / a0;
+    this.a1 = -2 * c / a0; this.a2 = (1 - alpha) / a0;
+  }
+  process(x) {
+    const y = this.b0 * x + this.b1 * this.x1 + this.b2 * this.x2 - this.a1 * this.y1 - this.a2 * this.y2;
+    this.x2 = this.x1; this.x1 = x; this.y2 = this.y1; this.y1 = y;
+    return y;
+  }
+}
+
+// ---- Schroeder reverb: 4 combs + 2 allpasses per channel ----
+class Comb {
+  constructor(size) { this.buf = new Float32Array(size); this.size = size; this.idx = 0; this.store = 0; }
+  process(x) {
+    const out = this.buf[this.idx];
+    this.store = out * (1 - COMB_DAMP) + this.store * COMB_DAMP;
+    this.buf[this.idx] = x + this.store * COMB_FB;
+    this.idx = (this.idx + 1) % this.size;
+    return out;
+  }
+}
+class Allpass {
+  constructor(size) { this.buf = new Float32Array(size); this.size = size; this.idx = 0; }
+  process(x) {
+    const buffered = this.buf[this.idx];
+    const out = -x + buffered;
+    this.buf[this.idx] = x + buffered * ALLPASS_FB;
+    this.idx = (this.idx + 1) % this.size;
+    return out;
+  }
+}
+
+const oscSine = (phase) => Math.sin(2 * Math.PI * phase);
+const oscSquare = (phase) => (phase - Math.floor(phase)) < 0.5 ? 1 : -1;
+const oscTriangle = (phase) => { const p = phase - Math.floor(phase); return p < 0.5 ? 4 * p - 1 : 3 - 4 * p; };
+
+// Web Audio's exponentialRampToValueAtTime, which the effects were written
+// against: it moves geometrically, never touching zero.
+function expRamp(v0, v1, t, d) {
+  if (t <= 0) return v0;
+  if (t >= d) return v1;
+  return v0 * Math.pow(v1 / v0, t / d);
+}
+
+class Synth extends AudioWorkletProcessor {
+  constructor() {
+    super();
+    this.muted = false;
+    this.rng = 0x9e3779b9 | 0;         // xorshift: its own noise stream, independent of the game
+    this.drones = DRONE_SPECS.map((spec, i) => {
+      const cents = (this.arand01() - 0.5) * 10;       // slight detuning
+      return { phase: 0, freq: spec[0] * Math.pow(2, cents / 1200), vol: spec[2], lfoPhase: 0, lfoHz: 0.08 + i * 0.03, triangle: spec[1] };
+    });
+    this.ghosts = Array.from({ length: 8 }, () => ({ active: false, t: 0, dur: 0, attack: 0, freq: 0, peak: 0, phase: 0, vibPhase: 0, vibHz: 0 }));
+    this.ghostTimer = [0.8, 2.5, 4.2];                 // three staggered chains
+    this.lp = new Biquad(); this.lp.lowpass(900, 1.2); // the bus filter
+    this.noiseFilt = new Biquad(); this.noiseFilt.bandpass(80, 0.5);   // the rumble
+    this.noiseLfo = 0;
+    const scaled = (n) => Math.round(n * RATE_SCALE);
+    this.combsL = COMB_LENS.map((n) => new Comb(scaled(n)));
+    this.combsR = COMB_LENS.map((n) => new Comb(scaled(n + STEREO_SPREAD)));
+    this.apsL = ALLPASS_LENS.map((n) => new Allpass(scaled(n)));
+    this.apsR = ALLPASS_LENS.map((n) => new Allpass(scaled(n + STEREO_SPREAD)));
+    this.sfx = Array.from({ length: 8 }, () => ({ kind: NONE, t: 0, phase: 0, phase2: 0, rise: false, filt: new Biquad() }));
+    this.port.onmessage = (e) => {
+      if (e.data.muted !== undefined) this.muted = e.data.muted;
+      if (e.data.play !== undefined) this.playSfx(e.data.play, e.data.rise);
+    };
+  }
+
+  arand() {
+    let r = this.rng;
+    r ^= r << 13; r ^= r >>> 17; r ^= r << 5;
+    this.rng = r;
+    return (r >>> 0) / 4294967295 * 2 - 1;             // -1..1
+  }
+  arand01() { return (this.arand() + 1) * 0.5; }
+
+  spawnGhost() {
+    for (const gh of this.ghosts) {
+      if (gh.active) continue;
+      const dur = 4 + this.arand01() * 5;
+      gh.active = true; gh.t = 0; gh.dur = dur; gh.attack = dur * 0.35;
+      gh.freq = GHOST_SCALE[Math.floor(this.arand01() * 8) % 8];
+      gh.peak = 0.06 + this.arand01() * 0.05;
+      gh.phase = 0; gh.vibPhase = 0; gh.vibHz = 0.5 + this.arand01() * 0.5;
+      return;
+    }
+  }
+
+  // Steal the oldest voice if all eight are busy.
+  playSfx(kind, rise) {
+    let slot = -1, oldest = -1;
+    for (let i = 0; i < this.sfx.length; i++) {
+      const s = this.sfx[i];
+      if (s.kind === NONE) { slot = i; break; }
+      if (s.t > oldest) { oldest = s.t; slot = i; }
+    }
+    if (slot < 0) return;
+    const s = { kind, t: 0, phase: 0, phase2: 0, rise: !!rise, filt: new Biquad() };
+    if (kind === TYPE) s.filt.bandpass(2600, 1.2);
+    else if (kind === WARP) s.filt.bandpass(1200, 1.0);      // the airy part of the whoosh
+    else if (kind === PUNCH) s.filt.bandpass(500, 0.8);      // dull and low, not a click
+    else if (kind === SHOT) s.filt.bandpass(2200, 1.4);      // the thin edge on the attack
+    else if (kind === PORTAL) s.filt.bandpass(1500, 0.6);    // a wide airy band for the vortex
+    this.sfx[slot] = s;
+  }
+
+  // The seven effects, ported envelope for envelope.
+  renderSfx(dt) {
+    let total = 0;
+    for (const s of this.sfx) {
+      switch (s.kind) {
+        case JUMP: {                   // square wave sweeping up: the recognisable retro hop
+          const DUR = 0.16;
+          const freq = s.t < DUR * 0.7 ? expRamp(320, 760, s.t, DUR * 0.7) : expRamp(760, 660, s.t - DUR * 0.7, DUR * 0.3);
+          let env;
+          if (s.t < 0.01) env = expRamp(0.0001, JUMP_GAIN, s.t, 0.01);
+          else if (s.t < DUR * 0.6) env = JUMP_GAIN;
+          else env = expRamp(JUMP_GAIN, 0.0001, s.t - DUR * 0.6, DUR * 0.4);
+          total += oscSquare(s.phase) * env;
+          s.phase += freq * dt; s.t += dt;
+          if (s.t >= DUR) s.kind = NONE;
+          break;
+        }
+        case COIN: {                   // two flat square notes a fourth apart, the second ringing out
+          const BLIP = 0.075, RING = 0.42;
+          const freq = s.t < BLIP ? 987.77 : 1318.51;      // B5 -> E6, hard step
+          let env;
+          if (s.t < 0.005) env = expRamp(0.0001, 1, s.t, 0.005);
+          else if (s.t < BLIP + 0.06) env = 1;
+          else env = expRamp(1, 0.0001, s.t - (BLIP + 0.06), RING - 0.06);
+          total += oscSquare(s.phase) * env * COIN_GAIN;
+          s.phase += freq * dt; s.t += dt;
+          if (s.t >= BLIP + RING) s.kind = NONE;
+          break;
+        }
+        case WARP: {                   // a swept tone with a shimmering fifth over an airy whoosh
+          const DUR = 0.45, lo = 200, hi = 1500;
+          const freq = expRamp(s.rise ? lo : hi, s.rise ? hi : lo, s.t, DUR * 0.8);
+          const env = s.t < 0.008 ? expRamp(0.0001, 1, s.t, 0.008) : expRamp(1, 0.0001, s.t - 0.008, DUR - 0.008);
+          const tone = oscSine(s.phase) * 0.6 + oscSine(s.phase2) * 0.22;
+          const whoosh = s.filt.process(this.arand()) * expRamp(1, 0.0001, s.t, DUR * 0.6);
+          total += (tone + whoosh * 0.5) * env * WARP_GAIN;
+          s.phase += freq * dt;
+          s.phase2 += freq * 1.5 * dt;                     // a fifth above, for the shimmer
+          if (s.phase2 >= 1) s.phase2 -= Math.floor(s.phase2);
+          s.t += dt;
+          if (s.t >= DUR) s.kind = NONE;
+          break;
+        }
+        case PUNCH: {                  // a blunt thump: a pitch that drops away under a dull noise slap
+          const DUR = 0.18;
+          const freq = expRamp(190, 55, s.t, 0.09);
+          const env = s.t < 0.004 ? expRamp(0.0001, 1, s.t, 0.004) : expRamp(1, 0.0001, s.t - 0.004, DUR - 0.004);
+          const body = oscSine(s.phase) * 0.9;
+          const slap = s.filt.process(this.arand()) * expRamp(1, 0.0001, s.t, 0.05);
+          total += (body + slap * 0.7) * env * PUNCH_GAIN;
+          s.phase += freq * dt; s.t += dt;
+          if (s.t >= DUR) s.kind = NONE;
+          break;
+        }
+        case SHOT: {                   // a short bright "pew": a square tone falling fast, a thin noise edge
+          const DUR = 0.11;
+          const freq = expRamp(1500, 380, s.t, DUR * 0.75);
+          const env = s.t < 0.003 ? expRamp(0.0001, 1, s.t, 0.003) : expRamp(1, 0.0001, s.t - 0.003, DUR - 0.003);
+          const edge = s.filt.process(this.arand()) * expRamp(1, 0.0001, s.t, 0.025);
+          total += (oscSquare(s.phase) * 0.8 + edge * 0.6) * env * SHOT_GAIN;
+          s.phase += freq * dt; s.t += dt;
+          if (s.t >= DUR) s.kind = NONE;
+          break;
+        }
+        case PORTAL: {                 // a tone spiralling down and away under an airy noise vortex
+          const DUR = 0.95;
+          const frac = clampF(s.t / DUR, 0, 1);
+          const base = expRamp(880, 70, s.t, DUR * 0.92);
+          const wob = Math.sin(2 * Math.PI * (6 + 30 * frac) * s.t) * (30 + 150 * frac);
+          const freq = base + wob;
+          const env = s.t < DUR * 0.18 ? expRamp(0.0001, 1, s.t, DUR * 0.18) : expRamp(1, 0.0001, s.t - DUR * 0.18, DUR * 0.82);
+          const tone = oscSine(s.phase) * 0.55 + oscTriangle(s.phase2) * 0.25;
+          const vortex = s.filt.process(this.arand()) * Math.sin(Math.PI * frac);
+          total += (tone + vortex * 0.8) * env * PORTAL_GAIN;
+          s.phase += freq * dt;
+          s.phase2 += freq * 2.02 * dt;                    // a detuned octave shimmer
+          if (s.phase2 >= 1) s.phase2 -= Math.floor(s.phase2);
+          s.t += dt;
+          if (s.t >= DUR) s.kind = NONE;
+          break;
+        }
+        case TYPE: {                   // a filtered noise transient (the plastic click) over a low thock
+          const CLICK = 0.05, DUR = 0.08;
+          let click = 0;
+          if (s.t < CLICK) {
+            const decay = 1 - s.t / CLICK;
+            const env = s.t < 0.002 ? expRamp(0.0001, 1, s.t, 0.002) : expRamp(1, 0.0001, s.t - 0.002, CLICK - 0.002);
+            click = s.filt.process(this.arand() * decay) * env;
+          }
+          const thockFreq = expRamp(220, 110, s.t, 0.04);
+          const thockEnv = s.t < 0.003 ? expRamp(0.0001, 0.6, s.t, 0.003) : expRamp(0.6, 0.0001, s.t - 0.003, 0.057);
+          total += (click + oscTriangle(s.phase) * thockEnv) * TYPE_GAIN;
+          s.phase += thockFreq * dt; s.t += dt;
+          if (s.t >= DUR) s.kind = NONE;
+          break;
+        }
+      }
+      if (s.phase >= 1) s.phase -= Math.floor(s.phase);
+    }
+    return total;
+  }
+
+  // One pass per sample: drones and ghosts through the bus filter, split
+  // dry/wet, the wet half through the reverb, rumble and effects added flat.
+  process(inputs, outputs) {
+    const left = outputs[0][0], right = outputs[0][1] || outputs[0][0];
+    const n = left.length;
+    if (this.muted) {                  // frozen, like suspending the graph: no state advances
+      left.fill(0); right.fill(0);
+      return true;
+    }
+    const dt = 1 / SR;
+    for (let i = 0; i < this.ghostTimer.length; i++) {    // ghost chains are scheduled per block
+      this.ghostTimer[i] -= n / SR;
+      if (this.ghostTimer[i] <= 0) {
+        this.spawnGhost();
+        this.ghostTimer[i] = 3 + this.arand01() * 6;
+      }
+    }
+    for (let i = 0; i < n; i++) {
+      let bus = 0;
+      for (const d of this.drones) {
+        const wave = d.triangle ? oscTriangle(d.phase) : oscSine(d.phase);
+        bus += wave * (d.vol + oscSine(d.lfoPhase) * d.vol * 0.25);
+        d.phase += d.freq * dt; if (d.phase >= 1) d.phase -= 1;
+        d.lfoPhase += d.lfoHz * dt; if (d.lfoPhase >= 1) d.lfoPhase -= 1;
+      }
+      for (const gh of this.ghosts) {
+        if (!gh.active) continue;
+        const env = gh.t < gh.attack ? gh.peak * gh.t / gh.attack : gh.peak * (1 - (gh.t - gh.attack) / (gh.dur - gh.attack));
+        bus += oscSine(gh.phase) * Math.max(env, 0);
+        const vib = oscSine(gh.vibPhase) * 1.5;           // vibrato
+        gh.phase += (gh.freq + vib) * dt; if (gh.phase >= 1) gh.phase -= 1;
+        gh.vibPhase += gh.vibHz * dt; if (gh.vibPhase >= 1) gh.vibPhase -= 1;
+        gh.t += dt;
+        if (gh.t >= gh.dur) gh.active = false;
+      }
+      const filtered = this.lp.process(bus);
+      const wetIn = filtered * WET * REVERB_IN;
+      let wetL = 0, wetR = 0;
+      for (let j = 0; j < 4; j++) { wetL += this.combsL[j].process(wetIn); wetR += this.combsR[j].process(wetIn); }
+      wetL *= 0.25; wetR *= 0.25;
+      for (let j = 0; j < 2; j++) { wetL = this.apsL[j].process(wetL); wetR = this.apsR[j].process(wetR); }
+      const dry = filtered * DRY;
+      let rumble = this.noiseFilt.process(this.arand());   // slow breathing rumble under everything
+      rumble *= NOISE_GAIN + oscSine(this.noiseLfo) * 0.02;
+      this.noiseLfo += 0.05 * dt; if (this.noiseLfo >= 1) this.noiseLfo -= 1;
+      const sfxOut = this.renderSfx(dt);
+      left[i] = clampF((dry + wetL + rumble) * MASTER + sfxOut, -1, 1);
+      right[i] = clampF((dry + wetR + rumble) * MASTER + sfxOut, -1, 1);
+    }
+    return true;
+  }
+}
+registerProcessor('synth', Synth);
+</script>
+<script>
+"use strict";
+
+// ---- World (matches Game.java) ----
+const CELL = 20;                       // px, one level cell
+const COLS = 40;
+const ROWS = 30;
+const FINE = 5;                        // px, the quarter-cell overlay grid
+const WORLD_W = COLS * CELL;           // 800
+const WORLD_H = ROWS * CELL;           // 600
+const BG_COLOR = '#2b2b3d';            // the old #game background
+// Java's physics constants are per *frame* at 60fps, so the loop steps at a
+// fixed 1/60 s and never scales motion by a variable dt.
+const STEP = 1 / 60;                   // seconds per update
+const MAX_CATCH_UP = 0.1;              // seconds of backlog kept after a stall (tab switch, etc.)
+
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+
+// Which screen is up: the level picker, or one of the levels.
+const SCREEN_SELECT = 0, SCREEN_LEVEL1 = 1, SCREEN_LEVEL2 = 2, SCREEN_LEVEL3 = 3, SCREEN_LEVEL4 = 4;
+let screen = SCREEN_SELECT;
+let currentLevel = 1;
+
+// ---- Offscreen layers ----
+// "Bake once, move forever": anything that never changes is drawn to an
+// offscreen canvas a single time and only blitted afterwards.
+function makeLayer(width, height) {
+  const layer = document.createElement('canvas');
+  layer.width = width;
+  layer.height = height;
+  return layer;
+}
+
+// The background and base 20px grid, baked once. Same three passes, in the
+// same order, as Game.drawGrid: a faint panel fill, then the lines at two
+// alphas stacked on the same positions (Java drew an outer and an inner set).
+const gridLayer = makeLayer(WORLD_W, WORLD_H);
+(function bakeGrid() {
+  const g = gridLayer.getContext('2d');
+  g.fillStyle = BG_COLOR;
+  g.fillRect(0, 0, WORLD_W, WORLD_H);
+
+  g.fillStyle = 'rgba(255,255,255,' + 8 / 255 + ')';        // play-area panel
+  g.fillRect(0, 0, WORLD_W, WORLD_H);
+
+  g.fillStyle = 'rgba(255,255,255,' + 10 / 255 + ')';       // outer lines
+  for (let x = 0; x < WORLD_W; x += CELL) g.fillRect(x, 0, 1, WORLD_H);
+  for (let y = 0; y < WORLD_H; y += CELL) g.fillRect(0, y, WORLD_W, 1);
+
+  g.fillStyle = 'rgba(255,255,255,' + 20 / 255 + ')';       // inner lines
+  for (let c = 0; c <= COLS; c++) g.fillRect(c * CELL, 0, 1, WORLD_H);
+  for (let r = 0; r <= ROWS; r++) g.fillRect(0, r * CELL, WORLD_W, 1);
+})();
+
+
+// ---- Drawing primitives & baking toolkit (step 1) ----
+// Colours are CSS strings resolved once; nothing below builds a colour, a
+// gradient or a path inside the per-frame code.
+
+// "#rrggbb" string from a 0xRRGGBB int, optionally with a 0..255 alpha.
+function hex(rgb, alpha) {
+  const r = (rgb >> 16) & 255, g = (rgb >> 8) & 255, b = rgb & 255;
+  return alpha === undefined ? 'rgb(' + r + ',' + g + ',' + b + ')'
+                             : 'rgba(' + r + ',' + g + ',' + b + ',' + alpha / 255 + ')';
+}
+
+const FONT_FAMILY = '-apple-system, "Helvetica Neue", Arial, sans-serif';
+
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+// The 1.4 s ease-in-out pulse every glowing thing shares: 0 at the ends of
+// the cycle, 1 in the middle.
+function pulse() { return 0.5 - 0.5 * Math.cos(2 * Math.PI * time / 1.4); }
+
+// Block kinds and the vertical gradient / border / top-highlight each is drawn in.
+const BLUE = 0, GREEN = 1, ORANGE = 2, CYAN = 3, YELLOW = 4, MAGIC = 5, MOVING = 6, RED = 7, BLACK = 8;
+const BLOCK_STYLES = [
+  { name: 'BLUE',   top: 0x4d8bff, bot: 0x2255cc, border: 0x1a3f9e, inset: 89 },
+  { name: 'GREEN',  top: 0x4dff6a, bot: 0x22cc44, border: 0x1a9e33, inset: 102 },
+  { name: 'ORANGE', top: 0xffa64d, bot: 0xe06d00, border: 0x9e4a1a, inset: 89 },
+  { name: 'CYAN',   top: 0x5ce8ff, bot: 0x00a8cc, border: 0x1a7a9e, inset: 89 },
+  { name: 'YELLOW', top: 0xffe14d, bot: 0xe6b800, border: 0xb38f00, inset: 102 },
+  { name: 'MAGIC',  top: 0xc98bff, bot: 0x7a2fd6, border: 0x4e1a8c, inset: 89 },
+  { name: 'MOVING', top: 0x4dff6a, bot: 0x22cc44, border: 0x1a3f9e, inset: 102 },
+  { name: 'RED',    top: 0xff6b6b, bot: 0xd61f1f, border: 0x8c1414, inset: 102 },
+  { name: 'BLACK',  top: 0x3a3a3a, bot: 0x0d0d0d, border: 0x000000, inset: 89 },
+];
+
+// One CELL-sized sprite per kind, rendered once. Java blitted the same cached
+// image, so its 1px border is clipped to the top and left edges (the right and
+// bottom border pixels fell outside the 20x20 image) — reproduced here.
+const blockSprites = BLOCK_STYLES.map((style) => {
+  const sprite = makeLayer(CELL, CELL);
+  const g = sprite.getContext('2d');
+  const gradient = g.createLinearGradient(0, 0, 0, CELL);
+  gradient.addColorStop(0, hex(style.top));
+  gradient.addColorStop(1, hex(style.bot));
+  g.fillStyle = gradient;
+  g.fillRect(0, 0, CELL, CELL);
+  g.fillStyle = hex(0xffffff, style.inset);           // highlight along the top edge
+  g.fillRect(1, 1, CELL - 2, 2);
+  g.fillStyle = hex(style.border);                    // top and left border pixels
+  g.fillRect(0, 0, CELL, 1);
+  g.fillRect(0, 0, 1, CELL);
+  return sprite;
+});
+
+// A block at whole-pixel position (x, y). `alpha` and `scale` are only used by
+// the 311 magic platform's fade/pop, where the sprite is scaled about its centre.
+function drawBlock(kind, x, y, alpha = 1, scale = 1) {
+  if (alpha <= 0.01) return;
+  if (alpha === 1 && scale === 1) {
+    ctx.drawImage(blockSprites[kind], Math.round(x), Math.round(y));
+    return;
+  }
+  const size = CELL * scale;
+  ctx.globalAlpha = alpha;
+  ctx.drawImage(blockSprites[kind], Math.round(x + (CELL - size) / 2), Math.round(y + (CELL - size) / 2), size, size);
+  ctx.globalAlpha = 1;
+}
+
+// A shiny three-tone square of edge `size`: dark edge, lit face, corner glint.
+// Every piece colour is baked into a sprite once.
+function makePieceSprite(size, edge, face, hi) {
+  const sprite = makeLayer(size, size);
+  const g = sprite.getContext('2d');
+  g.fillStyle = hex(edge); g.fillRect(0, 0, size, size);
+  g.fillStyle = hex(face); g.fillRect(0, 0, size - 2, size - 2);
+  g.fillStyle = hex(hi);   g.fillRect(0, 0, 2, 2);
+  return sprite;
+}
+const PIECE_WHITE = { edge: 0x8f9ad4, face: 0xf2f5ff, hi: 0xffffff };   // the player and its shots
+const PIECE_RED = { edge: 0x9e1a1a, face: 0xff4d4d, hi: 0xffd6d6 };     // the enemies
+const pieceWhite = makePieceSprite(FINE, PIECE_WHITE.edge, PIECE_WHITE.face, PIECE_WHITE.hi);
+const pieceRed = makePieceSprite(FINE, PIECE_RED.edge, PIECE_RED.face, PIECE_RED.hi);
+
+function drawPiece(sprite, x, y) {
+  ctx.drawImage(sprite, Math.round(x), Math.round(y));
+}
+
+// ---- Glow: the Eyesz "shadow" rule ----
+// Java's drawGlow stacked translucent rounded rects every frame, with the
+// radius and alpha following pulse(). Here each glow is baked once into a
+// short ladder of frames across the pulse (GLOW_STEPS + 1 of them) and, per
+// frame, it is a single drawImage of the nearest one — the expensive picture
+// is painted once, only its position and frame index change.
+const GLOW_STEPS = 12;
+
+// `layers` are {rgb:[r,g,b], spread, spreadRange, alpha, alphaRange}: at pulse
+// p the layer's spread is spread + spreadRange*p and its strength alpha +
+// alphaRange*p (the `6 + 4 * p` / `0.35 + 0.25 * p` of the Java call sites).
+function makeGlowStyle(layers) {
+  let widest = 0;
+  for (const l of layers) widest = Math.max(widest, l.spread + l.spreadRange);
+  return { layers, pad: Math.ceil(widest) + 2, cache: new Map() };
+}
+
+// Renders one pulse frame: the same ring loop as Game.drawGlow, onto a
+// transparent canvas, so blitting it composites exactly as drawing live did.
+function bakeGlowFrame(style, w, h, radius, p) {
+  const pad = style.pad;
+  const frame = makeLayer(w + 2 * pad, h + 2 * pad);
+  const g = frame.getContext('2d');
+  for (const l of style.layers) {
+    const spread = l.spread + l.spreadRange * p;
+    const strength = l.alpha + l.alphaRange * p;
+    const rings = Math.floor(spread);
+    for (let f = 1; f <= rings; f++) {
+      const k = 1 - f / (spread + 1);
+      const alpha = Math.round(clamp(strength * k * k, 0, 1) * 255) / 255;   // Java's fade() rounds to 8 bits
+      const ringW = w + 2 * f, ringH = h + 2 * f;
+      const arc = clamp((radius + f) * 2, 0, Math.min(ringW, ringH));
+      g.fillStyle = 'rgba(' + l.rgb[0] + ',' + l.rgb[1] + ',' + l.rgb[2] + ',' + alpha + ')';
+      g.beginPath();
+      g.roundRect(pad - f, pad - f, ringW, ringH, arc / 2);
+      g.fill();
+    }
+  }
+  return frame;
+}
+
+// Frames for one size of one glow, baked on first use (the player's glow
+// follows whatever parts are left, so its sizes aren't known up front).
+function glowFrames(style, w, h, radius) {
+  const key = (w * 1024 + h) * 16 + radius;
+  let frames = style.cache.get(key);
+  if (!frames) {
+    frames = [];
+    for (let i = 0; i <= GLOW_STEPS; i++) frames.push(bakeGlowFrame(style, w, h, radius, i / GLOW_STEPS));
+    style.cache.set(key, frames);
+  }
+  return frames;
+}
+
+// Draws the glow around the box (x, y, w, h) at pulse position p (0..1).
+function drawGlow(style, x, y, w, h, radius, p) {
+  const frame = glowFrames(style, w, h, radius)[Math.round(p * GLOW_STEPS)];
+  ctx.drawImage(frame, Math.round(x) - style.pad, Math.round(y) - style.pad);
+}
+
+const GLOW_WHITE = [255, 255, 255];
+const GLOW_BLUE = [160, 190, 255];
+const GLOW_SHOT_BLUE = [180, 205, 255];
+const GLOW_BUTTON_OUTER = [255, 225, 120];
+const GLOW_BUTTON_INNER = [255, 190, 40];
+const GLOW_RED_OUTER = [255, 130, 130];
+const GLOW_RED_INNER = [255, 40, 40];
+
+// The glow styles the game uses (spread/alpha numbers straight from Game.java).
+const glowPlayer = makeGlowStyle([     // white square, border line
+  { rgb: GLOW_WHITE, spread: 6, spreadRange: 4, alpha: 0.35, alphaRange: 0.25 },
+  { rgb: GLOW_BLUE, spread: 14, spreadRange: 8, alpha: 0.18, alphaRange: 0.14 }]);
+const glowShot = makeGlowStyle([
+  { rgb: GLOW_WHITE, spread: 7, spreadRange: 5, alpha: 0.50, alphaRange: 0.30 },
+  { rgb: GLOW_SHOT_BLUE, spread: 16, spreadRange: 9, alpha: 0.22, alphaRange: 0.16 }]);
+const glowPortal = makeGlowStyle([
+  { rgb: GLOW_WHITE, spread: 6, spreadRange: 4, alpha: 0.30, alphaRange: 0.20 },
+  { rgb: GLOW_BLUE, spread: 14, spreadRange: 8, alpha: 0.16, alphaRange: 0.12 }]);
+const glowButton = makeGlowStyle([
+  { rgb: GLOW_BUTTON_OUTER, spread: 6, spreadRange: 4, alpha: 0.40, alphaRange: 0.30 },
+  { rgb: GLOW_BUTTON_INNER, spread: 14, spreadRange: 8, alpha: 0.20, alphaRange: 0.15 }]);
+const glowEnemy = makeGlowStyle([      // hopping and standing enemy
+  { rgb: GLOW_RED_OUTER, spread: 6, spreadRange: 4, alpha: 0.40, alphaRange: 0.30 },
+  { rgb: GLOW_RED_INNER, spread: 14, spreadRange: 8, alpha: 0.20, alphaRange: 0.15 }]);
+
+// ---- Audio (step 8) ----
+// The synth lives in the AudioWorklet defined in #synth-src; this is just the
+// handle the game uses. Browsers only allow sound after a user gesture, so the
+// first key press or click unlocks it; until then effects are silently dropped.
+const SFX_JUMP = 1, SFX_COIN = 2, SFX_TYPE = 3, SFX_WARP = 4, SFX_PUNCH = 5, SFX_SHOT = 6, SFX_PORTAL = 7;
+const audio = {
+  node: null,
+  started: false,
+  unlock() {
+    if (this.started) return;
+    this.started = true;
+    try {
+      const context = new AudioContext({ latencyHint: 'interactive' });
+      const source = document.getElementById('synth-src').textContent;
+      const blobUrl = URL.createObjectURL(new Blob([source], { type: 'text/javascript' }));
+      // A blob: URL is refused when the page is opened from file://; a data: URL isn't.
+      const dataUrl = 'data:text/javascript;charset=utf-8,' + encodeURIComponent(source);
+      context.audioWorklet.addModule(blobUrl)
+        .catch(() => context.audioWorklet.addModule(dataUrl))
+        .then(() => {
+          this.node = new AudioWorkletNode(context, 'synth', { outputChannelCount: [2] });
+          this.node.connect(context.destination);
+          this.node.port.postMessage({ muted });
+        })
+        .catch(() => {});
+      if (context.state === 'suspended') context.resume();
+    } catch (e) {
+      // no audio available: the game is silent, nothing else changes
+    }
+  },
+  // Plays an effect; `rise` is the warp's direction (up when growing back).
+  play(kind, rise) {
+    if (this.node) this.node.port.postMessage({ play: kind, rise: !!rise });
+  },
+  setMuted(value) {
+    if (this.node) this.node.port.postMessage({ muted: value });
+  },
+};
+
+// ---- Level 1: static layout (step 2) ----
+// Every solid is one CELL-sized block (the standing enemy's pieces are FINE
+// sized). Cells are numbered from 1, row by row, the way the level was authored.
+const FINE_COLS = WORLD_W / FINE;      // 160
+const MAGIC_CELL = 469;                // row 11, column 28 — the secret purple platform
+const HARRY_PLATFORM_FROM = 209;       // Harry's ledge, cells 209..219
+const HARRY_PLATFORM_TO = 219;
+const STANDING_ENEMY_CELL = 873;       // row 21, column 32
+const ENEMY_SPAN = CELL / FINE;        // 4 pieces a side
+// Poison water basin (cells 1167-1181): the bottom row is left open under it.
+const WATER_X = 6 * CELL, WATER_W = 15 * CELL;
+const WATER_Y = 29 * CELL, WATER_H = CELL;
+
+// Which motion, if any, a block gets once it is shot (used from step 6).
+const MOVER_NONE = 0, MOVER_UP_DOWN_1 = 1, MOVER_DOWN_UP_8 = 2, MOVER_SHIFT = 3;
+
+// Top-left pixel of a 1-based cell number on the 20px grid / the 5px grid.
+function cellX(cell) { return ((cell - 1) % COLS) * CELL; }
+function cellY(cell) { return Math.floor((cell - 1) / COLS) * CELL; }
+function fineX(cell) { return ((cell - 1) % FINE_COLS) * FINE; }
+function fineY(cell) { return Math.floor((cell - 1) / FINE_COLS) * FINE; }
+
+function blockMoverKind(cell) {
+  if (cell === 644) return MOVER_UP_DOWN_1;
+  if (cell === 305) return MOVER_DOWN_UP_8;
+  return MOVER_NONE;
+}
+
+const blocks = [];                     // in the same order Java pushed them; collision walks it in order
+
+function makeBlock(x, y, size, kind, mover) {
+  return { x, y, size, kind, off: false, mover, moving: false, homeX: x, homeY: y, moveT: 0, targetX: 0, targetY: 0 };
+}
+
+function addBlock(cell, kind) {
+  blocks.push(makeBlock(cellX(cell), cellY(cell), CELL, kind, blockMoverKind(cell)));
+}
+
+// Out of collision and not drawn until something turns it on (the 311 platform).
+function addOffBlock(cell, kind) {
+  const b = makeBlock(cellX(cell), cellY(cell), CELL, kind, MOVER_NONE);
+  b.off = true;
+  blocks.push(b);
+}
+
+// Is a whole-cell block already standing on this cell? A 5px enemy piece sits
+// on a cell without filling it, so only CELL-sized blocks answer.
+function blockAt(x, y) {
+  for (const b of blocks) if (b.size === CELL && b.x === x && b.y === y) return true;
+  return false;
+}
+
+function addIfFree(cell) {
+  if (!blockAt(cellX(cell), cellY(cell))) blocks.push(makeBlock(cellX(cell), cellY(cell), CELL, BLUE, MOVER_NONE));
+}
+
+// Blue blocks all the way round the screen. Cells that already hold a block
+// keep it, and the stretch of the bottom row under the water stays open.
+function addBorder() {
+  for (let c = 1; c <= COLS; c++) addIfFree(c);                          // top row
+  for (let r = 0; r < ROWS; r++) addIfFree(r * COLS + COLS);             // right column
+  const waterCol = WATER_X / CELL, waterCols = WATER_W / CELL;
+  for (let c = (ROWS - 1) * COLS + 1; c <= ROWS * COLS; c++) {           // bottom row
+    const col = (c - 1) % COLS;
+    if (col >= waterCol && col < waterCol + waterCols) continue;
+    addIfFree(c);
+  }
+}
+
+// Cell 873 cut along the 5px grid into a 4x4 of solids. Rows go in
+// bottom-first: load-bearing for the vertical collision pass (step 3).
+function addStandingEnemy() {
+  const x0 = cellX(STANDING_ENEMY_CELL), y0 = cellY(STANDING_ENEMY_CELL);
+  for (let row = ENEMY_SPAN - 1; row >= 0; row--) {
+    for (let col = 0; col < ENEMY_SPAN; col++) {
+      blocks.push(makeBlock(x0 + col * FINE, y0 + row * FINE, FINE, RED, MOVER_NONE));
+    }
+  }
+}
+
+function buildBlocks() {
+  blocks.length = 0;
+  addBlock(1126, BLUE);                // the two pillars either side of the water
+  addBlock(1166, BLUE);
+  addBlock(1142, BLUE);
+  addBlock(1182, BLUE);
+  addBlock(904, GREEN);
+  addBlock(452, BLUE);
+  addBlock(754, ORANGE);
+  addBlock(305, CYAN);
+  for (let c = 397; c <= 399; c++) addBlock(c, BLUE);   // the ledge under the 359 coin
+  addBlock(562, BLUE);                 // ...and the one under 522
+
+  addBlock(365, BLUE);                 // three single blue steps
+  addBlock(444, BLUE);
+  addBlock(644, BLUE);
+
+  for (let c = HARRY_PLATFORM_FROM; c <= HARRY_PLATFORM_TO; c++) addBlock(c, BLUE);  // Harry's ledge
+  for (let c = 204; c <= 208; c++) addBlock(c, BLUE);   // ...carried on to 204, so walking left reaches the 203 portal
+
+  for (let c = 1; c <= 1161; c += COLS) addBlock(c, BLUE);  // wall down the left edge
+  for (let c = 762; c <= 769; c++) addBlock(c, BLUE);       // the shelf on row 19
+  for (let c = 911; c <= 920; c++) addBlock(c, GREEN);      // the shelf on row 22
+  addBlock(910, GREEN);                // one more green step, left of that shelf
+  for (let c = 458; c <= 459; c++) addBlock(c, YELLOW);     // the lift, parked at the top
+
+  addStandingEnemy();                  // sixteen red-grid solids filling cell 873
+  addOffBlock(MAGIC_CELL, MAGIC);      // earned by crossing column 28
+  addBorder();
+}
+buildBlocks();
+
+// Blocks that never move or change are baked with the grid into one layer;
+// the lift, the magic platform, the shootable movers and the red enemy pieces
+// are the only ones drawn live.
+const dynamicBlocks = blocks.filter((b) => b.kind === YELLOW || b.kind === MAGIC || b.mover !== MOVER_NONE);
+const level1Layer = makeLayer(WORLD_W, WORLD_H);
+function bakeLevel1() {
+  const g = level1Layer.getContext('2d');
+  g.drawImage(gridLayer, 0, 0);
+  for (const b of blocks) {
+    if (b.kind === RED || dynamicBlocks.includes(b)) continue;
+    g.drawImage(blockSprites[b.kind], b.x, b.y);
+  }
+  bakeHud(g);
+}
+
+// The standing enemy's sixteen pieces as one 20x20 sprite (it never changes;
+// only its glow pulses behind it).
+const standingEnemySprite = makeLayer(CELL, CELL);
+(function bakeStandingEnemy() {
+  const g = standingEnemySprite.getContext('2d');
+  for (let row = 0; row < ENEMY_SPAN; row++) {
+    for (let col = 0; col < ENEMY_SPAN; col++) g.drawImage(pieceRed, col * FINE, row * FINE);
+  }
+})();
+
+function drawStandingEnemy() {
+  const x = cellX(STANDING_ENEMY_CELL), y = cellY(STANDING_ENEMY_CELL);
+  drawGlow(glowEnemy, x, y, CELL, CELL, 3, pulse());
+  ctx.drawImage(standingEnemySprite, x, y);
+}
+
+// ---- Measuring tools: the 5px red grid (1) and the hovered cell number (H) ----
+const fineGridLayer = makeLayer(WORLD_W, WORLD_H);
+(function bakeFineGrid() {
+  const g = fineGridLayer.getContext('2d');
+  g.fillStyle = 'rgba(255,120,120,' + 191 / 255 + ')';
+  for (let c = 0; c <= FINE_COLS; c++) g.fillRect(c * FINE, 0, 1, WORLD_H);
+  for (let r = 0; r <= WORLD_H / FINE; r++) g.fillRect(0, r * FINE, WORLD_W, 1);
+})();
+
+// 1-based number of the cell under the pointer (5px cells while the red grid
+// is up), or 0 when the readout is off or the pointer is outside the level.
+function hoveredCell() {
+  if (screen === SCREEN_SELECT || !debug.hover || !document.hasFocus()) return 0;
+  if (mouseX < 0 || mouseY < 0 || mouseX >= WORLD_W || mouseY >= WORLD_H) return 0;
+  if (debug.fine) return Math.floor(mouseY / FINE) * FINE_COLS + Math.floor(mouseX / FINE) + 1;
+  return Math.floor(mouseY / CELL) * COLS + Math.floor(mouseX / CELL) + 1;
+}
+
+// The square under the pointer picked out over the level.
+function drawHoverHighlight() {
+  if (!hoveredCell()) return;
+  if (debug.fine) {
+    const x = Math.floor(mouseX / FINE) * FINE, y = Math.floor(mouseY / FINE) * FINE;
+    ctx.fillStyle = 'rgba(255,70,70,' + 140 / 255 + ')';
+    ctx.fillRect(x, y, FINE, FINE);
+    ctx.fillStyle = 'rgba(255,80,80,' + 90 / 255 + ')';
+    ctx.fillRect(x - 1, y - 1, FINE + 2, 1);
+    ctx.fillRect(x - 1, y + FINE, FINE + 2, 1);
+    ctx.fillRect(x - 1, y, 1, FINE);
+    ctx.fillRect(x + FINE, y, 1, FINE);
+  } else {
+    ctx.fillStyle = 'rgba(136,136,200,' + 89 / 255 + ')';
+    ctx.fillRect(Math.floor(mouseX / CELL) * CELL, Math.floor(mouseY / CELL) * CELL, CELL, CELL);
+  }
+}
+
+// Top-right cell number, white over a dark drop shadow.
+function drawCellNumber() {
+  const n = hoveredCell();
+  if (!n) return;
+  ctx.font = 'bold 28px -apple-system, "Helvetica Neue", Arial, sans-serif';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = 'rgba(0,0,0,' + 150 / 255 + ')';
+  ctx.fillText(String(n), WORLD_W - 16, 12);
+  ctx.fillStyle = '#fff';
+  ctx.fillText(String(n), WORLD_W - 17, 11);
+}
+
+// Until the level select arrives (step 9) the game opens straight onto level 1.
+// Drawn back to front in the order Game.java draws it.
+function drawLevel1() {
+  ctx.drawImage(level1Layer, 0, 0);
+  for (const b of dynamicBlocks) {
+    if (b.kind === MAGIC) drawBlock(MAGIC, b.x, b.y, magicAnim, 0.4 + 0.6 * magicAnim);
+    else if (!b.off) drawBlock(b.kind, b.x, b.y);
+  }
+  drawStandingEnemy();
+  drawPlatform();
+  drawWater();
+  drawPortal();
+  drawCoins();
+  drawButtons();
+  drawEnemy();
+  drawBorderLine();
+  drawShots();                         // under the player, so a shot seems to leave from behind them
+  drawWhitesquare();
+  drawHarry();                         // the pointer-selectable character on the 209..219 ledge
+  drawHarryBullets();
+  drawLifebar();
+  drawCoinCounter();
+  if (debug.fine) ctx.drawImage(fineGridLayer, 0, 0);
+  drawHoverHighlight();
+  drawBackButton();
+  drawDeathModal();                    // covers the whole screen, so it goes on last
+}
+
+// ---- White square: the original player (step 3) ----
+// Every constant is per *frame* at 60fps, straight from Game.java, which is
+// why the loop steps at a fixed 1/60 s instead of scaling by dt.
+const WHITESQUARE_CELL = 1083;
+const NORMAL_SIZE = CELL;              // 20
+const SMALL_SIZE = FINE;               // 5, one red-grid cell
+const MOVE_SPEED = 3.2;                // px per frame
+const GRAVITY = 0.6;                   // px per frame^2
+const JUMP_VELOCITY = -12;             // px per frame
+
+let px = 0, py = 0;                    // world position, top-left
+let prevPx = 0, prevPy = 0;            // where we were before this frame's movement
+let vy = 0;
+let psize = NORMAL_SIZE;               // shrinks to SMALL_SIZE past the shiny line (step 4)
+let onGround = false, onPlatform = false, onYellow = false;   // what they're standing on
+let prevJump = false;                  // jump is edge-triggered, so a tap is one jump
+let faceDir = 1;                       // 1 = right; the way the last movement key pointed
+let keyLeft = false, keyRight = false, keyJump = false, keyShoot = false;   // the white square's own input
+
+function resetWhitesquare() {
+  px = cellX(WHITESQUARE_CELL);
+  py = cellY(WHITESQUARE_CELL);
+  prevPx = px;
+  prevPy = py;
+  vy = 0;
+  psize = NORMAL_SIZE;
+  onGround = false;
+  onPlatform = false;
+  onYellow = false;
+  faceDir = 1;                         // the spawn looks right, into the level
+
+  // Pieces die with the player, the ones on the ground too.
+  for (const shot of shots) shot.state = SHOT_GONE;
+  prevShoot = true;
+  // A new life comes back whole: all sixteen parts.
+  partGone.fill(false);
+}
+
+// The white square's input from the raw key state, zeroed while Harry is the
+// selected character. The facing is remembered
+// rather than read when firing: holding both keys cancels the movement and
+// leaves the facing alone.
+function readInput() {
+  if (harry.selected) {                // Harry has the keys; the square holds still
+    keyLeft = false;
+    keyRight = false;
+    keyJump = false;
+    keyShoot = false;
+    return;
+  }
+  keyLeft = raw.left;
+  keyRight = raw.right;
+  keyJump = raw.jump;
+  keyShoot = raw.shoot;
+  if (keyLeft !== keyRight) faceDir = keyRight ? 1 : -1;
+}
+
+// Does the player box overlap the box at (bx, by, bw, bh)?
+function overlapsRect(bx, by, bw, bh) {
+  return px < bx + bw && px + psize > bx && py < by + bh && py + psize > by;
+}
+
+// Which face of a box at (by, bh) the player has to be put back onto: true for
+// its top, false for its underside. Decided by where they were before this
+// frame's fall — the shallower-overlap test alone isn't enough once a fall
+// clears a whole cell.
+function resolveToTop(by, bh) {
+  if (prevPy + psize <= by) return true;       // feet were above it: a landing
+  if (prevPy >= by + bh) return false;         // head was below it: a bonk
+  return (py + psize) - by <= (by + bh) - py;
+}
+
+// Everything the player's body does in a frame: driven, carried by what it
+// stands on, stopped by what it runs into, and drained by what it swims in.
+function updateWhitesquare() {
+  // ---- Horizontal movement + collision ----
+  const startX = px;
+  if (onPlatform) px += platDx;        // carried sideways
+  if (keyLeft) px -= MOVE_SPEED;
+  if (keyRight) px += MOVE_SPEED;
+  const movingRight = px > startX;
+
+  for (const b of blocks) {
+    if (b.off || !overlapsRect(b.x, b.y, b.size, b.size)) continue;
+    // Push sideways only when moving sideways caused the overlap — an overlap
+    // the player was already inside horizontally belongs to the vertical pass.
+    if (startX < b.x + b.size && startX + psize > b.x) continue;
+    px = movingRight ? b.x - psize : b.x + b.size;
+  }
+
+  // The platform blocks from the sides too: leave by the nearer edge rather
+  // than being thrown across it.
+  if (overlapsRect(platX, PLAT_Y, PLAT_W, PLAT_H)) {
+    const nearLeft = (px + psize) - platX <= (platX + PLAT_W) - px;
+    px = nearLeft ? platX - psize : platX + PLAT_W;
+  }
+
+  if (px < 0) px = 0;
+  if (px > WORLD_W - psize) px = WORLD_W - psize;
+
+  // In the water when horizontally over it and dipping below the surface.
+  const inWater = px + psize > WATER_X && px < WATER_X + WATER_W && py + psize > WATER_Y;
+
+  // ---- Jump, edge-triggered so a tap works on land and in water ----
+  const jumpPressed = keyJump && !prevJump;
+  if (jumpPressed && onGround) {
+    vy = JUMP_VELOCITY;
+    onGround = false;
+    onPlatform = false;
+    onYellow = false;
+    audio.play(SFX_JUMP);
+  } else if (jumpPressed && inWater) {
+    vy = WATER_JUMP;
+    audio.play(SFX_JUMP);
+  }
+  prevJump = keyJump;
+
+  // ---- Vertical movement + collision ----
+  if (inWater) {
+    // Buoyant swimming: bob at the surface, hold up to climb out.
+    vy += WATER_GRAVITY;
+    vy *= WATER_DRAG;
+    const floatY = WATER_Y - psize * 0.4 + Math.sin(time * 4) * 2;
+    if (py > floatY) vy += (floatY - py) * BUOYANCY;
+    if (keyJump) vy -= SWIM_UP;
+  } else {
+    vy += GRAVITY;
+  }
+
+  // A single step must never carry the player clean past a solid.
+  const maxStep = CELL + psize - 1;
+  vy = clamp(vy, -maxStep, maxStep);
+
+  prevPy = py;
+  py += vy;
+  onGround = false;
+  onPlatform = false;
+  onYellow = false;
+
+  for (const b of blocks) {
+    if (b.off || !overlapsRect(b.x, b.y, b.size, b.size)) continue;
+    if (resolveToTop(b.y, b.size)) {
+      py = b.y - psize;
+      vy = 0;
+      onGround = true;
+      if (b.kind === YELLOW) onYellow = true;
+    } else {
+      py = b.y + b.size;
+      if (vy < 0) vy = 0;                      // stop a rising bonk, keep a fall falling
+    }
+  }
+
+  // The moving platform, solid on both faces, same came-from rule.
+  if (overlapsRect(platX, PLAT_Y, PLAT_W, PLAT_H)) {
+    if (resolveToTop(PLAT_Y, PLAT_H)) {
+      py = PLAT_Y - psize;
+      vy = 0;
+      onGround = true;
+      onPlatform = true;
+    } else {
+      py = PLAT_Y + PLAT_H;
+      if (vy < 0) vy = 0;
+    }
+  }
+
+  const floorY = WORLD_H - psize;
+  if (py >= floorY) {
+    py = floorY;
+    vy = 0;
+    onGround = true;
+  }
+
+  // The bar drains in the water and never comes back on land.
+  if (inWater) {
+    hp -= DROWN_RATE;
+    if (hp <= 0) {
+      hp = 0;
+      showDeath(DEATH_WATER);
+    }
+  }
+}
+
+// ---- Shiny line: crossing it shrinks the player to one red-grid piece ----
+const LINE_COL = 30, LINE_TOP_ROW = 23, LINE_BOTTOM_ROW = 29;
+const LINE_X = LINE_COL * CELL - 1;    // the CSS pulled it 1px left of the cell edge
+const LINE_TOP_Y = LINE_TOP_ROW * CELL;
+const LINE_BOTTOM_Y = (LINE_BOTTOM_ROW + 1) * CELL;
+const LINE_W = 3;
+
+// Shrink to a red-grid cell while right of the line, restore on the left.
+// Only the drawn segment counts: passing above or below it leaves the size alone.
+function checkShinyLine(scattered) {
+  if (scattered) return;
+  if (py < LINE_BOTTOM_Y && py + psize > LINE_TOP_Y) {
+    const want = px >= LINE_X + 1 ? SMALL_SIZE : NORMAL_SIZE;
+    if (want !== psize) {
+      audio.play(SFX_WARP, want > psize);   // a rising note on the way back to full size
+      psize = want;
+    }
+  }
+}
+
+// The line's white-to-lavender bar, baked once; its glow pulses behind it.
+const lineSprite = makeLayer(LINE_W, LINE_BOTTOM_Y - LINE_TOP_Y);
+(function bakeLine() {
+  const g = lineSprite.getContext('2d');
+  const gradient = g.createLinearGradient(0, 0, 0, lineSprite.height);
+  gradient.addColorStop(0, hex(0xffffff));
+  gradient.addColorStop(1, hex(0xc9d2ff));
+  g.fillStyle = gradient;
+  g.fillRect(0, 0, LINE_W, lineSprite.height);
+})();
+
+function drawBorderLine() {
+  drawGlow(glowPlayer, LINE_X, LINE_TOP_Y, LINE_W, lineSprite.height, 2, pulse());
+  ctx.drawImage(lineSprite, LINE_X, LINE_TOP_Y);
+}
+
+// ---- Projectiles ----
+// A shot is a piece of the player, not something it carries: firing tears one
+// red-grid square off the body and throws it the way they face. Ammunition and
+// body are the same sixteen squares.
+const SHOT_SIZE = SMALL_SIZE;          // 5, one part
+const SHOT_SPEED = 7;                  // px per frame, just over twice the walk
+const PART_SPAN = NORMAL_SIZE / FINE;  // 4 parts a side
+const PART_COUNT = PART_SPAN * PART_SPAN;   // 16
+const SHOT_GONE = 0, SHOT_FLYING = 1, SHOT_FALLING = 2, SHOT_LANDED = 3;
+
+const shots = [];                      // one slot per part, held from firing to lying on the ground
+for (let i = 0; i < PART_COUNT; i++) shots.push({ x: 0, y: 0, vx: 0, vy: 0, state: SHOT_GONE, cell: 0 });
+const partGone = new Array(PART_COUNT).fill(false);   // the body, square by square: fired or still on
+let prevShoot = true;                  // the trigger is edge-triggered: one press, one shot
+
+function partsLeft() {
+  let n = 0;
+  for (let i = 0; i < PART_COUNT; i++) if (!partGone[i]) n++;
+  return n;
+}
+
+// Nothing of the player is still moving: every piece has come to rest or been lost.
+function piecesSettled() {
+  for (const shot of shots) if (shot.state === SHOT_FLYING || shot.state === SHOT_FALLING) return false;
+  return true;
+}
+
+// Which part goes next: the front column first, top down, then the column
+// behind it — the player is eaten away from the face they're pointing.
+// Returns its index (row * PART_SPAN + col), or -1 once nothing is left.
+function nextPart() {
+  for (let i = 0; i < PART_SPAN; i++) {
+    const col = faceDir > 0 ? PART_SPAN - 1 - i : i;
+    for (let row = 0; row < PART_SPAN; row++) {
+      if (!partGone[row * PART_SPAN + col]) return row * PART_SPAN + col;
+    }
+  }
+  return -1;
+}
+
+// Tears off the next part and sends it. One slot per part, so there's never a
+// shot without a part behind it.
+function fireShot() {
+  const i = nextPart();
+  if (i < 0) return;
+  partGone[i] = true;
+  const row = Math.floor(i / PART_SPAN), col = i % PART_SPAN;
+
+  // It leaves from where it sat: the part's own square at full size, or from
+  // the single square the shrunken player is.
+  let x = px, y = py;
+  if (psize > FINE) {
+    x += col * FINE;
+    y += row * FINE;
+  }
+  const shot = shots[i];
+  shot.x = x;
+  shot.y = y;
+  shot.vx = faceDir * SHOT_SPEED;
+  shot.vy = 0;
+  shot.state = SHOT_FLYING;
+  audio.play(SFX_SHOT);
+}
+
+// The 20px cell a point falls in, numbered the way the level is written.
+function cellOf(x, y) {
+  const col = clamp(Math.floor(x / CELL), 0, COLS - 1);
+  const row = clamp(Math.floor(y / CELL), 0, ROWS - 1);
+  return row * COLS + col + 1;
+}
+
+function pileCount(cell) {
+  let n = 0;
+  for (const shot of shots) if (shot.state === SHOT_LANDED && shot.cell === cell) n++;
+  return n;
+}
+
+// The shot stops at anything the player would. 5px against a 20px cell, so
+// there's nothing here it can tunnel through.
+function shotBlocked(x, y) {
+  for (const b of blocks) {
+    if (b.off) continue;
+    if (x < b.x + b.size && x + SHOT_SIZE > b.x && y < b.y + b.size && y + SHOT_SIZE > b.y) return true;
+  }
+  return false;
+}
+
+// The poison takes a piece the way it takes the player; also the only hole in
+// the level's floor.
+function pieceLost(x, y) {
+  if (y > WORLD_H) return true;
+  return x + SHOT_SIZE > WATER_X && x < WATER_X + WATER_W && y + SHOT_SIZE > WATER_Y;
+}
+
+// The highest surface the fall crossed, or -1 if it crossed none — swept rather
+// than an overlap test, since a quick fall can step clean over a 5px block.
+function pieceLanding(x, prevY, y) {
+  let landY = WORLD_H;
+  for (const b of blocks) {
+    if (b.off) continue;
+    if (x >= b.x + b.size || x + SHOT_SIZE <= b.x) continue;
+    if (prevY + SHOT_SIZE > b.y) continue;       // already below this top
+    landY = Math.min(landY, b.y);
+  }
+  return y + SHOT_SIZE > landY ? landY : -1;
+}
+
+// The sixteen pieces are a player again, standing in the cell they filled.
+// This moves you; it doesn't heal you.
+function reformAt(cell) {
+  px = cellX(cell);
+  py = cellY(cell);
+  prevPx = px;
+  prevPy = py;
+  vy = 0;
+  psize = NORMAL_SIZE;
+  onGround = false;
+  onPlatform = false;
+  onYellow = false;
+  partGone.fill(false);
+  for (const shot of shots) shot.state = SHOT_GONE;
+  audio.play(SFX_WARP, true);          // the rising note for coming back whole
+}
+
+// Comes to rest in the cell it fell into, dropping into the lowest free square
+// of the pile there — four across, the layout the player's own parts are in.
+function settlePiece(shot, landY) {
+  const cell = cellOf(shot.x + SHOT_SIZE / 2, landY - SHOT_SIZE / 2);
+  const n = pileCount(cell);
+  shot.x = cellX(cell) + (n % PART_SPAN) * FINE;
+  shot.y = cellY(cell) + (PART_SPAN - 1 - Math.floor(n / PART_SPAN)) * FINE;
+  shot.vy = 0;
+  shot.cell = cell;
+  shot.state = SHOT_LANDED;
+  if (pileCount(cell) === PART_COUNT) reformAt(cell);
+}
+
+function updateShots() {
+  for (const shot of shots) {
+    if (shot.state === SHOT_FLYING) {
+      shot.x += shot.vx;
+      if (shot.x + SHOT_SIZE < 0 || shot.x > WORLD_W) {
+        shot.state = SHOT_GONE;                    // off the level; not coming back
+      } else if (shotBlocked(shot.x, shot.y)) {
+        shot.x -= shot.vx;                         // back out to the last step that was clear
+        shot.vx = 0;
+        shot.state = SHOT_FALLING;
+      }
+    } else if (shot.state === SHOT_FALLING) {
+      shot.vy += GRAVITY;
+      const prevY = shot.y;
+      shot.y += shot.vy;
+      if (pieceLost(shot.x, shot.y)) {
+        shot.state = SHOT_GONE;
+      } else {
+        const landY = pieceLanding(shot.x, prevY, shot.y);
+        if (landY >= 0) settlePiece(shot, landY);
+      }
+    }
+  }
+}
+
+// Everything the level itself does in a frame: the platform, the lift, the
+// player's own body, its shots, and the things it can trigger.
+function updateGame() {
+  if (dead) return;                    // paused behind the death overlay
+
+  // Every part thrown: there's no body to move, and the pieces in the air are
+  // the player now. The level goes on running around them.
+  const scattered = partsLeft() === 0;
+
+  prevPx = px;                         // the magic platform's trigger needs this frame's direction
+  checkShinyLine(scattered);
+
+  // ---- Moving platform ----
+  const prevPlatX = platX;
+  platX += platDir * PLAT_SPEED;
+  if (platX <= PLAT_MIN_X) { platX = PLAT_MIN_X; platDir = 1; }
+  if (platX >= PLAT_MAX_X) { platX = PLAT_MAX_X; platDir = -1; }
+  platDx = platX - prevPlatX;
+
+  updateMovers();                      // blocks Harry has shot into motion
+
+  // The lift moves on its own; a rider is carried by however far it went.
+  yellowDy = moveYellow();
+  if (onYellow && !scattered) py += yellowDy;
+
+  if (!scattered) updateWhitesquare();
+
+  // A piece thrown while scattered would have nothing to come from, and the
+  // trigger is read anyway so a held Enter can't fire the moment they re-form.
+  if (!scattered && keyShoot && !prevShoot) fireShot();
+  prevShoot = keyShoot;
+  updateShots();
+
+  updateEnemy();                       // the red block hops along its shelf...
+  if (!scattered) {
+    checkEnemy();                      // ...and takes half the bar off anyone who touches it
+    checkMagicTriggers();              // column 28 spawns the 311 platform, row 13 clears it
+    checkButtons();                    // touched the button -> click, it goes, the lift starts
+    checkCoins();                      // ...and the coins -> they pop away
+  }
+
+  // Nothing of them is moving any more and no cell caught the whole sixteen,
+  // so there's nowhere left for them to be.
+  if (scattered && partsLeft() === 0 && piecesSettled()) showDeath(DEATH_SPENT);
+}
+
+// The box around the parts still attached, into remainingBox. The glow follows
+// this rather than the square the player started as, so a half-fired body
+// doesn't glow like it's still whole. False when nothing is left.
+const remainingBox = { x: 0, y: 0, w: 0, h: 0 };
+function measureRemaining() {
+  if (partsLeft() === 0) return false;
+  if (psize <= FINE) {
+    remainingBox.x = px; remainingBox.y = py; remainingBox.w = psize; remainingBox.h = psize;
+    return true;
+  }
+  let minR = PART_SPAN, minC = PART_SPAN, maxR = -1, maxC = -1;
+  for (let row = 0; row < PART_SPAN; row++) {
+    for (let col = 0; col < PART_SPAN; col++) {
+      if (partGone[row * PART_SPAN + col]) continue;
+      minR = Math.min(minR, row); maxR = Math.max(maxR, row);
+      minC = Math.min(minC, col); maxC = Math.max(maxC, col);
+    }
+  }
+  remainingBox.x = px + minC * FINE;
+  remainingBox.y = py + minR * FINE;
+  remainingBox.w = (maxC - minC + 1) * FINE;
+  remainingBox.h = (maxR - minR + 1) * FINE;
+  return true;
+}
+
+// Built out of the red grid: a 4x4 of shiny squares at full size, minus
+// whatever has been fired off, or a single square once the line has shrunk it.
+function drawWhitesquare() {
+  if (!measureRemaining()) return;     // nothing left of them
+  const radius = psize > 8 ? 3 : 1;
+  drawGlow(glowPlayer, remainingBox.x, remainingBox.y, remainingBox.w, remainingBox.h, radius, pulse());
+  if (psize <= FINE) {
+    drawPiece(pieceWhite, px, py);
+    return;
+  }
+  for (let row = 0; row < PART_SPAN; row++) {
+    for (let col = 0; col < PART_SPAN; col++) {
+      if (!partGone[row * PART_SPAN + col]) drawPiece(pieceWhite, px + col * FINE, py + row * FINE);
+    }
+  }
+}
+
+// Shots wear the player's gradient with a harder white glow, and a short
+// trailing streak while flying.
+function drawShots() {
+  const p = pulse();
+  for (const shot of shots) {
+    if (shot.state === SHOT_GONE) continue;
+    if (shot.state === SHOT_FLYING) {
+      ctx.fillStyle = '#fff';
+      for (let i = 1; i <= 3; i++) {
+        const k = 1 - i / 4;
+        const backH = SHOT_SIZE * k;
+        ctx.globalAlpha = 0.30 * k;
+        ctx.fillRect(Math.round(shot.x - shot.vx * i * 0.5), Math.round(shot.y + (SHOT_SIZE - backH) / 2), SHOT_SIZE, Math.round(backH));
+      }
+      ctx.globalAlpha = 1;
+    }
+    if (shot.state !== SHOT_LANDED) drawGlow(glowShot, shot.x, shot.y, SHOT_SIZE, SHOT_SIZE, 1, p);
+    drawPiece(pieceWhite, shot.x, shot.y);
+  }
+}
+
+// ---- Hazards & interactables (step 5) ----
+
+// Mouse: the click latched by the last drainInput(), consumed by whichever
+// control it lands on so a click never falls through to what's underneath.
+let clicked = false;
+function consumeClick() {
+  if (!clicked) return false;
+  clicked = false;
+  return true;
+}
+
+// ---- Death ----
+// What killed you, so the card can say so.
+const DEATH_WATER = 0, DEATH_ENEMY = 1, DEATH_SPENT = 2;
+const DEATH_COPY = [
+  ['You drowned', 'Your life ran out', 'in the poison water.'],
+  ['You were struck down', 'The red block took', 'the last of your life.'],
+  ['You came apart', 'Every piece of you landed', 'somewhere else.'],
+];
+const MAX_HP = 100;
+const DROWN_RATE = 0.4;                // hp per frame in the water; it never regenerates
+let hp = MAX_HP;
+let dead = false;                      // paused behind the death overlay
+let deathBy = DEATH_WATER;
+let deathT = 0;                        // seconds the overlay has been up
+
+// Dying undoes the run's progress: the coins go back where they were and the
+// tally to zero, the button is unpressed, and the lift parks at the top again.
+// The 311 platform's state is kept.
+function showDeath(cause) {
+  if (dead) return;
+  dead = true;
+  deathBy = cause;
+  deathT = 0;
+  keyLeft = false;
+  keyRight = false;
+  keyJump = false;
+  spawnCoins();
+  coinsTaken = 0;
+  spawnButtons();
+  resetYellow();
+}
+
+// Retry puts the player back, whole. (Java never refilled the bar on retry,
+// so a second water touch was instant death; here a new life is a full bar.)
+function retry() {
+  dead = false;
+  hp = MAX_HP;
+  resetWhitesquare();
+  resetHarry();                        // otherwise a water death leaves Harry standing in the hazard
+}
+
+// ---- Sliding green platform (cells 1049-1050, travelling to 1060) ----
+const PLAT_W = 2 * CELL, PLAT_H = CELL, PLAT_Y = 26 * CELL;
+const PLAT_MIN_X = 8 * CELL, PLAT_MAX_X = 18 * CELL, PLAT_SPEED = 1.2;
+let platX = PLAT_MIN_X, platDir = 1, platDx = 0;
+
+function drawPlatform() {
+  drawBlock(MOVING, platX, PLAT_Y);
+  drawBlock(MOVING, platX + CELL, PLAT_Y);
+}
+
+// ---- Yellow lift, started by the button ----
+const YELLOW_TOP = 11 * CELL, YELLOW_BOTTOM = 22 * CELL, YELLOW_SPEED = 1.2;
+let yellowY = YELLOW_TOP, yellowDir = 1;
+let yellowActive = false;
+let yellowDy = 0;                     // how far the lift moved this frame, for its riders
+
+// Moves the lift and reports how far it travelled, so a rider standing on it
+// can be carried along instead of left behind.
+function moveYellow() {
+  if (!yellowActive) return 0;
+  const prev = yellowY;
+  yellowY += yellowDir * YELLOW_SPEED;
+  if (yellowY >= YELLOW_BOTTOM) { yellowY = YELLOW_BOTTOM; yellowDir = -1; }
+  if (yellowY <= YELLOW_TOP) { yellowY = YELLOW_TOP; yellowDir = 1; }
+  for (const b of blocks) if (b.kind === YELLOW) b.y = yellowY;   // collision reads this
+  return yellowY - prev;
+}
+
+function resetYellow() {
+  yellowActive = false;
+  yellowY = YELLOW_TOP;
+  yellowDir = 1;
+  for (const b of blocks) if (b.kind === YELLOW) b.y = YELLOW_TOP;
+}
+
+// ---- The button: two 5px blocks on fine cells 14070-14071 ----
+const BUTTON_CELLS = [14070, 14071];
+const BUTTON_HIT_PAD = 4;              // the blocks are tiny, so a click a few px off still counts
+const buttons = BUTTON_CELLS.map(() => ({ x: 0, y: 0, alive: false }));
+const buttonSprite = makePieceSprite(FINE, 0xd99b00, 0xffd94d, 0xfff6c2);
+
+function spawnButtons() {
+  for (let i = 0; i < BUTTON_CELLS.length; i++) {
+    buttons[i].x = fineX(BUTTON_CELLS[i]);
+    buttons[i].y = fineY(BUTTON_CELLS[i]);
+    buttons[i].alive = true;
+  }
+}
+
+// Touching one: both blocks go and the lift starts.
+function clearButtons() {
+  if (!buttons.some((b) => b.alive)) return;
+  for (const b of buttons) b.alive = false;
+  yellowActive = true;
+  audio.play(SFX_TYPE);
+}
+
+function checkButtons() {
+  for (const b of buttons) {
+    if (b.alive && overlapsRect(b.x, b.y, FINE, FINE)) {
+      clearButtons();
+      return;
+    }
+  }
+}
+
+// Clicking one works too.
+function clickButtons() {
+  for (const b of buttons) {
+    if (!b.alive) continue;
+    const bx = b.x - BUTTON_HIT_PAD, by = b.y - BUTTON_HIT_PAD, bs = FINE + 2 * BUTTON_HIT_PAD;
+    if (mouseX >= bx && mouseX < bx + bs && mouseY >= by && mouseY < by + bs && consumeClick()) {
+      clearButtons();
+      return;
+    }
+  }
+}
+
+function drawButtons() {
+  const p = pulse();
+  for (const b of buttons) {
+    if (!b.alive) continue;
+    drawGlow(glowButton, b.x, b.y, FINE, FINE, 1, p);
+    drawPiece(buttonSprite, b.x, b.y);
+  }
+}
+
+// ---- The platform that appears on cell 469 ----
+// Cross column 28 anywhere between cells 28 and 268 left-to-right and it
+// appears; fall through row 13 a row below where it sits, and it goes away.
+const MAGIC_ON = { x: 27 * CELL, y: 0, w: CELL, h: 7 * CELL };
+const MAGIC_OFF = { x: 25 * CELL, y: 12 * CELL, w: 15 * CELL, h: CELL };
+const MAGIC_FADE = 0.18;               // seconds, the CSS transition
+let magicAnim = 0;                     // 0 gone, 1 fully there
+
+function setMagicPlatform(on) {
+  for (const b of blocks) if (b.kind === MAGIC) b.off = !on;
+}
+
+function magicOn() {
+  for (const b of blocks) if (b.kind === MAGIC) return !b.off;
+  return false;
+}
+
+// Crossing the trigger column is a two-way switch: left-to-right brings the
+// platform in, right-to-left takes it away. Standing still changes nothing.
+function checkMagicTriggers() {
+  if (overlapsRect(MAGIC_ON.x, MAGIC_ON.y, MAGIC_ON.w, MAGIC_ON.h)) {
+    const dx = px - prevPx;
+    if (dx > 0) setMagicPlatform(true);
+    else if (dx < 0) setMagicPlatform(false);
+  }
+  // only on the way down: walking along row 9 shouldn't clear it
+  if (vy > 0 && overlapsRect(MAGIC_OFF.x, MAGIC_OFF.y, MAGIC_OFF.w, MAGIC_OFF.h)) setMagicPlatform(false);
+
+  const target = magicOn() ? 1 : 0;
+  const step = STEP / MAGIC_FADE;
+  magicAnim += clamp(target - magicAnim, -step, step);
+}
+
+// ---- Poison water (cells 1167-1181) ----
+const WATER_GRAVITY = 0.12, WATER_DRAG = 0.85, BUOYANCY = 0.08;
+const SWIM_UP = 0.85, WATER_JUMP = -9;
+
+// The body: a vertical gradient, and a 1px border drawn over the waves.
+const waterBodySprite = makeLayer(WATER_W, WATER_H);
+const waterBorderSprite = makeLayer(WATER_W + 1, WATER_H + 1);
+(function bakeWaterFrame() {
+  const g = waterBodySprite.getContext('2d');
+  const gradient = g.createLinearGradient(0, 0, 0, WATER_H);
+  gradient.addColorStop(0, 'rgba(120,235,165,' + 140 / 255 + ')');
+  gradient.addColorStop(1, 'rgba(55,190,120,' + 199 / 255 + ')');
+  g.fillStyle = gradient;
+  g.fillRect(0, 0, WATER_W, WATER_H);
+  const b = waterBorderSprite.getContext('2d');
+  b.fillStyle = 'rgba(120,255,150,' + 60 / 255 + ')';
+  b.fillRect(0, 0, WATER_W + 1, 1);
+  b.fillRect(0, 0, 1, WATER_H + 1);
+  b.fillRect(WATER_W, 0, 1, WATER_H + 1);
+  b.fillRect(0, WATER_H, WATER_W + 1, 1);
+})();
+
+// The CSS floated two repeating crests over the body at different speeds, one
+// drifting right and one left. Each is a plain sine, so it is baked once as a
+// strip one period wider than the water; per frame the strip is slid along by
+// whole pixels instead of redrawing 300 columns.
+function makeWave(period, band, amp, color) {
+  const strip = makeLayer(WATER_W + period, band);
+  const g = strip.getContext('2d');
+  g.fillStyle = color;
+  for (let x = 0; x < strip.width; x++) {
+    const y = Math.round(band / 2 - amp * Math.sin(2 * Math.PI * x / period));
+    g.fillRect(x, y, 1, band - y);
+  }
+  return { strip, period, band };
+}
+const waveNear = makeWave(64, 14, 3.5, 'rgba(214,255,228,' + 166 / 255 + ')');
+const waveFar = makeWave(96, 12, 3, 'rgba(52,196,122,' + 128 / 255 + ')');
+
+// Draws `wave` drifting at `phase` periods (the scroll is phase * period px).
+function drawWave(wave, phase) {
+  const shift = Math.floor(((phase * wave.period) % wave.period + wave.period) % wave.period);
+  ctx.drawImage(wave.strip, shift, 0, WATER_W, wave.band, WATER_X, WATER_Y, WATER_W, wave.band);
+}
+
+function drawWater() {
+  ctx.drawImage(waterBodySprite, WATER_X, WATER_Y);
+  drawWave(waveNear, -time / 2.6);
+  drawWave(waveFar, time / 4.4);
+  ctx.drawImage(waterBorderSprite, WATER_X, WATER_Y);
+}
+
+// ---- Coins ----
+const COIN_CELLS = [265, 714, 359, 522];   // 359/522 sit on the 399/562 ledges
+const COIN_SIZE = 14;                  // a little smaller than its cell
+const COIN_POP = 0.32;                 // seconds of the pickup animation
+const coins = COIN_CELLS.map(() => ({ x: 0, y: 0, alive: false }));
+const coinPops = [0, 1, 2, 3].map(() => ({ x: 0, y: 0, t: 0, active: false }));
+let coinsTaken = 0;
+
+function spawnCoins() {
+  for (let i = 0; i < COIN_CELLS.length; i++) {
+    coins[i].x = cellX(COIN_CELLS[i]) + (CELL - COIN_SIZE) / 2;
+    coins[i].y = cellY(COIN_CELLS[i]) + (CELL - COIN_SIZE) / 2;
+    coins[i].alive = true;
+  }
+  for (const pop of coinPops) pop.active = false;
+}
+
+// Remove the coin, add it to the tally, and start a pop where it sat.
+function takeCoin(coin) {
+  coin.alive = false;
+  coinsTaken++;
+  audio.play(SFX_COIN);
+  if (coinsTaken === COIN_CELLS.length) unlockLevels();   // every coin in one run (dying resets the tally)
+  for (const pop of coinPops) {
+    if (!pop.active) {
+      pop.x = coin.x;
+      pop.y = coin.y;
+      pop.t = 0;
+      pop.active = true;
+      break;
+    }
+  }
+}
+
+function checkCoins() {
+  for (const coin of coins) {
+    if (coin.alive && overlapsRect(coin.x, coin.y, COIN_SIZE, COIN_SIZE)) takeCoin(coin);
+  }
+  for (const pop of coinPops) {
+    if (!pop.active) continue;
+    pop.t += STEP;
+    if (pop.t >= COIN_POP) pop.active = false;
+  }
+}
+
+function fillEllipse(cx, cy, rx, ry, color) {
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, Math.max(rx, 0), Math.max(ry, 0), 0, 0, 2 * Math.PI);
+  ctx.fill();
+}
+
+function drawCoinFace(cx, cy, rx, ry, alpha) {
+  if (alpha <= 0.01) return;
+  ctx.globalAlpha = alpha;
+  fillEllipse(cx, cy, Math.max(rx, 0.5), ry, '#d99b00');
+  fillEllipse(cx, cy, Math.max(rx - 1, 0.4), ry - 1, '#ffd94d');
+  fillEllipse(cx - rx * 0.3, cy - ry * 0.35, Math.max(rx * 0.35, 0.4), ry * 0.3, '#fff6c2');
+  ctx.globalAlpha = 1;
+}
+
+// The CSS spun a flat disc with rotateY, so it squashes edge-on twice a turn:
+// the horizontal radius is a cosine.
+function drawCoins() {
+  const spin = Math.cos(2 * Math.PI * time / 1.2);
+  for (const coin of coins) {
+    if (!coin.alive) continue;
+    drawCoinFace(coin.x + COIN_SIZE / 2, coin.y + COIN_SIZE / 2, COIN_SIZE / 2 * Math.abs(spin), COIN_SIZE / 2, 1);
+  }
+  // pickups: scale to 1.8 and rise 14px as they fade out
+  for (const pop of coinPops) {
+    if (!pop.active) continue;
+    const k = pop.t / COIN_POP;
+    const rx = COIN_SIZE / 2 * (1 + 0.8 * k);
+    drawCoinFace(pop.x + COIN_SIZE / 2, pop.y + COIN_SIZE / 2 - 14 * k, rx, rx, 1 - k);
+  }
+}
+
+// ---- Lifebar (cells 48-55) and coin tally ----
+const LIFEBAR = { x: 7 * CELL, y: 1 * CELL, w: 8 * CELL, h: CELL };
+const LIFEBAR_INNER_W = LIFEBAR.w - 4;
+const lifebarFill = makeLayer(LIFEBAR_INNER_W, LIFEBAR.h - 4);   // gradient baked once, stretched to the hp
+(function bakeLifebarFill() {
+  const g = lifebarFill.getContext('2d');
+  const gradient = g.createLinearGradient(0, 0, LIFEBAR_INNER_W, 0);
+  gradient.addColorStop(0, hex(0xd61f1f));
+  gradient.addColorStop(1, hex(0xff6b6b));
+  g.fillStyle = gradient;
+  g.fillRect(0, 0, lifebarFill.width, lifebarFill.height);
+})();
+
+// Bakes the parts of the HUD that never change (the bar's frame and the coin
+// icon) into `g`, the level's static layer.
+function bakeHud(g) {
+  g.fillStyle = 'rgba(0,0,0,' + 89 / 255 + ')';
+  g.strokeStyle = 'rgba(255,255,255,' + 64 / 255 + ')';
+  g.lineWidth = 1;
+  g.beginPath();
+  g.roundRect(LIFEBAR.x, LIFEBAR.y, LIFEBAR.w, LIFEBAR.h, 4);
+  g.fill();
+  g.stroke();
+
+  const iconX = LIFEBAR.x + LIFEBAR.w + 8, iconY = LIFEBAR.y + CELL / 2;
+  const disc = (cx, cy, r, color) => {
+    g.fillStyle = color;
+    g.beginPath();
+    g.ellipse(cx, cy, r, r, 0, 0, 2 * Math.PI);
+    g.fill();
+  };
+  disc(iconX + 6, iconY, 6, '#a87400');
+  disc(iconX + 6, iconY, 5, '#ffd94d');
+  disc(iconX + 4, iconY - 2, 2, '#fff6c2');
+}
+
+function drawLifebar() {
+  const innerW = LIFEBAR_INNER_W * Math.max(hp, 0) / MAX_HP;
+  if (innerW > 1) ctx.drawImage(lifebarFill, LIFEBAR.x + 2, LIFEBAR.y + 2, innerW, lifebarFill.height);
+}
+
+function drawCoinCounter() {
+  ctx.font = 'bold 14px ' + FONT_FAMILY;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = hex(0xffe27a);
+  ctx.fillText('x ' + coinsTaken, LIFEBAR.x + LIFEBAR.w + 8 + 17, LIFEBAR.y + CELL / 2 + 5);
+}
+
+// ---- Shoot-to-toggle block movers ----
+// A bullet from Harry that lands on a block runs this (step 7 fires them).
+// The yellow lift toggles its own run state; any other block with a `mover`
+// pattern starts or stops it.
+function blockShot(b) {
+  if (b.kind === YELLOW) {
+    yellowActive = !yellowActive;
+    audio.play(SFX_TYPE);
+    return;
+  }
+  if (b.mover === MOVER_NONE) return;
+  // Stopping leaves the block frozen where it is rather than snapping home;
+  // moveT is kept, so a later shot resumes from the same point in its loop.
+  b.moving = !b.moving;
+  audio.play(SFX_TYPE);
+}
+
+function updateMovers() {
+  for (const b of blocks) {
+    if (b.mover === MOVER_NONE || !b.moving) continue;
+    b.moveT += STEP;
+    if (b.mover === MOVER_UP_DOWN_1) {
+      // one cell up from home and back, a smooth 2s loop
+      b.x = b.homeX;
+      b.y = b.homeY - (CELL / 2) * (1 - Math.cos(Math.PI * b.moveT));
+    } else if (b.mover === MOVER_DOWN_UP_8) {
+      // eight cells down from home and back (cell 305 -> 625), a smooth 4s loop
+      b.x = b.homeX;
+      b.y = b.homeY + 4 * CELL * (1 - Math.cos(Math.PI * b.moveT / 2));
+    }
+  }
+}
+
+function resetMovers() {
+  for (const b of blocks) {
+    if (b.mover === MOVER_NONE) continue;
+    b.moving = false;
+    b.moveT = 0;
+    b.x = b.homeX;
+    b.y = b.homeY;
+  }
+}
+
+// ---- The hopping enemy (fine cell 12012) ----
+// A red twin of the player: the same 5px block the red grid is drawn in, sat
+// on the row-19 shelf. It runs the player's own physics — same gravity, a
+// shorter jump — and hops from one end of its shelf to the other.
+const ENEMY_CELL = 12012;
+const ENEMY_SIZE = FINE;               // 5, one red-grid cell
+const ENEMY_SPEED = 1.1;               // px per frame
+const ENEMY_JUMP = -6.5;               // about half the player's hop
+const ENEMY_HIT = MAX_HP / 2;          // half the bar, so two touches are fatal
+const ENEMY_GRACE = 1;                 // seconds before it can hit again
+let enemyX = 0, enemyY = 0, enemyVy = 0, enemyDir = 1;
+let enemyMinX = 0, enemyMaxX = 0;      // the ends of the shelf it patrols
+let hitCooldown = 0;                   // seconds of grace after a touch
+
+// Ground below and nothing above: the shelf runs into the left wall, whose
+// blocks are on the same row, and walking on those would put the enemy inside
+// the column standing on top of them.
+function enemyWalkable(x, rowY) {
+  return blockAt(x, rowY) && !blockAt(x, rowY - CELL);
+}
+
+// Placed when the level opens. The patrol ends are read off the level rather
+// than written down: it walks out from the cell it was dropped on for as long
+// as there's a block under the next one along.
+function spawnEnemy() {
+  enemyX = fineX(ENEMY_CELL);
+  enemyY = fineY(ENEMY_CELL);
+  enemyVy = 0;
+  enemyDir = 1;
+  hitCooldown = 0;
+
+  const rowY = Math.floor((enemyY + ENEMY_SIZE) / CELL) * CELL;   // the ground it stands on
+  const here = Math.floor(enemyX / CELL) * CELL;
+  let left = here;
+  while (enemyWalkable(left - CELL, rowY)) left -= CELL;
+  let right = here;
+  while (enemyWalkable(right + CELL, rowY)) right += CELL;
+  enemyMinX = left;
+  enemyMaxX = right + CELL - ENEMY_SIZE;
+}
+
+function updateEnemy() {
+  enemyVy += GRAVITY;
+  // The same anti-tunnelling bound as the player, fixed since it never resizes.
+  const maxStep = CELL + ENEMY_SIZE - 1;
+  enemyVy = clamp(enemyVy, -maxStep, maxStep);
+
+  enemyX += enemyDir * ENEMY_SPEED;
+  if (enemyX <= enemyMinX) { enemyX = enemyMinX; enemyDir = 1; }
+  if (enemyX >= enemyMaxX) { enemyX = enemyMaxX; enemyDir = -1; }
+
+  const prevY = enemyY;
+  enemyY += enemyVy;
+
+  let onGroundNow = false;
+  for (const b of blocks) {
+    if (b.off) continue;
+    if (enemyX >= b.x + b.size || enemyX + ENEMY_SIZE <= b.x) continue;
+    if (enemyY >= b.y + b.size || enemyY + ENEMY_SIZE <= b.y) continue;
+    // Same came-from rule the player uses, for the same reason.
+    if (prevY + ENEMY_SIZE <= b.y) {
+      enemyY = b.y - ENEMY_SIZE;
+      enemyVy = 0;
+      onGroundNow = true;
+    } else if (prevY >= b.y + b.size) {
+      enemyY = b.y + b.size;
+      if (enemyVy < 0) enemyVy = 0;
+    }
+  }
+  if (onGroundNow) enemyVy = ENEMY_JUMP;   // straight back up: it never rests
+}
+
+// Touching it costs half the bar. The grace period is what makes that one hit
+// rather than one per frame.
+function checkEnemy() {
+  if (hitCooldown > 0) {
+    hitCooldown -= STEP;
+    return;
+  }
+  if (!overlapsRect(enemyX, enemyY, ENEMY_SIZE, ENEMY_SIZE)) return;
+  audio.play(SFX_PUNCH);
+  hp -= ENEMY_HIT;
+  hitCooldown = ENEMY_GRACE;
+  if (hp <= 0) {
+    hp = 0;
+    showDeath(DEATH_ENEMY);
+  }
+}
+
+// Same shiny treatment as the player and the button, in red.
+function drawEnemy() {
+  drawGlow(glowEnemy, enemyX, enemyY, ENEMY_SIZE, ENEMY_SIZE, 1, pulse());
+  drawPiece(pieceRed, enemyX, enemyY);
+}
+
+// ---- Portal (cell 203): shiny border, nothing inside ----
+// Harry touching it is handled in updateHarry/drawHarry, which spin him down
+// into this cell.
+const PORTAL_CELL = 203;
+const portalSprite = makeLayer(CELL + 4, CELL + 4);      // the framed black square, 2px of margin for the stroke
+(function bakePortal() {
+  const g = portalSprite.getContext('2d');
+  g.fillStyle = '#000';
+  g.strokeStyle = hex(0xeef2ff);
+  g.lineWidth = 2;
+  g.beginPath();
+  g.roundRect(2, 2, CELL, CELL, 3);
+  g.fill();
+  g.stroke();
+})();
+
+function drawPortal() {
+  const x = cellX(PORTAL_CELL), y = cellY(PORTAL_CELL);
+  drawGlow(glowPortal, x, y, CELL, CELL, 3, pulse());
+  ctx.drawImage(portalSprite, x - 2, y - 2);
+}
+
+// ---- Second player: Harry, a Pitfall-style character ----
+// A red-grid twin of the player, stood on his own ledge (cells 209..219).
+// Built from 5px red-grid squares. Click him (or press Tab) and the keys drive
+// him while the white square holds still; click the square (or Tab again) to
+// hand control back. While he's selected a click fires a bullet at the pointer.
+const HARRY_SPAWN_CELL = 213;
+const HARRY_STAND_W = 4 * FINE;        // 20, four red-grid squares across
+const HARRY_STAND_H = 9 * FINE;        // 45
+const HARRY_CROUCH_H = 6 * FINE;       // 30
+const HARRY_PRONE_W = 6 * FINE;        // 30
+const HARRY_PRONE_H = 3 * FINE;        // 15
+const HARRY_SPEED = 2.6;               // px per frame
+const HARRY_PRONE_SPEED = 1.2;
+const HARRY_JUMP = -11;
+const HARRY_WARP_DUR = 0.95;           // seconds drawn down into the cell-203 portal
+const HARRY_WARP_GAP = 0.45;           // ...then this long fully gone before respawning
+const HARRY_WARP_SPINS = 2.5;          // turns around the portal centre on the way in
+const HARRY_BULLET_MAX = 12;
+const HARRY_BULLET_SIZE = FINE;
+const HARRY_BULLET_SPEED = 6;          // px per frame
+const HARRY_ARM_SEGS = 3;              // red-grid squares in the aiming arm
+const HARRY_ARM_LEN = HARRY_ARM_SEGS * FINE;
+
+const ANIM_IDLE = 0, ANIM_RUN = 1, ANIM_JUMP = 2, ANIM_CROUCH = 3, ANIM_PRONE = 4, ANIM_PRONE_MOVE = 5;
+const ANIM_NAMES = ['idle', 'running', 'jumping', 'crouch', 'prone', 'prone move'];
+
+const harry = {
+  x: 0, y: 0, w: HARRY_STAND_W, h: HARRY_STAND_H, vy: 0, faceDir: 1,
+  onGround: false, onPlatform: false, onYellow: false, prevJump: false,
+  selected: false, anim: ANIM_IDLE, animT: 0, crouchT: 0,
+  warping: false, warpT: 0, hitCooldown: 0,
+  bullets: Array.from({ length: HARRY_BULLET_MAX }, () => ({ x: 0, y: 0, vx: 0, vy: 0, alive: false })),
+};
+
+function resetHarry() {
+  if (screen === SCREEN_LEVEL3 || screen === SCREEN_LEVEL4) {
+    // level 3: the middle of the empty room; level 4: the bottom-left corner, by the first ledge.
+    harry.x = (screen === SCREEN_LEVEL3 ? COLS / 2 : 2) * CELL;
+    harry.y = (ROWS - 1) * CELL - HARRY_STAND_H;          // feet on the bottom border
+  } else {
+    harry.x = cellX(HARRY_SPAWN_CELL);
+    harry.y = cellY(HARRY_SPAWN_CELL) - HARRY_STAND_H;    // feet on top of his ledge
+  }
+  harry.w = HARRY_STAND_W;
+  harry.h = HARRY_STAND_H;
+  harry.vy = 0;
+  harry.faceDir = 1;
+  harry.onGround = false;
+  harry.onPlatform = false;
+  harry.onYellow = false;
+  harry.prevJump = false;
+  harry.anim = ANIM_IDLE;
+  harry.animT = 0;
+  harry.crouchT = 0;
+  harry.warping = false;
+  harry.warpT = 0;
+  harry.hitCooldown = 0;
+  harry.selected = true;               // a level opens with Harry driving, not the white square
+  for (const bullet of harry.bullets) bullet.alive = false;
+}
+
+// The box each pose fills: crouch is shorter, prone shorter still and wider.
+let poseW = HARRY_STAND_W, poseH = HARRY_STAND_H;
+function measurePose(anim) {
+  if (anim === ANIM_PRONE || anim === ANIM_PRONE_MOVE) { poseW = HARRY_PRONE_W; poseH = HARRY_PRONE_H; }
+  else if (anim === ANIM_CROUCH) { poseW = HARRY_STAND_W; poseH = HARRY_CROUCH_H; }
+  else { poseW = HARRY_STAND_W; poseH = HARRY_STAND_H; }
+}
+
+// The mouse: click the white square to hand control back; otherwise, while
+// Harry is selected, a click fires a bullet toward that point; and a click on
+// Harry (when he isn't selected) picks him. Tab toggles. Nothing here eats a
+// click it didn't act on, so the level's own buttons still work.
+function harryHandleSelect() {
+  // A click on the Back button is UI chrome, not a shot at the world.
+  if (hovered(BACK_RECT.x, BACK_RECT.y, BACK_RECT.w, BACK_RECT.h)) return;
+
+  if (screen === SCREEN_LEVEL3 || screen === SCREEN_LEVEL4) {
+    // Harry is the only character here: always driving, click to fire.
+    harry.selected = true;
+    if (clicked && !harry.warping) {
+      harryFire(mouseX, mouseY);
+      clicked = false;
+    }
+    return;
+  }
+  if (screen !== SCREEN_LEVEL1 || dead) return;
+
+  if (pressed.tab) harry.selected = !harry.selected;
+  if (!clicked) return;
+
+  const overPlayer = mouseX >= px && mouseX < px + psize && mouseY >= py && mouseY < py + psize;
+  const overHarry = mouseX >= harry.x && mouseX < harry.x + harry.w && mouseY >= harry.y && mouseY < harry.y + harry.h;
+  if (overPlayer) {
+    harry.selected = false;
+    clicked = false;
+  } else if (harry.selected && !harry.warping) {
+    harryFire(mouseX, mouseY);
+    clicked = false;
+  } else if (overHarry) {
+    harry.selected = true;
+    clicked = false;
+  }
+}
+
+// The leading shoulder (the aiming arm's root) into shoulderX/Y, and the unit
+// vector from it toward a target into aimX/Y — falling back to the facing
+// direction if the target is right on top of it.
+let shoulderX = 0, shoulderY = 0, aimX = 1, aimY = 0;
+function aimHarryAt(targetX, targetY) {
+  shoulderX = harry.x + harry.w / 2 + harry.faceDir * (harry.w / 2 - FINE / 2);
+  shoulderY = harry.y + harry.h * 0.28;
+  const dx = targetX - shoulderX, dy = targetY - shoulderY;
+  const d = Math.sqrt(dx * dx + dy * dy);
+  if (d < 0.001) { aimX = harry.faceDir; aimY = 0; }
+  else { aimX = dx / d; aimY = dy / d; }
+}
+
+// Fire one bullet from the tip of the aiming arm, straight at the clicked point.
+function harryFire(targetX, targetY) {
+  aimHarryAt(targetX, targetY);
+  if (Math.abs(aimX) > 0.15) harry.faceDir = aimX > 0 ? 1 : -1;
+  aimHarryAt(targetX, targetY);        // the shoulder moves with the facing
+  const muzzleX = shoulderX + aimX * HARRY_ARM_LEN - HARRY_BULLET_SIZE / 2;
+  const muzzleY = shoulderY + aimY * HARRY_ARM_LEN - HARRY_BULLET_SIZE / 2;
+  for (const bullet of harry.bullets) {
+    if (bullet.alive) continue;
+    bullet.x = muzzleX;
+    bullet.y = muzzleY;
+    bullet.vx = aimX * HARRY_BULLET_SPEED;
+    bullet.vy = aimY * HARRY_BULLET_SPEED;
+    bullet.alive = true;
+    audio.play(SFX_SHOT);
+    return;
+  }
+}
+
+// Bullets fly straight and die on the first solid they touch — any level
+// block, the sliding platform, or the edge of the world.
+function updateHarryBullets() {
+  for (const bullet of harry.bullets) {
+    if (!bullet.alive) continue;
+    bullet.x += bullet.vx;
+    bullet.y += bullet.vy;
+    if (bullet.x + HARRY_BULLET_SIZE < 0 || bullet.x > WORLD_W || bullet.y + HARRY_BULLET_SIZE < 0 || bullet.y > WORLD_H) {
+      bullet.alive = false;
+      continue;
+    }
+    let hit = false;
+    const l1 = screen === SCREEN_LEVEL1;
+    for (const b of harrySolids()) {
+      if (b.off) continue;
+      if (bullet.x < b.x + b.size && bullet.x + HARRY_BULLET_SIZE > b.x
+          && bullet.y < b.y + b.size && bullet.y + HARRY_BULLET_SIZE > b.y) {
+        hit = true;
+        if (l1) {
+          blockShot(b);                // a shot block starts or stops moving
+        } else if (b.mover === MOVER_SHIFT) {
+          level3ShiftOn = !level3ShiftOn;   // both SHIFT blocks move together
+          audio.play(SFX_TYPE);
+        }
+        break;
+      }
+    }
+    if (!hit && l1 && bullet.x < platX + PLAT_W && bullet.x + HARRY_BULLET_SIZE > platX
+        && bullet.y < PLAT_Y + PLAT_H && bullet.y + HARRY_BULLET_SIZE > PLAT_Y) {
+      hit = true;
+    }
+    if (hit) bullet.alive = false;
+  }
+}
+
+// The blocks Harry stands on and shoots, by screen.
+function harrySolids() {
+  if (screen === SCREEN_LEVEL1) return blocks;
+  return screen === SCREEN_LEVEL4 ? level4Blocks : level3Blocks;
+}
+
+// Is a Harry-sized box at (x, y) inside something solid?
+function harryBoxBlocked(x, y, w, h) {
+  for (const b of harrySolids()) {
+    if (!b.off && x < b.x + b.size && x + w > b.x && y < b.y + b.size && y + h > b.y) return true;
+  }
+  return screen === SCREEN_LEVEL1 && x < platX + PLAT_W && x + w > platX && y < PLAT_Y + PLAT_H && y + h > PLAT_Y;
+}
+
+// Can Harry change to a w x h box, feet and centre kept? Tries the centred box
+// first, then nudged a few px either way (widening beside a wall). The x that
+// fit goes into fitX.
+const FIT_NUDGES = [0, -5, 5, -10, 10];
+let fitX = 0;
+function fitHarryBox(w, h) {
+  const top = harry.y + harry.h - h, centreX = harry.x + harry.w / 2;
+  for (const nudge of FIT_NUDGES) {
+    const x = centreX - w / 2 + nudge;
+    if (x < 0 || x + w > WORLD_W) continue;
+    if (!harryBoxBlocked(x, top, w, h)) {
+      fitX = x;
+      return true;
+    }
+  }
+  return false;
+}
+
+function harryHitsRect(rx, ry, rw, rh) {
+  return harry.x < rx + rw && harry.x + harry.w > rx && harry.y < ry + rh && harry.y + harry.h > ry;
+}
+
+// Same shape of loop the player and the hopping enemy run: per-frame
+// constants, horizontal move then a came-from vertical resolve against the
+// level's blocks.
+function updateHarry() {
+  if (screen === SCREEN_SELECT || screen === SCREEN_LEVEL2 || dead) return;
+  const l1 = screen === SCREEN_LEVEL1;           // levels 3 and 4 have no hazards and no platform
+  const solids = harrySolids();
+  const h = harry;
+
+  // ---- being swallowed by the cell-203 portal ----
+  if (h.warping) {
+    h.warpT += STEP;
+    if (h.warpT >= HARRY_WARP_DUR + HARRY_WARP_GAP) resetHarry();
+    return;
+  }
+
+  // ---- input, only while it's the selected character ----
+  let left = false, right = false, down = false, jumpHeld = false, proneHeld = false;
+  if (h.selected) {
+    left = raw.left;
+    right = raw.right;
+    down = raw.down;
+    jumpHeld = raw.jump;
+    proneHeld = raw.prone;
+  }
+  const moving = left !== right;
+  if (moving) {
+    h.faceDir = right ? 1 : -1;
+  } else if (h.selected) {
+    // standing still: face the pointer, so body and aiming arm agree
+    const mid = h.x + h.w / 2;
+    if (Math.abs(mouseX - mid) > 4) h.faceDir = mouseX > mid ? 1 : -1;
+  }
+
+  // ---- edge-triggered hop ----
+  // He can't hop where he has no room to stand up (a low tunnel).
+  let justJumped = false;
+  if (h.selected && jumpHeld && !h.prevJump && h.onGround && fitHarryBox(HARRY_STAND_W, HARRY_STAND_H)) {
+    h.vy = HARRY_JUMP;
+    h.onGround = false;
+    h.onPlatform = false;
+    h.onYellow = false;
+    justJumped = true;
+    audio.play(SFX_JUMP);
+  }
+  h.prevJump = jumpHeld;
+
+  // ---- pick the animation ----
+  let anim;
+  if (!h.onGround || justJumped) {
+    anim = ANIM_JUMP;
+  } else if (down || proneHeld) {
+    h.crouchT += STEP;
+    if (proneHeld || h.crouchT > 0.40) anim = moving ? ANIM_PRONE_MOVE : ANIM_PRONE;
+    else anim = ANIM_CROUCH;
+  } else {
+    h.crouchT = 0;
+    anim = moving ? ANIM_RUN : ANIM_IDLE;
+  }
+
+  // ---- the pose's box, keeping feet and centre put ----
+  // Getting taller (or wider) needs room: prone -> crouch or stand inside a
+  // thin gap between blocks would embed him in them and leave him stuck. So a
+  // pose that doesn't fit is refused and he stays as small as he is, until he
+  // is somewhere with room. Shrinking always fits.
+  measurePose(anim);
+  let boxX = h.x + h.w / 2 - poseW / 2;
+  if (poseW !== h.w || poseH !== h.h) {
+    if (poseH > h.h || poseW > h.w) {
+      if (fitHarryBox(poseW, poseH)) {
+        boxX = fitX;                               // possibly nudged a few px to clear a wall
+      } else {
+        anim = h.h === HARRY_PRONE_H ? (moving ? ANIM_PRONE_MOVE : ANIM_PRONE) : ANIM_CROUCH;
+        measurePose(anim);
+        boxX = h.x + h.w / 2 - poseW / 2;
+      }
+    }
+  }
+  if (anim !== h.anim) {
+    h.anim = anim;
+    h.animT = 0;
+  } else {
+    h.animT += STEP;
+  }
+  if (poseW !== h.w || poseH !== h.h) {
+    const bottom = h.y + h.h;
+    h.w = poseW;
+    h.h = poseH;
+    h.y = bottom - h.h;
+    h.x = boxX;
+  }
+
+  // ---- horizontal move + collision ----
+  let speed = 0;
+  if (anim === ANIM_RUN || anim === ANIM_JUMP) speed = HARRY_SPEED;
+  else if (anim === ANIM_PRONE_MOVE) speed = HARRY_PRONE_SPEED;
+  if (h.onYellow) h.y += yellowDy;     // the lift carries its rider before anything else moves
+
+  const startX = h.x;
+  if (h.onPlatform) h.x += platDx;     // the sliding platform carries its rider sideways
+  h.x += (right ? speed : 0) - (left ? speed : 0);
+  const moved = h.x - startX;
+  for (const b of solids) {
+    if (b.off || !harryHitsRect(b.x, b.y, b.size, b.size)) continue;
+    if (startX < b.x + b.size && startX + h.w > b.x) continue;
+    if (moved > 0) h.x = b.x - h.w;
+    else if (moved < 0) h.x = b.x + b.size;
+  }
+  // the sliding platform blocks from the sides too
+  if (l1 && harryHitsRect(platX, PLAT_Y, PLAT_W, PLAT_H)) {
+    const nearLeft = (h.x + h.w) - platX <= (platX + PLAT_W) - h.x;
+    h.x = nearLeft ? platX - h.w : platX + PLAT_W;
+  }
+  h.x = clamp(h.x, 0, WORLD_W - h.w);
+
+  // ---- vertical move + collision ----
+  h.vy = clamp(h.vy + GRAVITY, -22, 22);
+  const prevY = h.y;
+  h.y += h.vy;
+  h.onGround = false;
+  h.onPlatform = false;
+  h.onYellow = false;
+  for (const b of solids) {
+    if (b.off) continue;
+    if (h.x >= b.x + b.size || h.x + h.w <= b.x) continue;
+    if (h.y >= b.y + b.size || h.y + h.h <= b.y) continue;
+    if (prevY + h.h <= b.y) {
+      h.y = b.y - h.h;
+      h.vy = 0;
+      h.onGround = true;
+      if (b.kind === YELLOW) h.onYellow = true;
+    } else if (prevY >= b.y + b.size) {
+      h.y = b.y + b.size;
+      if (h.vy < 0) h.vy = 0;
+    } else if ((h.y + h.h) - b.y <= (b.y + b.size) - h.y) {
+      // Neither came-from held: a block (a lift, a shot mover) moved into us.
+      // Shove out the nearer face.
+      h.y = b.y - h.h;
+      h.vy = 0;
+      h.onGround = true;
+      if (b.kind === YELLOW) h.onYellow = true;
+    } else {
+      h.y = b.y + b.size;
+      if (h.vy < 0) h.vy = 0;
+    }
+  }
+  if (l1 && harryHitsRect(platX, PLAT_Y, PLAT_W, PLAT_H)) {
+    if (prevY + h.h <= PLAT_Y) {
+      h.y = PLAT_Y - h.h;
+      h.vy = 0;
+      h.onGround = true;
+      h.onPlatform = true;
+    } else if (prevY >= PLAT_Y + PLAT_H) {
+      h.y = PLAT_Y + PLAT_H;
+      if (h.vy < 0) h.vy = 0;
+    }
+  }
+  if (h.y + h.h >= WORLD_H) {
+    h.y = WORLD_H - h.h;
+    h.vy = 0;
+    h.onGround = true;
+  }
+  if (h.y < 0) {
+    h.y = 0;
+    if (h.vy < 0) h.vy = 0;
+  }
+
+  if (!l1) return;                               // nothing else lives in the empty rooms
+
+  // ---- the secret purple platform (cell 469) ----
+  if (harryHitsRect(MAGIC_ON.x, MAGIC_ON.y, MAGIC_ON.w, MAGIC_ON.h)) {
+    if (moved > 0) setMagicPlatform(true);
+    else if (moved < 0) setMagicPlatform(false);
+  }
+  if (h.vy > 0 && harryHitsRect(MAGIC_OFF.x, MAGIC_OFF.y, MAGIC_OFF.w, MAGIC_OFF.h)) setMagicPlatform(false);
+
+  // ---- the cell-203 portal ----
+  if (harryHitsRect(cellX(PORTAL_CELL), cellY(PORTAL_CELL), CELL, CELL)) {
+    h.warping = true;
+    h.warpT = 0;
+    audio.play(SFX_PORTAL);
+  }
+
+  // ---- coins and the shared lifebar ----
+  for (const coin of coins) {
+    if (coin.alive && harryHitsRect(coin.x, coin.y, COIN_SIZE, COIN_SIZE)) takeCoin(coin);
+  }
+  const inWater = h.x + h.w > WATER_X && h.x < WATER_X + WATER_W && h.y + h.h > WATER_Y;
+  if (inWater) {
+    hp -= DROWN_RATE;
+    if (hp <= 0) {
+      hp = 0;
+      showDeath(DEATH_WATER);
+    }
+  }
+  if (h.hitCooldown > 0) {
+    h.hitCooldown -= STEP;
+  } else if (harryHitsRect(enemyX, enemyY, ENEMY_SIZE, ENEMY_SIZE)) {
+    audio.play(SFX_PUNCH);
+    hp -= ENEMY_HIT;
+    h.hitCooldown = ENEMY_GRACE;
+    if (hp <= 0) {
+      hp = 0;
+      showDeath(DEATH_ENEMY);
+    }
+  }
+}
+
+// ---- the poses ----
+// Each pose is a flat list of (column, row, part) triples: one 5px red-grid
+// square each, tagged with the body part it belongs to so it is shaded its own
+// colour. Columns run 0..3 for the upright forms (a swinging arm may poke out
+// to -1 or 4) and 0..5 lying down; facing left mirrors them as pivot - col.
+// Rows are measured from the top of the box.
+const HEAD = 0, CHEST = 1, ARM = 2, LEG = 3, EYE = 4;
+
+// Builds a pose from per-part lists of (col, row) pairs. The eye goes last so
+// it is drawn over the head.
+function makePose(head, chest, arm, leg, eye) {
+  const cells = [];
+  const add = (part, list) => { for (let i = 0; i < list.length; i += 2) cells.push(list[i], list[i + 1], part); };
+  add(HEAD, head); add(CHEST, chest); add(ARM, arm); add(LEG, leg); add(EYE, eye);
+  return cells;
+}
+const UPRIGHT_HEAD = [1, 0, 2, 0, 1, 1, 2, 1];
+const LEANING_HEAD = [2, 0, 3, 0, 2, 1, 3, 1];
+const RUN_CHEST = [1, 2, 2, 2, 1, 3, 2, 3, 2, 4];
+const POSE_IDLE_0 = makePose(UPRIGHT_HEAD, [1, 2, 2, 2, 1, 3, 2, 3, 1, 4, 2, 4], [0, 2, 3, 2, 0, 3, 3, 3],
+  [1, 5, 2, 5, 1, 6, 2, 6, 1, 7, 2, 7, 0, 8, 1, 8, 2, 8, 3, 8], [2, 1]);
+const POSE_IDLE_1 = makePose(UPRIGHT_HEAD, [1, 2, 2, 2, 1, 3, 2, 3, 1, 4, 2, 4], [0, 3, 3, 3, 0, 4, 3, 4],   // arms a row lower: the breathing frame
+  [1, 5, 2, 5, 1, 6, 2, 6, 1, 7, 2, 7, 0, 8, 1, 8, 2, 8, 3, 8], [2, 1]);
+const POSE_RUN_A = makePose(LEANING_HEAD, RUN_CHEST, [3, 2, 4, 3, 0, 2, 0, 3],   // right leg and arm forward
+  [2, 5, 3, 6, 3, 7, 3, 8, 1, 5, 1, 6, 0, 7, 0, 8], [3, 1]);
+const POSE_RUN_B = makePose(LEANING_HEAD, RUN_CHEST, [0, 3, 3, 3],               // mid-stride, legs gathered
+  [1, 5, 2, 5, 1, 6, 2, 6, 1, 7, 2, 7, 1, 8, 2, 8], [3, 1]);
+const POSE_RUN_C = makePose(LEANING_HEAD, RUN_CHEST, [0, 2, -1, 3, 3, 2, 3, 3],  // left leg and arm forward
+  [1, 5, 0, 6, 0, 7, 0, 8, 2, 5, 3, 6, 3, 7, 3, 8], [3, 1]);
+const POSE_JUMP = makePose([1, 2, 2, 2, 1, 3, 2, 3], [1, 4, 2, 4, 1, 5, 2, 5], [0, 0, 3, 0, 1, 1, 2, 1],   // arms up, knees drawn up
+  [0, 6, 1, 6, 2, 6, 3, 6, 0, 7, 3, 7, 0, 8, 3, 8], [2, 3]);
+const POSE_CROUCH = makePose(UPRIGHT_HEAD, [1, 2, 2, 2], [0, 1, 3, 1, 0, 2, 3, 2],          // folded down into six rows
+  [0, 3, 1, 3, 2, 3, 3, 3, 0, 4, 3, 4, 0, 5, 1, 5, 2, 5, 3, 5], [2, 1]);
+const POSE_PRONE_0 = makePose([5, 0, 5, 1], [2, 0, 3, 0, 4, 0, 2, 1, 3, 1, 4, 1], [1, 1],   // flat, head to the right
+  [0, 2, 1, 2, 2, 2, 3, 2, 4, 2], [5, 1]);
+const POSE_PRONE_1 = makePose([5, 1], [2, 0, 3, 0, 4, 0, 5, 0, 2, 1, 3, 1, 4, 1], [0, 1, 1, 1],   // the crawl reach
+  [0, 2, 1, 2, 2, 2, 4, 2, 5, 2], [5, 1]);
+const RUN_CYCLE = [POSE_RUN_A, POSE_RUN_B, POSE_RUN_C, POSE_RUN_B];
+
+// The pose for an animation at time t into the pose list, and its mirror
+// pivot (the last column), into poseCells / posePivot.
+let poseCells = POSE_IDLE_0, posePivot = 3;
+function choosePose(anim, t) {
+  posePivot = 3;
+  if (anim === ANIM_IDLE) poseCells = Math.floor(t * 2) % 2 === 1 ? POSE_IDLE_1 : POSE_IDLE_0;
+  else if (anim === ANIM_RUN) poseCells = RUN_CYCLE[Math.floor(t * 12) % 4];
+  else if (anim === ANIM_JUMP) poseCells = POSE_JUMP;
+  else if (anim === ANIM_CROUCH) poseCells = POSE_CROUCH;
+  else {
+    posePivot = 5;
+    poseCells = anim === ANIM_PRONE_MOVE && Math.floor(t * 8) % 2 === 1 ? POSE_PRONE_1 : POSE_PRONE_0;
+  }
+}
+
+// Each part keeps the level's shiny three-tone look in its own hue: skin head,
+// green shirt, orange sleeves, blue trousers, a white eye with a blue glint.
+const harryPieces = [
+  makePieceSprite(FINE, 0xb5763a, 0xe8a86a, 0xffd9ad),   // HEAD
+  makePieceSprite(FINE, 0x1a9e33, 0x4dff6a, 0xd6ffdf),   // CHEST
+  makePieceSprite(FINE, 0x9e4a1a, 0xffa64d, 0xffe1c2),   // ARM
+  makePieceSprite(FINE, 0x1a3f9e, 0x4d8bff, 0xcfe0ff),   // LEG
+  makePieceSprite(FINE, 0x22303d, 0xffffff, 0x8fd0ff),   // EYE
+];
+const HARRY_FACE_COLORS = [0xe8a86a, 0x4dff6a, 0xffa64d, 0x4d8bff, 0xffffff];
+
+// The portal swallow: every square of the current pose spirals in toward the
+// centre of cell 203, spinning faster and shrinking as it goes, then winks out.
+function drawHarryWarp() {
+  const h = harry;
+  if (h.warpT >= HARRY_WARP_DUR) return;           // gone; waiting on the respawn beat
+  const k = clamp(h.warpT / HARRY_WARP_DUR, 0, 1);
+  const ease = k * k;                              // accelerate into the hole
+  const pull = 1 - ease;                           // the spread of the squares collapses to a point
+  const portX = cellX(PORTAL_CELL) + CELL / 2, portY = cellY(PORTAL_CELL) + CELL / 2;
+  const hcx = h.x + h.w / 2, hcy = h.y + h.h / 2;
+  const angle = ease * HARRY_WARP_SPINS * 2 * Math.PI;
+  const ca = Math.cos(angle), sa = Math.sin(angle);
+  const size = Math.max(FINE * (1 - 0.85 * ease), 1.5);
+  ctx.globalAlpha = clamp(1 - ease * ease, 0, 1);
+  choosePose(h.anim, h.animT);
+  for (let i = 0; i < poseCells.length; i += 3) {
+    const col = h.faceDir > 0 ? poseCells[i] : posePivot - poseCells[i];
+    const ox = h.x + col * FINE + FINE / 2 - hcx;
+    const oy = h.y + poseCells[i + 1] * FINE + FINE / 2 - hcy;
+    const rx = (ox * ca - oy * sa) * pull;
+    const ry = (ox * sa + oy * ca) * pull;
+    const bx = hcx + (portX - hcx) * ease + rx;
+    const by = hcy + (portY - hcy) * ease + ry;
+    ctx.fillStyle = hex(HARRY_FACE_COLORS[poseCells[i + 2]]);
+    ctx.fillRect(bx - size / 2, by - size / 2, size, size);
+  }
+  ctx.globalAlpha = 1;
+}
+
+// One shiny square per grid cell of the pose, coloured by its body part.
+function drawHarry() {
+  const h = harry;
+  if (h.warping) {
+    drawHarryWarp();
+    return;
+  }
+  // Idle breathes: the head, chest and arms lift a pixel on the inhale while
+  // the legs stay planted.
+  const bob = h.anim === ANIM_IDLE && Math.sin(h.animT * 2.2) > 0.3 ? -1 : 0;
+
+  // The arm on the leading side sits at or past the pivot column; while
+  // aiming, that pose-drawn arm is replaced by the swinging arm below, so it
+  // is skipped here to avoid a third arm.
+  choosePose(h.anim, h.animT);
+  for (let i = 0; i < poseCells.length; i += 3) {
+    const part = poseCells[i + 2];
+    if (h.selected && part === ARM && poseCells[i] >= posePivot) continue;
+    const col = h.faceDir > 0 ? poseCells[i] : posePivot - poseCells[i];
+    const y = h.y + poseCells[i + 1] * FINE + (part === LEG ? 0 : bob);   // legs and feet never leave the ground
+    drawPiece(harryPieces[part], h.x + col * FINE, y);
+  }
+
+  if (h.selected) {
+    // The aiming arm: swings to point wherever the pointer is, and is where
+    // bullets leave from.
+    aimHarryAt(mouseX, mouseY);
+    for (let k = 1; k <= HARRY_ARM_SEGS; k++) {
+      drawPiece(harryPieces[ARM], shoulderX + aimX * k * FINE - FINE / 2, shoulderY + aimY * k * FINE - FINE / 2);
+    }
+    ctx.font = 'bold 10px ' + FONT_FAMILY;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = hex(0xffd6d6);
+    ctx.globalAlpha = 0.9;
+    ctx.fillText(ANIM_NAMES[h.anim], h.x + h.w / 2, h.y - 12);
+    ctx.globalAlpha = 1;
+  }
+}
+
+// Each bullet is one shiny square in Harry's sleeve orange, with a short
+// streak back along its path so it reads as speed.
+function drawHarryBullets() {
+  ctx.fillStyle = hex(0xffa64d);
+  for (const bullet of harry.bullets) {
+    if (!bullet.alive) continue;
+    for (let i = 1; i <= 3; i++) {
+      ctx.globalAlpha = 0.28 * (1 - i / 4);
+      ctx.fillRect(Math.round(bullet.x - bullet.vx * i * 0.5), Math.round(bullet.y - bullet.vy * i * 0.5), HARRY_BULLET_SIZE, HARRY_BULLET_SIZE);
+    }
+    ctx.globalAlpha = 1;
+    drawPiece(harryPieces[ARM], bullet.x, bullet.y);
+  }
+}
+
+// Level 1 back to its opening state: the player whole at the spawn, the
+// platform and lift back where they start, the button, coins and tally
+// restored, and the 311 platform earned again.
+function resetLevel1() {
+  dead = false;
+  hp = MAX_HP;
+  resetWhitesquare();
+  resetHarry();
+  platX = PLAT_MIN_X;
+  platDir = 1;
+  spawnButtons();
+  spawnCoins();
+  coinsTaken = 0;
+  spawnEnemy();                        // back at its end of the shelf
+  resetYellow();
+  resetMovers();                       // anything shot into motion is back home and still
+  setMagicPlatform(false);
+  magicAnim = 0;
+}
+bakeLevel1();                          // needs the HUD constants above
+resetLevel1();
+
+// ---- Screens & UI (step 9) ----
+
+const BACK_RECT = { x: 16, y: 12, w: 86, h: 28 };
+
+// Is the pointer inside the box?
+function hovered(x, y, w, h) {
+  return mouseX >= x && mouseX < x + w && mouseY >= y && mouseY < y + h;
+}
+
+// ---- Text and panels ----
+// Text is drawn from its baseline; drawTextTop from its top edge, which lets
+// the modal's layout maths (a top-anchored y walked down line by line) carry over.
+function drawTextCentered(text, cx, baselineY, size, color) {
+  ctx.font = 'bold ' + size + 'px ' + FONT_FAMILY;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = color;
+  ctx.fillText(text, cx, baselineY);
+}
+
+function drawTextTop(text, cx, topY, size, color) {
+  drawTextCentered(text, cx, topY + size * 0.8, size, color);
+}
+
+// A rounded panel with a border, the shape every button in the CSS uses.
+function drawPanel(x, y, w, h, radius, fill, border, thickness) {
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, radius);
+  ctx.fillStyle = fill;
+  ctx.fill();
+  ctx.strokeStyle = border;
+  ctx.lineWidth = thickness;
+  ctx.stroke();
+}
+
+const COLOR_TILE = hex(0x3d3d55), COLOR_TILE_HOT = hex(0x5a5a8c);
+const COLOR_TILE_BORDER = hex(0x55557a), COLOR_TILE_BORDER_HOT = hex(0x8888c8);
+const COLOR_TEXT = hex(0xcfcfe6);
+const COLOR_LOCKED = hex(0x2f2f44), COLOR_LOCKED_BORDER = hex(0x3f3f5c), COLOR_LOCKED_TEXT = hex(0x6d6d8c);
+
+// ---- Level locks ----
+// Only level 1 is open at first. Collecting all four coins in one run of
+// level 1, or pressing U on the level select, opens the rest. Deliberately
+// not saved anywhere: quitting, refreshing or leaving the page and coming back
+// locks everything again.
+let levelsUnlocked = false;
+
+function isLevelOpen(n) {
+  return n === 1 || levelsUnlocked;
+}
+
+function unlockLevels() {
+  if (levelsUnlocked) return;
+  levelsUnlocked = true;
+  showToast('All levels unlocked');
+}
+
+// A short notice at the top centre, fading in and out.
+const TOAST_SECONDS = 3.5;
+const TOAST_FADE = 0.3;
+let toastText = '';
+let toastStart = -Infinity;
+
+function showToast(text) {
+  toastText = text;
+  toastStart = time;
+}
+
+function drawToast() {
+  const age = time - toastStart;
+  if (age < 0 || age > TOAST_SECONDS) return;
+  ctx.globalAlpha = Math.min(1, age / TOAST_FADE, (TOAST_SECONDS - age) / TOAST_FADE);
+  ctx.font = 'bold 14px ' + FONT_FAMILY;
+  const w = ctx.measureText(toastText).width + 36;
+  drawPanel((WORLD_W - w) / 2, 14, w, 30, 8, hex(0x2f8f4e), 'rgba(120,255,160,' + 115 / 255 + ')', 1);
+  drawTextCentered(toastText, WORLD_W / 2, 34, 14, hex(0xeef0ff));
+  ctx.globalAlpha = 1;
+}
+
+// A small padlock: a shackle over a body, centred on cx.
+function drawPadlock(cx, top, color) {
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(cx, top + 6, 5, Math.PI, 2 * Math.PI);
+  ctx.stroke();
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.roundRect(cx - 8, top + 6, 16, 12, 2);
+  ctx.fill();
+}
+
+// ---- Level select (the first screen) ----
+// A 5-wide grid of 90px tiles under a title.
+const LEVEL_COUNT = 10;
+const SELECT_CELL = 90, SELECT_GAP = 14, SELECT_COLS = 5;
+const SELECT_ROWS = Math.ceil(LEVEL_COUNT / SELECT_COLS);
+const TITLE_SIZE = 32;
+const selectGridW = SELECT_COLS * SELECT_CELL + (SELECT_COLS - 1) * SELECT_GAP;
+const selectGridH = SELECT_ROWS * SELECT_CELL + (SELECT_ROWS - 1) * SELECT_GAP;
+const selectX0 = (WORLD_W - selectGridW) / 2;
+const selectY0 = (WORLD_H - (TITLE_SIZE + 30 + selectGridH)) / 2 + TITLE_SIZE + 30;
+const selectTiles = Array.from({ length: LEVEL_COUNT }, (_, i) => ({
+  x: selectX0 + (i % SELECT_COLS) * (SELECT_CELL + SELECT_GAP),
+  y: selectY0 + Math.floor(i / SELECT_COLS) * (SELECT_CELL + SELECT_GAP),
+  w: SELECT_CELL, h: SELECT_CELL,
+}));
+// The way out: there is no title bar to close. In a browser it goes back a page.
+const QUIT_RECT = { x: (WORLD_W - 120) / 2, y: selectTiles[LEVEL_COUNT - 1].y + SELECT_CELL + 28, w: 120, h: 34 };
+
+function quitGame() {
+  if (history.length > 1) history.back();
+}
+
+function drawSelectScreen() {
+  drawTextCentered('SELECT LEVEL', WORLD_W / 2, selectTiles[0].y - 30 - TITLE_SIZE, TITLE_SIZE, hex(0xf0f0f0));
+  for (let n = 1; n <= LEVEL_COUNT; n++) {
+    const r = selectTiles[n - 1];
+    if (!isLevelOpen(n)) {                             // locked: dimmed, padlocked, no hover lift
+      drawPanel(r.x, r.y, r.w, r.h, 8, COLOR_LOCKED, COLOR_LOCKED_BORDER, 2);
+      drawTextCentered(String(n), r.x + r.w / 2, r.y + (r.h - 24) / 2 + 20, 24, COLOR_LOCKED_TEXT);
+      drawPadlock(r.x + r.w / 2, r.y + 58, COLOR_LOCKED_TEXT);
+      continue;
+    }
+    const hot = hovered(r.x, r.y, r.w, r.h);
+    const y = hot ? r.y - 3 : r.y;                     // the CSS lifts the tile on hover
+    drawPanel(r.x, y, r.w, r.h, 8, hot ? COLOR_TILE_HOT : COLOR_TILE, hot ? COLOR_TILE_BORDER_HOT : COLOR_TILE_BORDER, 2);
+    drawTextCentered(String(n), r.x + r.w / 2, y + (r.h - 24) / 2 + 20, 24, hot ? '#fff' : COLOR_TEXT);
+  }
+  if (!levelsUnlocked) {
+    drawTextCentered('Collect all 4 coins in level 1 to unlock the rest', WORLD_W / 2, QUIT_RECT.y + QUIT_RECT.h + 34, 12, COLOR_LOCKED_TEXT);
+    drawTextCentered('(or press U)', WORLD_W / 2, QUIT_RECT.y + QUIT_RECT.h + 52, 12, COLOR_LOCKED_TEXT);
+  }
+  const hotQuit = hovered(QUIT_RECT.x, QUIT_RECT.y, QUIT_RECT.w, QUIT_RECT.h);
+  const quitY = hotQuit ? QUIT_RECT.y - 3 : QUIT_RECT.y;
+  drawPanel(QUIT_RECT.x, quitY, QUIT_RECT.w, QUIT_RECT.h, 8, hotQuit ? hex(0x6b3d4f) : COLOR_TILE,
+    hotQuit ? hex(0xc88a9e) : COLOR_TILE_BORDER, 2);
+  drawTextCentered('Quit', QUIT_RECT.x + QUIT_RECT.w / 2, quitY + QUIT_RECT.h / 2 + 5, 15, hotQuit ? '#fff' : COLOR_TEXT);
+}
+
+function drawBackButton() {
+  const hot = hovered(BACK_RECT.x, BACK_RECT.y, BACK_RECT.w, BACK_RECT.h) && !dead;   // the death card covers it
+  drawPanel(BACK_RECT.x, BACK_RECT.y, BACK_RECT.w, BACK_RECT.h, 6, hot ? COLOR_TILE_HOT : COLOR_TILE, COLOR_TILE_BORDER, 2);
+  drawTextCentered('< Levels', BACK_RECT.x + BACK_RECT.w / 2, BACK_RECT.y + BACK_RECT.h / 2 + 5, 14, hot ? '#fff' : COLOR_TEXT);
+}
+
+// The clicks the level itself didn't take: a tile or Quit on the picker, the
+// Back button on a level. Run last in update() so a click that switches
+// screens can't fall through to what now sits under the pointer.
+function updateScreenButtons() {
+  if (screen === SCREEN_SELECT) {
+    for (let n = 1; n <= LEVEL_COUNT; n++) {
+      const r = selectTiles[n - 1];
+      if (!isLevelOpen(n)) continue;                   // a locked tile takes no clicks
+      if (hovered(r.x, r.y, r.w, r.h) && consumeClick()) {
+        if (n === 2) gotoLevel2();
+        else if (n === 3) gotoLevel3();
+        else if (n === 4) gotoLevel4();
+        else openLevel(n);
+      }
+    }
+    if (hovered(QUIT_RECT.x, QUIT_RECT.y, QUIT_RECT.w, QUIT_RECT.h) && consumeClick()) quitGame();
+  } else if (hovered(BACK_RECT.x, BACK_RECT.y, BACK_RECT.w, BACK_RECT.h) && !dead && consumeClick()) {
+    gotoLevelSelect();
+  }
+}
+
+// Escape backs out of a level to the picker, and out of the picker to the page before.
+function handleEscape() {
+  if (screen === SCREEN_SELECT) quitGame();
+  else gotoLevelSelect();
+}
+
+// ---- Screen switching ----
+function openLevel(level) {
+  currentLevel = level;
+  resetLevel1();
+  screen = SCREEN_LEVEL1;
+}
+
+function gotoLevel2() {
+  currentLevel = 2;
+  dead = false;
+  screen = SCREEN_LEVEL2;
+}
+
+function gotoLevel3() {
+  currentLevel = 3;
+  dead = false;
+  screen = SCREEN_LEVEL3;
+  level3ShiftOn = false;
+  buildLevel3Blocks();
+  resetHarry();                        // after the screen switch: level 3 has its own spawn
+}
+
+function gotoLevel4() {
+  currentLevel = 4;
+  dead = false;
+  screen = SCREEN_LEVEL4;
+  resetHarry();                        // after the screen switch: level 4 has its own spawn
+  resetLight();
+}
+
+function gotoLevelSelect() {
+  dead = false;
+  resetWhitesquare();                  // without this a drowned/spent state is still there on the way out
+  resetHarry();                        // ...or a hazard death leaves Harry standing in it
+  resetMovers();
+  screen = SCREEN_SELECT;
+}
+
+// ---- Death card ----
+// Laid out from the CSS box model: a 340px card with 28px padding, a heading,
+// two lines of copy and a column of two buttons.
+const MODAL_W = 340, MODAL_PAD_Y = 28, MODAL_TITLE = 26, MODAL_BODY = 14;
+const MODAL_BTN_H = 40, MODAL_BTN_GAP = 12;
+const MODAL_H = MODAL_PAD_Y + MODAL_TITLE + 8 + 2 * (MODAL_BODY + 3) + 22 + 2 * MODAL_BTN_H + MODAL_BTN_GAP + MODAL_PAD_Y;
+const MODAL_FADE = 0.25;               // seconds, the dimming overlay
+const MODAL_POP = 0.28;                // seconds, the card's pop-in
+const MODAL_BOX = { x: (WORLD_W - MODAL_W) / 2, y: (WORLD_H - MODAL_H) / 2, w: MODAL_W, h: MODAL_H };
+const MODAL_BTN_Y0 = MODAL_BOX.y + MODAL_PAD_Y + MODAL_TITLE + 8 + 2 * (MODAL_BODY + 3) + 22;
+const modalButtons = [0, 1].map((i) => ({ x: MODAL_BOX.x + 26, y: MODAL_BTN_Y0 + i * (MODAL_BTN_H + MODAL_BTN_GAP), w: MODAL_W - 52, h: MODAL_BTN_H }));
+
+// Colours here are [r, g, b, a(0..255)] so a fade can scale the alpha.
+const MODAL_CARD_TOP = [0x2f, 0x33, 0x50, 255], MODAL_CARD_BOT = [0x1c, 0x1f, 0x33, 255], MODAL_CARD_BORDER = [150, 175, 255, 89];
+const MODAL_RETRY = { top: [0x2f, 0x8f, 0x4e, 255], bot: [0x1f, 0x6d, 0x3a, 255], border: [120, 255, 160, 115] };
+const MODAL_LEVELS = { top: [0x4a, 0x4f, 0x78, 255], bot: [0x36, 0x3a, 0x5c, 255], border: [150, 175, 255, 102] };
+
+function cssColor(c, alphaScale) {
+  return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + (c[3] / 255) * alphaScale + ')';
+}
+
+function lerpColor(a, b, t) {
+  return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t, a[3] + (b[3] - a[3]) * t];
+}
+
+// A glow that never pulses, baked once: { frame, pad }.
+function bakeStaticGlow(w, h, radius, rgb, spread, strength) {
+  const style = makeGlowStyle([{ rgb, spread, spreadRange: 0, alpha: strength, alphaRange: 0 }]);
+  return { frame: bakeGlowFrame(style, w, h, radius, 0), pad: style.pad };
+}
+const modalGlow = bakeStaticGlow(MODAL_W, MODAL_H, 14, [120, 150, 255], 20, 0.20);
+const retryGlow = bakeStaticGlow(modalButtons[0].w, MODAL_BTN_H, 8, MODAL_RETRY.border, 12, 0.35 * MODAL_RETRY.border[3] / 255);
+const levelsGlow = bakeStaticGlow(modalButtons[1].w, MODAL_BTN_H, 8, MODAL_LEVELS.border, 12, 0.35 * MODAL_LEVELS.border[3] / 255);
+
+// A rounded panel with a vertical gradient: the caps are filled with the
+// midpoint colour and the straight band between them carries the blend, which
+// hides the seam at a small radius.
+function drawGradPanel(x, y, w, h, radius, top, bot, border, alpha) {
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, radius);
+  ctx.fillStyle = cssColor(lerpColor(top, bot, 0.5), alpha);
+  ctx.fill();
+  if (h > 2 * radius) {
+    const gradient = ctx.createLinearGradient(0, y + radius, 0, y + h - radius);
+    gradient.addColorStop(0, cssColor(lerpColor(top, bot, radius / h), alpha));
+    gradient.addColorStop(1, cssColor(lerpColor(top, bot, 1 - radius / h), alpha));
+    ctx.fillStyle = gradient;
+    ctx.fillRect(x, y + radius, w, h - 2 * radius);
+  }
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, radius);
+  ctx.strokeStyle = cssColor(border, alpha);
+  ctx.lineWidth = 1;
+  ctx.stroke();
+}
+
+// The CSS pop used a cubic-bezier that overshoots; this is the usual back-out easing.
+function easeBackOut(t) {
+  const c1 = 1.70158, c3 = c1 + 1, u = t - 1;
+  return 1 + c3 * u * u * u + c1 * u * u;
+}
+
+// The <kbd> chip beside a button label; returns its width.
+function drawKbd(label, x, cy, alpha) {
+  ctx.font = 'bold 12px ' + FONT_FAMILY;
+  const w = ctx.measureText(label).width + 16;
+  ctx.beginPath();
+  ctx.roundRect(x, cy - 9, w, 18, 5);
+  ctx.fillStyle = cssColor([0, 0, 0, 89], alpha);
+  ctx.fill();
+  ctx.strokeStyle = cssColor([255, 255, 255, 64], alpha);
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = cssColor([0xdf, 0xe4, 0xff, 255], alpha);
+  ctx.fillText(label, x + 8, cy + 4);
+  return w;
+}
+
+const WHITE = [255, 255, 255, 255];
+function drawModalButton(i, label, key, colors, glow, alpha) {
+  const r = modalButtons[i];
+  let y = r.y, top = colors.top, bot = colors.bot;
+  if (hovered(r.x, r.y, r.w, r.h) && alpha > 0.9) {
+    y -= 2;                                            // the CSS lifts it
+    top = lerpColor(top, WHITE, 0.12);
+    bot = lerpColor(bot, WHITE, 0.12);
+    ctx.drawImage(glow.frame, r.x - glow.pad, y - glow.pad);
+  }
+  drawGradPanel(r.x, y, r.w, r.h, 8, top, bot, colors.border, alpha);
+
+  // label and key cap sit side by side, centred together
+  ctx.font = 'bold 15px ' + FONT_FAMILY;
+  const labelW = ctx.measureText(label).width;
+  ctx.font = 'bold 12px ' + FONT_FAMILY;
+  const keyW = ctx.measureText(key).width;
+  const x = r.x + (r.w - (labelW + 10 + keyW + 16)) / 2, cy = y + r.h / 2;
+  ctx.font = 'bold 15px ' + FONT_FAMILY;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = cssColor([0xee, 0xf0, 0xff, 255], alpha);
+  ctx.fillText(label, x, cy + 5);
+  drawKbd(key, x + labelW + 10, cy, alpha);
+}
+
+// Enter retries, Escape bails out to the picker (handled globally); clicking
+// the buttons does the same.
+function handleDeathInput() {
+  if (!dead) return;
+  deathT += STEP;
+  if (pressed.enter) {
+    retry();
+    return;
+  }
+  if (clicked) {
+    const retryBtn = modalButtons[0], levelsBtn = modalButtons[1];
+    if (hovered(retryBtn.x, retryBtn.y, retryBtn.w, retryBtn.h) && consumeClick()) retry();
+    else if (hovered(levelsBtn.x, levelsBtn.y, levelsBtn.w, levelsBtn.h) && consumeClick()) gotoLevelSelect();
+  }
+}
+
+function drawDeathModal() {
+  if (!dead) return;
+  const fadeT = clamp(deathT / MODAL_FADE, 0, 1);
+  const pop = clamp(deathT / MODAL_POP, 0, 1);
+  const alpha = clamp(deathT / 0.12, 0, 1);            // the text catches up quickly
+
+  ctx.globalAlpha = fadeT;
+  ctx.fillStyle = 'rgba(10,10,20,' + 140 / 255 + ')';
+  ctx.fillRect(0, 0, WORLD_W, WORLD_H);
+  ctx.globalAlpha = 1;
+
+  // scale the card about its centre as it appears
+  const scale = 0.8 + 0.2 * easeBackOut(pop);
+  const cw = MODAL_BOX.w * scale, ch = MODAL_BOX.h * scale;
+  const cx0 = MODAL_BOX.x + (MODAL_BOX.w - cw) / 2, cy0 = MODAL_BOX.y + (MODAL_BOX.h - ch) / 2;
+  ctx.globalAlpha = alpha;
+  ctx.drawImage(modalGlow.frame, cx0 - modalGlow.pad * scale, cy0 - modalGlow.pad * scale,
+    modalGlow.frame.width * scale, modalGlow.frame.height * scale);
+  ctx.globalAlpha = 1;
+  drawGradPanel(cx0, cy0, cw, ch, 14, MODAL_CARD_TOP, MODAL_CARD_BOT, MODAL_CARD_BORDER, alpha);
+
+  const lines = DEATH_COPY[deathBy];
+  const cx = MODAL_BOX.x + MODAL_BOX.w / 2;
+  let y = MODAL_BOX.y + MODAL_PAD_Y;
+  drawTextTop(lines[0], cx, y, MODAL_TITLE, cssColor([0xff, 0x8a, 0x8a, 255], alpha));
+  y += MODAL_TITLE + 8;
+  drawTextTop(lines[1], cx, y, MODAL_BODY, cssColor([0xb7, 0xbc, 0xda, 255], alpha));
+  y += MODAL_BODY + 3;
+  drawTextTop(lines[2], cx, y, MODAL_BODY, cssColor([0xb7, 0xbc, 0xda, 255], alpha));
+
+  drawModalButton(0, 'Retry', 'Enter', MODAL_RETRY, retryGlow, alpha);
+  drawModalButton(1, 'Level Select', 'Esc', MODAL_LEVELS, levelsGlow, alpha);
+}
+
+// ---- Level 2: a spinning wheel of marker blocks ----
+// Nothing in it but the border platforms boxing it in, and eight marker
+// blocks plus a white centre in a 3x3 that D steps forward through a fixed
+// schedule and A steps back through.
+const level2Blocks = [];
+for (let c = 1; c <= COLS; c++) level2Blocks.push(makeBlock(cellX(c), cellY(c), CELL, BLUE, MOVER_NONE));                 // top row
+for (let r = 0; r < ROWS; r++) level2Blocks.push(makeBlock(0, r * CELL, CELL, BLUE, MOVER_NONE));                          // left column
+for (let r = 0; r < ROWS; r++) level2Blocks.push(makeBlock((COLS - 1) * CELL, r * CELL, CELL, BLUE, MOVER_NONE));          // right column
+for (let c = (ROWS - 1) * COLS + 1; c <= ROWS * COLS; c++) level2Blocks.push(makeBlock(cellX(c), cellY(c), CELL, BLUE, MOVER_NONE));   // bottom row
+const level2Layer = makeLayer(WORLD_W, WORLD_H);
+(function bakeLevel2() {
+  const g = level2Layer.getContext('2d');
+  g.drawImage(gridLayer, 0, 0);
+  for (const b of level2Blocks) g.drawImage(blockSprites[b.kind], b.x, b.y);
+})();
+
+const LEVEL2_BASE_COL = [5, 6, 7, 5, 6, 7, 5, 7];
+const LEVEL2_BASE_ROW = [26, 26, 26, 28, 28, 28, 27, 27];
+const LEVEL2_KINDS = [GREEN, ORANGE, CYAN, YELLOW, MAGIC, RED, BLUE, MOVING];
+const LEVEL2_WHITE_COL = 6, LEVEL2_WHITE_ROW = 27;
+const LEVEL2_LABEL_SIZE = 12;
+const LEVEL2_EASE_RATE = 14;           // per second: the drawn position chases the target, so rapid presses compound into one fluid slide
+// One step of the forward sequence: [which block moves (an index into
+// LEVEL2_KINDS, or -1 for the white centre), column, row].
+const LEVEL2_SCHEDULE = [
+  [2, 8, 26], [1, 7, 26], [2, 8, 27], [0, 6, 26], [2, 8, 28], [1, 8, 26], [6, 5, 26], [0, 7, 26],
+  [3, 5, 27], [1, 8, 27], [6, 6, 26], [4, 5, 28], [5, 6, 28], [7, 7, 28], [-1, 7, 27],
+  [0, 8, 26], [6, 7, 26], [3, 5, 26], [4, 5, 27], [3, 6, 26], [4, 6, 27],
+  // second loop
+  [0, 9, 26], [6, 8, 26], [0, 9, 27], [3, 7, 26], [4, 6, 26], [6, 9, 26], [3, 8, 26], [0, 9, 28], [5, 6, 27],
+];
+const level2Col = new Array(8), level2Row = new Array(8);            // where each marker stands
+const level2DispCol = new Array(8), level2DispRow = new Array(8);    // what is drawn, easing toward that
+let level2WhiteCol = LEVEL2_WHITE_COL, level2WhiteRow = LEVEL2_WHITE_ROW;
+let level2WhiteDispCol = LEVEL2_WHITE_COL, level2WhiteDispRow = LEVEL2_WHITE_ROW;
+let level2Steps = 0;                   // how many D presses so far — walks the schedule
+for (let i = 0; i < 8; i++) {
+  level2Col[i] = level2DispCol[i] = LEVEL2_BASE_COL[i];
+  level2Row[i] = level2DispRow[i] = LEVEL2_BASE_ROW[i];
+}
+
+function level2SetPos(idx, col, row) {
+  if (idx === -1) { level2WhiteCol = col; level2WhiteRow = row; }
+  else { level2Col[idx] = col; level2Row[idx] = row; }
+}
+
+// Where block `idx` stood right before schedule step `before` ran: its target
+// as of the last earlier step that moved it, or its starting cell if this is
+// the first step that ever does. Into prevCol / prevRow.
+let prevCol = 0, prevRow = 0;
+function level2PrevPos(before, idx) {
+  for (let j = before - 1; j >= 0; j--) {
+    if (LEVEL2_SCHEDULE[j][0] === idx) { prevCol = LEVEL2_SCHEDULE[j][1]; prevRow = LEVEL2_SCHEDULE[j][2]; return; }
+  }
+  if (idx === -1) { prevCol = LEVEL2_WHITE_COL; prevRow = LEVEL2_WHITE_ROW; }
+  else { prevCol = LEVEL2_BASE_COL[idx]; prevRow = LEVEL2_BASE_ROW[idx]; }
+}
+
+// D steps forward through the schedule; A steps back through the exact same
+// list, undoing whichever move D last applied.
+function updateLevel2() {
+  if (screen !== SCREEN_LEVEL2) return;
+  if (pressed.d && level2Steps < LEVEL2_SCHEDULE.length) {
+    const m = LEVEL2_SCHEDULE[level2Steps];
+    level2SetPos(m[0], m[1], m[2]);
+    level2Steps++;
+  }
+  if (pressed.a && level2Steps > 0) {
+    level2Steps--;
+    const m = LEVEL2_SCHEDULE[level2Steps];
+    level2PrevPos(level2Steps, m[0]);
+    level2SetPos(m[0], prevCol, prevRow);
+  }
+  const t = clamp(STEP * LEVEL2_EASE_RATE, 0, 1);
+  for (let i = 0; i < 8; i++) {
+    level2DispCol[i] += (level2Col[i] - level2DispCol[i]) * t;
+    level2DispRow[i] += (level2Row[i] - level2DispRow[i]) * t;
+  }
+  level2WhiteDispCol += (level2WhiteCol - level2WhiteDispCol) * t;
+  level2WhiteDispRow += (level2WhiteRow - level2WhiteDispRow) * t;
+}
+
+// A shiny bevelled number in the middle of a square: a bright fleck a pixel
+// low, then solid black on top, so it reads on any colour.
+function drawLevel2Label(x, y, size, label) {
+  const cy = y + (size - LEVEL2_LABEL_SIZE) / 2;
+  drawTextTop(String(label), x + size / 2, cy + 1, LEVEL2_LABEL_SIZE, 'rgba(255,255,255,' + 160 / 255 + ')');
+  drawTextTop(String(label), x + size / 2, cy, LEVEL2_LABEL_SIZE, '#000');
+}
+
+// Same look, white-on-black so it reads on the dark BLACK block too.
+function drawLevel3Label(x, y, label) {
+  const cy = y + (CELL - LEVEL2_LABEL_SIZE) / 2;
+  drawTextTop(String(label), x + CELL / 2, cy + 1, LEVEL2_LABEL_SIZE, '#000');
+  drawTextTop(String(label), x + CELL / 2, cy, LEVEL2_LABEL_SIZE, '#fff');
+}
+
+// The fixed centre of the wheel: a soft pulsing glow behind the player's own
+// shiny piece, and a second glint in the opposite corner.
+const glowLevel2White = makeGlowStyle([{ rgb: GLOW_WHITE, spread: 8, spreadRange: 0, alpha: 0.3, alphaRange: 0.25 }]);
+const whiteBlockSprite = makePieceSprite(CELL, PIECE_WHITE.edge, PIECE_WHITE.face, PIECE_WHITE.hi);
+function drawLevel2White(x, y) {
+  const p = pulse();
+  drawGlow(glowLevel2White, x, y, CELL, CELL, 3, p);
+  ctx.drawImage(whiteBlockSprite, Math.round(x), Math.round(y));
+  const glint = CELL * 0.35;
+  ctx.globalAlpha = 0.55 + 0.35 * p;
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(Math.round(x + CELL - glint), Math.round(y + CELL - glint), Math.round(glint), Math.round(glint));
+  ctx.globalAlpha = 1;
+  drawLevel2Label(x, y, CELL, 0);
+}
+
+function drawLevel2Screen() {
+  ctx.drawImage(level2Layer, 0, 0);
+  for (let i = 0; i < 8; i++) {
+    const x = level2DispCol[i] * CELL, y = level2DispRow[i] * CELL;
+    drawBlock(LEVEL2_KINDS[i], x, y);
+    drawLevel2Label(x, y, CELL, i + 1);
+  }
+  drawLevel2White(level2WhiteDispCol * CELL, level2WhiteDispRow * CELL);
+  if (debug.fine) ctx.drawImage(fineGridLayer, 0, 0);
+  drawHoverHighlight();
+  drawBackButton();
+}
+
+// ---- Level 3: a bare border room, Harry, and two shot-moved blocks ----
+const level3Blocks = [];
+let level3ShiftOn = false;
+const LEVEL3_SHIFT_RATE = 10;          // per second, the eased approach to home or target
+const level3Layer = makeLayer(WORLD_W, WORLD_H);
+
+function addLevel3(cell, kind) {
+  const b = makeBlock(cellX(cell), cellY(cell), CELL, kind, MOVER_NONE);
+  level3Blocks.push(b);
+  return b;
+}
+
+// A block that shooting flips between its home cell and `targetCell`.
+function addLevel3Shifter(cell, kind, targetCell) {
+  const b = addLevel3(cell, kind);
+  b.mover = MOVER_SHIFT;
+  b.targetX = cellX(targetCell);
+  b.targetY = cellY(targetCell);
+}
+
+// Blue blocks boxing in an empty room: top and bottom rows, left and right
+// columns. `add(cell, kind)` puts one block in whichever level is building.
+function addRoomBorder(add) {
+  for (let c = 1; c <= COLS; c++) add(c, BLUE);                               // top row
+  for (let r = 1; r < ROWS - 1; r++) add(r * COLS + 1, BLUE);                 // left column
+  for (let r = 1; r < ROWS - 1; r++) add(r * COLS + COLS, BLUE);              // right column
+  for (let c = (ROWS - 1) * COLS + 1; c <= ROWS * COLS; c++) add(c, BLUE);    // bottom row
+}
+
+function buildLevel3Blocks() {
+  level3Blocks.length = 0;
+  addRoomBorder(addLevel3);
+  for (const cell of [973, 1133, 1013, 1053, 1093, 1138, 887, 1087]) addLevel3(cell, BLUE);
+  addLevel3Shifter(658, YELLOW, 657);  // label "1" -> shot moves it to 657
+  addLevel3Shifter(985, BLACK, 986);   // label "2" -> shot moves it to 986
+
+  // everything that never moves is baked with the grid
+  const g = level3Layer.getContext('2d');
+  g.clearRect(0, 0, WORLD_W, WORLD_H);
+  g.drawImage(gridLayer, 0, 0);
+  for (const b of level3Blocks) if (b.mover === MOVER_NONE) g.drawImage(blockSprites[b.kind], b.x, b.y);
+}
+
+// One shared switch, not one per block: shooting either flips it, and both
+// ease towards their own target together, closing a fraction of the remaining
+// distance each frame.
+function updateLevel3Movers() {
+  const t = clamp(STEP * LEVEL3_SHIFT_RATE, 0, 1);
+  for (const b of level3Blocks) {
+    if (b.mover !== MOVER_SHIFT) continue;
+    b.x += ((level3ShiftOn ? b.targetX : b.homeX) - b.x) * t;
+    b.y += ((level3ShiftOn ? b.targetY : b.homeY) - b.y) * t;
+  }
+}
+
+function drawLevel3Screen() {
+  ctx.drawImage(level3Layer, 0, 0);
+  for (const b of level3Blocks) {
+    if (b.mover === MOVER_NONE) continue;
+    drawBlock(b.kind, b.x, b.y);
+    drawLevel3Label(b.x, b.y, b.kind === YELLOW ? 1 : 2);   // the two shot-moved blocks carry their number with them
+  }
+  drawHarry();
+  drawHarryBullets();
+  if (debug.fine) ctx.drawImage(fineGridLayer, 0, 0);
+  drawHoverHighlight();
+  drawBackButton();
+}
+
+// ---- Level 4: the dark room ----
+// Harry in a border room with ledges to climb, lit by a pool of light that
+// follows him. Everything outside it sits under the Eyesz fog: a soft dark
+// veil with a clear hole in the middle. Like Eyesz, the veil is painted ONCE
+// and only its position changes as the player moves; its centre glides after
+// Harry instead of snapping. Pairs of eyes drift about in the dark and vanish
+// as the light reaches them.
+const level4Blocks = [];
+const level4Layer = makeLayer(WORLD_W, WORLD_H);
+
+function addLevel4(cell, kind) {
+  level4Blocks.push(makeBlock(cellX(cell), cellY(cell), CELL, kind, MOVER_NONE));
+}
+
+// A ledge of blue blocks along `row`, from column `from` to `to` inclusive.
+function addLedge(row, from, to) {
+  for (let col = from; col <= to; col++) addLevel4(row * COLS + col + 1, BLUE);
+}
+
+// Ledges zig-zag up the room. Harry's hop rises about 100px, so each ledge is
+// 4 rows (80px) above the last and the gap between neighbours is 2 cells or less.
+function buildLevel4Blocks() {
+  level4Blocks.length = 0;
+  addRoomBorder(addLevel4);
+  addLedge(25, 4, 13);
+  addLedge(21, 16, 25);
+  addLedge(17, 28, 37);
+  addLedge(13, 17, 26);
+  addLedge(9, 5, 14);
+  addLedge(5, 17, 26);
+  addLedge(27, 27, 31);                // a low step and a short ledge on the right, off the main climb
+  addLedge(23, 33, 37);
+
+  const g = level4Layer.getContext('2d');
+  g.clearRect(0, 0, WORLD_W, WORLD_H);
+  g.drawImage(gridLayer, 0, 0);        // the grid is left as it is
+  for (const b of level4Blocks) g.drawImage(blockSprites[b.kind], b.x, b.y);
+}
+buildLevel4Blocks();
+
+// ---- The fog veil and the light ----
+const FOG_CLEAR_RADIUS = 60;           // px, fully lit around Harry
+const FOG_DARK_RADIUS = 170;           // px, fully dark beyond this
+const FOG_DARKNESS = 0.94;             // the far alpha: nearly black, never quite
+const VEIL_SIZE = 2 * WORLD_W;         // big enough to blanket the room wherever Harry stands
+const veilSprite = makeLayer(VEIL_SIZE, VEIL_SIZE);
+(function bakeVeil() {
+  const g = veilSprite.getContext('2d');
+  const c = VEIL_SIZE / 2;
+  const gradient = g.createRadialGradient(c, c, FOG_CLEAR_RADIUS, c, c, FOG_DARK_RADIUS);
+  gradient.addColorStop(0, 'rgba(0,0,0,0)');
+  gradient.addColorStop(1, 'rgba(0,0,0,' + FOG_DARKNESS + ')');
+  g.fillStyle = gradient;
+  g.fillRect(0, 0, VEIL_SIZE, VEIL_SIZE);
+})();
+
+// A faint warm glow added over the lit area, baked once like the veil.
+const LIGHT_RADIUS = FOG_DARK_RADIUS;
+const lightSprite = makeLayer(2 * LIGHT_RADIUS, 2 * LIGHT_RADIUS);
+(function bakeLight() {
+  const g = lightSprite.getContext('2d');
+  const gradient = g.createRadialGradient(LIGHT_RADIUS, LIGHT_RADIUS, 0, LIGHT_RADIUS, LIGHT_RADIUS, LIGHT_RADIUS);
+  gradient.addColorStop(0, 'rgba(255,225,170,0.16)');
+  gradient.addColorStop(1, 'rgba(255,225,170,0)');
+  g.fillStyle = gradient;
+  g.fillRect(0, 0, 2 * LIGHT_RADIUS, 2 * LIGHT_RADIUS);
+})();
+
+// The light's centre glides onto Harry (Eyesz eased the fog with a 0.4 s CSS
+// transition): each frame it closes a fraction of the gap.
+const LIGHT_FOLLOW = 0.12;
+let lightX = 0, lightY = 0;
+
+function resetLight() {
+  lightX = harry.x + harry.w / 2;
+  lightY = harry.y + harry.h / 2;
+}
+
+// ---- Eyes in the dark ----
+// Eyesz's eyes: a pale disc with a dark pupil that looks toward the player
+// (there toward the cursor, here toward Harry), capped at the eye's edge.
+// Pairs wander the room; they only show in the shadow and fade as the light
+// nears. One pair keeps the dark-red pupils of Eyesz's target eye.
+const EYE_RADIUS = 7;
+const EYE_GAP = 5;                     // between the two eyes of a pair
+const EYE_PUPIL_RADIUS = 3;
+const EYE_PUPIL_REACH = 3.5;           // furthest a pupil travels from the eye centre
+const EYE_FADE = 60;                   // px over which an eye appears beyond the clear radius
+const EYE_PAIRS = 9;
+const EYE_BLINK_SECONDS = 0.16;
+
+function makeDiscSprite(size, radius, fill, stroke) {
+  const sprite = makeLayer(size, size);
+  const g = sprite.getContext('2d');
+  g.beginPath();
+  g.arc(size / 2, size / 2, radius, 0, 2 * Math.PI);
+  g.fillStyle = fill;
+  g.fill();
+  if (stroke) {
+    g.strokeStyle = stroke;
+    g.lineWidth = 1;
+    g.stroke();
+  }
+  return sprite;
+}
+const eyeSprite = makeDiscSprite(2 * EYE_RADIUS + 2, EYE_RADIUS, '#e8e8ea', '#232328');
+const pupilSprite = makeDiscSprite(2 * EYE_PUPIL_RADIUS + 2, EYE_PUPIL_RADIUS, '#111113');
+const redPupilSprite = makeDiscSprite(2 * EYE_PUPIL_RADIUS + 2, EYE_PUPIL_RADIUS, '#7a0e0e');
+
+// A small seeded generator so the eyes wander the same way every visit.
+function makeRandom(seed) {
+  let a = seed;
+  return () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const eyeRandom = makeRandom(4);
+const eyePairs = [];
+const EYE_MIN_X = 40, EYE_MAX_X = WORLD_W - 40, EYE_MIN_Y = 40, EYE_MAX_Y = WORLD_H - 40;
+
+function pickEyeTarget(pair) {
+  pair.targetX = EYE_MIN_X + eyeRandom() * (EYE_MAX_X - EYE_MIN_X);
+  pair.targetY = EYE_MIN_Y + eyeRandom() * (EYE_MAX_Y - EYE_MIN_Y);
+}
+
+function resetEyes() {
+  eyePairs.length = 0;
+  for (let i = 0; i < EYE_PAIRS; i++) {
+    const pair = {
+      x: EYE_MIN_X + eyeRandom() * (EYE_MAX_X - EYE_MIN_X),
+      y: EYE_MIN_Y + eyeRandom() * (EYE_MAX_Y - EYE_MIN_Y),
+      vx: 0, vy: 0, targetX: 0, targetY: 0,
+      speed: 0.3 + eyeRandom() * 0.5,  // px per frame
+      blinkT: 0, nextBlink: 1 + eyeRandom() * 4,
+      red: i === 0,
+    };
+    pickEyeTarget(pair);
+    eyePairs.push(pair);
+  }
+  eyePairs[0].speed = 0.25;            // the dark-red pair drifts slowest
+}
+resetEyes();
+
+function updateEyes() {
+  for (const pair of eyePairs) {
+    const dx = pair.targetX - pair.x, dy = pair.targetY - pair.y;
+    const dist = Math.hypot(dx, dy);
+    if (dist < 6) pickEyeTarget(pair);
+    else {                             // glide toward the target rather than snapping to a heading
+      pair.vx += (dx / dist * pair.speed - pair.vx) * 0.03;
+      pair.vy += (dy / dist * pair.speed - pair.vy) * 0.03;
+    }
+    pair.x += pair.vx;
+    pair.y += pair.vy;
+    pair.blinkT += STEP;
+    if (pair.blinkT > pair.nextBlink + EYE_BLINK_SECONDS) {
+      pair.blinkT = 0;
+      pair.nextBlink = 2 + eyeRandom() * 4;
+    }
+  }
+}
+
+// One eye, squashed by `blink` (1 open, 0 shut), its pupil looking at Harry.
+function drawEye(cx, cy, blink, pupil) {
+  ctx.drawImage(eyeSprite, cx - eyeSprite.width / 2, cy - eyeSprite.height / 2 * blink, eyeSprite.width, eyeSprite.height * blink);
+  if (blink < 0.3) return;
+  const tx = harry.x + harry.w / 2 - cx, ty = harry.y + harry.h / 2 - cy;
+  const d = Math.hypot(tx, ty) || 1;
+  const reach = Math.min(EYE_PUPIL_REACH, d);
+  ctx.drawImage(pupil, cx + tx / d * reach - pupil.width / 2, cy + ty / d * reach - pupil.height / 2 * blink, pupil.width, pupil.height * blink);
+}
+
+// Eyes show in the shadow only: invisible inside the clear light, fully there
+// EYE_FADE px beyond it.
+function drawEyes() {
+  for (const pair of eyePairs) {
+    const fromLight = Math.hypot(pair.x - lightX, pair.y - lightY);
+    const alpha = clamp((fromLight - FOG_CLEAR_RADIUS) / EYE_FADE, 0, 1);
+    if (alpha < 0.02) continue;
+    const phase = pair.blinkT - pair.nextBlink;
+    const blink = phase < 0 ? 1 : Math.abs(Math.cos(Math.PI * phase / EYE_BLINK_SECONDS));
+    const pupil = pair.red ? redPupilSprite : pupilSprite;
+    ctx.globalAlpha = alpha;
+    drawEye(pair.x - EYE_RADIUS - EYE_GAP / 2, pair.y, blink, pupil);
+    drawEye(pair.x + EYE_RADIUS + EYE_GAP / 2, pair.y, blink, pupil);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function updateLevel4() {
+  lightX += (harry.x + harry.w / 2 - lightX) * LIGHT_FOLLOW;
+  lightY += (harry.y + harry.h / 2 - lightY) * LIGHT_FOLLOW;
+  updateEyes();
+}
+
+function drawLevel4Screen() {
+  ctx.drawImage(level4Layer, 0, 0);
+  drawHarry();
+  drawHarryBullets();
+  // warm the lit area, then lay the veil over everything but the HUD
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.drawImage(lightSprite, lightX - LIGHT_RADIUS, lightY - LIGHT_RADIUS);
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.drawImage(veilSprite, lightX - VEIL_SIZE / 2, lightY - VEIL_SIZE / 2);
+  drawEyes();
+  if (debug.fine) ctx.drawImage(fineGridLayer, 0, 0);
+  drawHoverHighlight();
+  drawBackButton();
+}
+
+// ---- Input ----
+// Raw physical key state, tracked regardless of who is selected (Harry reads
+// it directly; the white square's gated copy is derived from it in step 3).
+const raw = { left: false, right: false, jump: false, shoot: false, down: false, prone: false };
+// Edge-triggered presses latched by the key listener and drained once per
+// update() into the *Pressed flags, the same shape as Game.java's pending*.
+const pending = { tab: false, enter: false, a: false, d: false, click: false };
+const pressed = { tab: false, enter: false, a: false, d: false, click: false };
+const debug = { fps: false, fine: false, hover: false };
+let muted = false;
+
+// Maps a key code to the raw movement flag it drives, or undefined.
+const RAW_KEYS = {
+  KeyA: 'left', ArrowLeft: 'left',
+  KeyD: 'right', ArrowRight: 'right',
+  KeyW: 'jump', ArrowUp: 'jump', Space: 'jump',
+  Enter: 'shoot',
+  KeyS: 'down', ArrowDown: 'down',
+  ControlLeft: 'prone', ControlRight: 'prone', KeyC: 'prone',
+};
+// Keys the page must not act on itself (scrolling, focus traversal).
+const SWALLOWED_KEYS = new Set(['Space', 'Tab', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
+
+addEventListener('keydown', (e) => {
+  audio.unlock();
+  const flag = RAW_KEYS[e.code];
+  if (flag) raw[flag] = true;
+  // Edge-latched presses fire on key repeat too, like AWT's keyPressed.
+  if (e.code === 'KeyA' || e.code === 'ArrowLeft') pending.a = true;
+  if (e.code === 'KeyD' || e.code === 'ArrowRight') pending.d = true;
+  if (e.code === 'Enter') pending.enter = true;
+  if (e.code === 'Tab') pending.tab = true;
+  // Toggles only flip on the initial press.
+  if (!e.repeat) {
+    if (e.code === 'Escape') handleEscape();
+    if (e.code === 'KeyJ') toggleFullscreen();
+    if (e.code === 'KeyU' && screen === SCREEN_SELECT) unlockLevels();
+    if (e.code === 'KeyM') { muted = !muted; audio.setMuted(muted); }
+    if (e.code === 'Digit1') debug.fine = !debug.fine;
+    if (e.code === 'KeyH') debug.hover = !debug.hover;
+    if (e.code === 'KeyF') { debug.fps = !debug.fps; resetFpsWindow(); }
+  }
+  if (SWALLOWED_KEYS.has(e.code)) e.preventDefault();
+});
+
+addEventListener('keyup', (e) => {
+  const flag = RAW_KEYS[e.code];
+  if (flag) raw[flag] = false;
+});
+
+// A key released while the tab was unfocused never reports keyup; clear
+// everything so the square doesn't keep running.
+addEventListener('blur', () => { for (const k in raw) raw[k] = false; });
+
+// Mouse position in world space (the CSS scale undone), plus a click latch.
+let mouseX = 0;
+let mouseY = 0;
+addEventListener('mousemove', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  mouseX = (e.clientX - rect.left) * WORLD_W / rect.width;
+  mouseY = (e.clientY - rect.top) * WORLD_H / rect.height;
+});
+canvas.addEventListener('mousedown', (e) => {
+  audio.unlock();
+  if (e.button === 0) pending.click = true;
+  canvas.focus();
+});
+
+// ---- Scaling & fullscreen ----
+// Largest whole multiple of 800x600 that fits the window; if the window is
+// smaller than one world, shrink to fit instead.
+//
+// The page around the canvas carries on the base 20px grid outward from the
+// level's own cell edges (what Java drew in its borderless fullscreen window),
+// so the lattice stays in step with the level however big the window is.
+function fitCanvas() {
+  let k = Math.min(innerWidth / WORLD_W, innerHeight / WORLD_H);
+  if (k >= 1) k = Math.floor(k);
+  canvas.style.width = WORLD_W * k + 'px';
+  canvas.style.height = WORLD_H * k + 'px';
+
+  const line = 'rgba(255,255,255,' + 10 / 255 + ')';
+  const cell = CELL * k;
+  const originX = (innerWidth - WORLD_W * k) / 2;     // where the level's (0,0) lands on the page
+  const originY = (innerHeight - WORLD_H * k) / 2;
+  document.body.style.backgroundImage =
+    'linear-gradient(to right, ' + line + ' ' + k + 'px, transparent ' + k + 'px), ' +
+    'linear-gradient(to bottom, ' + line + ' ' + k + 'px, transparent ' + k + 'px)';
+  document.body.style.backgroundSize = cell + 'px ' + cell + 'px';
+  document.body.style.backgroundPosition = originX + 'px ' + originY + 'px';
+}
+addEventListener('resize', fitCanvas);
+fitCanvas();
+canvas.focus();
+
+// J toggles fullscreen (F11 is the browser's own). The canvas keeps its
+// whole-number scale and stays centred on the extended grid.
+function toggleFullscreen() {
+  if (document.fullscreenElement) document.exitFullscreen();
+  else document.documentElement.requestFullscreen().catch(() => {});
+}
+
+// ---- Game loop ----
+let time = 0;                          // seconds of game time, drives animations
+let lastFrame = performance.now();
+let accumulator = 0;
+
+// Drains the latched presses into this update's flags, one frame each.
+function drainInput() {
+  for (const k in pending) { pressed[k] = pending[k]; pending[k] = false; }
+}
+
+// One fixed 1/60 s step of game logic. Later roadmap steps hang off here.
+function update() {
+  time += STEP;
+  drainInput();
+  clicked = pressed.click;
+
+  if (screen === SCREEN_LEVEL1) {
+    handleDeathInput();                // may send us back to the picker
+    if (screen === SCREEN_LEVEL1) {
+      readInput();
+      harryHandleSelect();             // the pointer picks which character the keys drive
+      if (!dead) clickButtons();
+      updateGame();
+      updateHarry();
+      updateHarryBullets();
+    }
+  }
+  if (screen === SCREEN_LEVEL3) {
+    readInput();
+    harryHandleSelect();
+    updateHarry();
+    updateHarryBullets();
+    updateLevel3Movers();
+  }
+  if (screen === SCREEN_LEVEL4) {
+    readInput();
+    harryHandleSelect();
+    updateHarry();
+    updateHarryBullets();
+    updateLevel4();
+  }
+  updateLevel2();                      // gates itself to level 2
+  updateScreenButtons();               // whatever clicks are left belong to the picker or the Back button
+}
+
+// Draws one frame of whichever screen is up.
+function draw() {
+  if (screen === SCREEN_SELECT) {
+    ctx.drawImage(gridLayer, 0, 0);
+    drawSelectScreen();
+  } else if (screen === SCREEN_LEVEL1) {
+    drawLevel1();
+  } else if (screen === SCREEN_LEVEL2) {
+    drawLevel2Screen();
+  } else if (screen === SCREEN_LEVEL3) {
+    drawLevel3Screen();
+  } else {
+    drawLevel4Screen();
+  }
+  drawToast();
+  drawCellNumber();
+  drawFps();
+}
+
+// ---- FPS readout (F) ----
+let fpsFrames = 0;
+let fpsSince = 0;
+let fpsText = '';
+
+function resetFpsWindow() {
+  fpsFrames = 0;
+  fpsSince = 0;
+  fpsText = 'measuring...';
+}
+
+// Counts rendered frames over half-second windows, like Game.tickFps.
+function tickFps(now) {
+  fpsFrames++;
+  if (fpsSince === 0) fpsSince = now;
+  const elapsed = now - fpsSince;
+  if (elapsed < 500) return;
+  if (debug.fps) {
+    fpsText = Math.round(fpsFrames * 1000 / elapsed) + ' fps - ' + (elapsed / fpsFrames).toFixed(1) + ' ms';
+  }
+  fpsFrames = 0;
+  fpsSince = now;
+}
+
+// Top-right readout, in the HUD's green.
+function drawFps() {
+  if (!debug.fps) return;
+  ctx.font = 'bold 13px -apple-system, "Helvetica Neue", Arial, sans-serif';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = '#7dffa8';
+  ctx.fillText(fpsText, WORLD_W - 16, 46);
+}
+
+// requestAnimationFrame callback: run as many fixed steps as real time owes
+// (so 60/120/144 Hz screens play identically), then render once.
+function frame(now) {
+  accumulator += Math.min((now - lastFrame) / 1000, MAX_CATCH_UP);
+  lastFrame = now;
+  while (accumulator >= STEP) {
+    update();
+    accumulator -= STEP;
+  }
+  draw();
+  tickFps(now);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
