@@ -4,9 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Natural numbers & counting</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="../topic.css" />
 </head>
-<body>
+<body data-field="arith">
 <div class="wrap">
 
   <a class="back" href="../math.html">← mathematics</a>
@@ -42,15 +42,7 @@
   <section>
     <h2>Try it — the successor machine</h2>
     <p>Click <em>successor</em> to take one step up. Each step adds one dot, so you can <em>see</em> the number you are counting to.</p>
-    <div class="demo">
-      <div class="demo-controls">
-        <span class="demo-label">current number</span>
-        <span class="demo-value" id="counterValue">0</span>
-        <button class="primary" id="successorBtn">successor (+1)</button>
-        <button id="resetBtn">reset</button>
-      </div>
-      <div class="dots" id="dots"></div>
-    </div>
+    <div class="demo" id="demo"></div>
   </section>
 
   <section>
@@ -60,6 +52,7 @@
   </section>
 
 </div>
+<script src="../topic.js"></script>
 <script src="script.js"></script>
 </body>
 </html>

@@ -9,7 +9,7 @@
 const DATA = [
   // ---- Arithmetic: numbers and the four operations ----
   {c:"Natural numbers & counting",url:"001-natural-numbers-counting/",cat:"arith",cl:"Arithmetic",ideas:["counting","successor","place value"],t:"Peano axioms · base-10 numerals"},
-  {c:"Integers & negative numbers",cat:"arith",cl:"Arithmetic",ideas:["sign","number line","absolute value"],t:"Brahmagupta (628 CE)"},
+  {c:"Integers & negative numbers",url:"002-integers-negative-numbers/",cat:"arith",cl:"Arithmetic",ideas:["sign","number line","absolute value"],t:"Brahmagupta (628 CE)"},
   {c:"Addition & subtraction",cat:"arith",cl:"Arithmetic",ideas:["sum","difference","carry / borrow"],t:"Commutative & associative laws"},
   {c:"Multiplication & division",cat:"arith",cl:"Arithmetic",ideas:["product","quotient","remainder"],t:"Distributive law · long division"},
   {c:"Fractions & rational numbers",cat:"arith",cl:"Arithmetic",ideas:["numerator","denominator","equivalence"],t:"Field of rationals ℚ"},

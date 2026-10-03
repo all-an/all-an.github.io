@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Integers & negative numbers</title>
+  <link rel="stylesheet" href="../topic.css" />
+</head>
+<body data-field="arith">
+<div class="wrap">
+
+  <a class="back" href="../math.html">← mathematics</a>
+  <h1>Integers &amp; negative numbers</h1>
+  <div class="field-tag">Arithmetic</div>
+
+  <section>
+    <h2>The idea</h2>
+    <p>The natural numbers only count forward: <code>1, 2, 3, …</code>. But some things go the other way — a temperature below freezing, a bank balance in debt, a floor of a building underground. To describe them we extend counting backwards past zero. The result is the <strong>integers</strong>:</p>
+    <div class="formula">… −3, −2, −1, 0, 1, 2, 3, …</div>
+    <p>Every natural number <code>n</code> now has an <strong>opposite</strong>, <code>−n</code>, and the two cancel each other out: <code>n + (−n) = 0</code>. Zero is its own opposite. The whole set is written <code>ℤ</code>, from the German <em>Zahlen</em>, "numbers".</p>
+  </section>
+
+  <section>
+    <h2>The number line and absolute value</h2>
+    <p>Picture the integers as evenly spaced points on a line, with <code>0</code> in the middle, positives to the right and negatives to the left. Bigger numbers are further to the right, so <code>−7 &lt; −2</code>: owing seven is worse than owing two.</p>
+    <p>The <strong>absolute value</strong> <code>|x|</code> forgets the direction and keeps only the distance from zero. Both <code>3</code> and <code>−3</code> are three steps from zero, so <code>|3| = |−3| = 3</code>. The distance between any two integers is <code>|a − b|</code>.</p>
+    <div class="formula">|x| = x    if x ≥ 0
+|x| = −x   if x &lt; 0</div>
+  </section>
+
+  <section>
+    <h2>Rules for signs</h2>
+    <p><strong>Adding</strong> a positive number moves right along the line; adding a negative number moves left. <strong>Subtracting</strong> is just adding the opposite:</p>
+    <div class="formula">a − b = a + (−b)        5 − 8 = 5 + (−8) = −3</div>
+    <p><strong>Multiplying</strong> follows a sign rule: like signs give a positive, unlike signs give a negative.</p>
+    <div class="formula">(+)(+) = +     (−)(−) = +
+(+)(−) = −     (−)(+) = −</div>
+    <p>Why is a negative times a negative positive? Watch a pattern: <code>3×(−2) = −6</code>, <code>2×(−2) = −4</code>, <code>1×(−2) = −2</code>, <code>0×(−2) = 0</code>. The answers climb by <code>2</code> each time, so the next step must continue to <code>(−1)×(−2) = +2</code>. The rules for negative numbers and zero were first written down by the Indian mathematician Brahmagupta in 628&nbsp;CE.</p>
+  </section>
+
+  <section>
+    <h2>Try it — the number line</h2>
+    <p>Slide <code>a</code> and <code>b</code> anywhere between −10 and 10. The markers show where they sit, where their sum lands, and the results below follow the sign rules.</p>
+    <div class="demo" id="demo"></div>
+  </section>
+
+  <section>
+    <h2>Exercises — solve them in JavaScript</h2>
+    <p>Write your answer in the editor, then press <strong>Run</strong>. Your function is checked against several test cases — green means it passed. Stuck? Each exercise has a worked solution you can reveal.</p>
+    <div id="exercises"></div>
+  </section>
+
+</div>
+<script src="../topic.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
