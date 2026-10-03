@@ -1,0 +1,92 @@
+:root {
+  --color-background-primary:   #111113;
+  --color-background-secondary: #1a1a1e;
+  --color-text-primary:         #e8e8ea;
+  --color-text-secondary:       #9898a0;
+  --color-text-tertiary:        #5e5e66;
+  --color-border-tertiary:      #232328;
+  --color-accent:                #CECBF6;
+  --border-radius-md:           7px;
+  --font-mono:                  'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--color-background-primary); color: var(--color-text-primary); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+.wrap { max-width: 900px; margin: 0 auto; padding: 2.5rem 2rem 3rem; }
+
+/* back link + bookmarks link, side by side above the title */
+.top-links { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 2rem; }
+a.back { font-size: 18px; color: var(--color-text-secondary); text-decoration: none; display: inline-block; }
+a.back:hover { color: var(--color-text-primary); }
+
+/* header: title and the category + status badges */
+h1 { font-size: 36px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 0.75rem; }
+.meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1.5rem; }
+.badge { display: inline-block; font-size: 14px; padding: 3px 10px; border-radius: 99px; white-space: nowrap; }
+.badge-cat { background:#26215C; color:#CECBF6; }               /* matches the Fullstack category colour in the courses list */
+.status-completed  { background:#173404; color:#C0DD97; }
+.status-inprogress { background:#042C53; color:#B5D4F4; }
+.status-planned     { background:#2C2C2A; color:#D3D1C7; }
+
+/* status override buttons, saved to localStorage */
+.actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 1.75rem; }
+.actions button { font-size: 16px; color: var(--color-text-primary); background: var(--color-background-secondary); border: 1px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 8px 14px; cursor: pointer; }
+.actions button:hover { border-color: #3a3a44; }
+.actions button.active { border-color: var(--color-text-secondary); }
+
+/* prose */
+.desc { font-size: 21px; color: var(--color-text-secondary); line-height: 1.7; margin-bottom: 2rem; }
+
+/* links in prose: the accent colour instead of the browser's default blue */
+.desc a, .step p a { color: var(--color-accent); }
+.desc a:hover, .step p a:hover { color: var(--color-text-primary); }
+
+/* one step of the course */
+.step { padding: 1.75rem 0; border-top: 1px solid var(--color-border-tertiary); scroll-margin-top: 1.5rem; }
+.step-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 0.75rem; }
+.step h2 { font-size: 22px; font-weight: 600; color: var(--color-accent); }
+.step p { font-size: 18px; color: var(--color-text-secondary); line-height: 1.7; margin-bottom: 0.9rem; }
+.step p:last-child { margin-bottom: 0; }
+.step-teaser { font-style: italic; }
+.step code { font-family: var(--font-mono); font-size: 16px; color: var(--color-text-primary); background: var(--color-background-secondary); padding: 1px 5px; border-radius: 3px; }
+.step pre { background: var(--color-background-secondary); border: 1px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 12px 14px; margin-bottom: 0.9rem; overflow-x: auto; }
+.step pre code { font-family: var(--font-mono); font-size: 16px; background: none; padding: 0; }
+
+/* hand-rolled syntax highlighting (see code-highlight.js) — one colour per token kind */
+.tok-keyword    { color: #FF7B72; }              /* if/for/return/true/null/... */
+.tok-type       { color: #79C0FF; }              /* int/void/String/Player/... */
+.tok-func       { color: #D2A8FF; }              /* name immediately followed by ( */
+.tok-string     { color: #A5D6A7; }
+.tok-char       { color: #A5D6A7; }
+.tok-number     { color: #F2CC60; }
+.tok-comment    { color: #8B949E; font-style: italic; }
+.tok-annotation { color: #FFA657; }              /* @Override, ... */
+.tok-bracket    { color: #E3B341; }              /* ( ) { } [ ] */
+.tok-punct      { color: #C9D1D9; }              /* , ; */
+.tok-operator   { color: #56D4DD; }              /* = + - * / % < > ! & | ^ ~ ? : . */
+.tok-key        { color: #79C0FF; }              /* YAML / JSON keys */
+.tok-literal    { color: #79C0FF; }              /* true / false / null in YAML and JSON */
+.tok-tag        { color: #7EE787; }              /* <div ... > and </div> in HTML / XML */
+.tok-attr       { color: #D2A8FF; }              /* attribute names, including Angular's [prop] and (event) */
+.tok-variable   { color: #FFA657; }              /* $VAR and ${VAR} in shell and nginx */
+.tok-flag       { color: #56D4DD; }              /* -d, --name in shell commands */
+
+/* collapses one or more long explanatory paragraphs behind a titled toggle,
+   so a wall of text doesn't dominate the step; closed by default. The
+   summary (title) always stays visible — only the paragraphs below it hide. */
+.explain { background: var(--color-background-secondary); border: 1px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 10px 14px; margin-bottom: 0.9rem; }
+.explain summary { cursor: pointer; font-size: 17px; font-weight: 600; color: var(--color-text-primary); list-style: none; }
+.explain summary::-webkit-details-marker { display: none; }
+.explain summary::before { content: '▸ '; color: var(--color-accent); }
+.explain[open] summary::before { content: '▾ '; }
+.explain[open] summary { margin-bottom: 0.6rem; }
+.explain p:last-child { margin-bottom: 0; }
+
+/* bookmark toggle: dim yellow hollow star when unmarked, full-bright yellow filled star when marked */
+.bookmark-btn { flex: none; font-size: 22px; line-height: 1; background: none; border: none; color: #7A7226; cursor: pointer; padding: 0 2px; }
+.bookmark-btn:hover { color: #B8AC33; }
+.bookmark-btn.bookmarked { color: #FFEE00; }
+
+/* line-number gutter added by line-numbers.js to multi-line code blocks */
+.has-line-numbers code { display: flex; }
+.line-numbers { flex: none; padding-right: 12px; margin-right: 12px; border-right: 1px solid var(--color-border-tertiary); text-align: right; color: var(--color-text-tertiary); user-select: none; white-space: pre; }
+.code-lines { flex: 1; min-width: 0; white-space: pre; }

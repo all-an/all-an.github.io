@@ -1,8 +1,17 @@
 // Renders the Java / Angular / AWS courses list. The dataset (DATA,
 // catLabel, catClass, statusLabel, statusClass) comes from
-// java-angular-aws-data.js, which is loaded first. A course name links out
-// to its course/certificate page when a real url is set (anything other
-// than "#").
+// java-angular-aws-data.js, which is loaded first. A course name links to its
+// local detail page when one exists (the `page` field), otherwise out to its
+// course/certificate when a real url is set (anything other than "#").
+
+// A course's detail page can override its status via "Mark done" / "Mark
+// planned" / "Mark in progress" buttons, saved to localStorage under
+// 'course-status:<folder>'. This reads that override when present, falling
+// back to the dataset value.
+function effectiveStatus(d) {
+  if (!d.page) return d.status;
+  return localStorage.getItem('course-status:' + d.page) || d.status;
+}
 
 // Render the table for the current search query, category filter and status filter.
 function render() {
@@ -10,7 +19,7 @@ function render() {
   const category = document.getElementById('catFilter').value;
   const status = document.getElementById('statusFilter').value;
 
-  let rows = DATA;
+  let rows = DATA.map(d => ({ ...d, status: effectiveStatus(d) }));
   if (category) rows = rows.filter(d => d.cat === category);
   if (status) rows = rows.filter(d => d.status === status);
   // Search matches the name, the category label, and the status label.
@@ -20,8 +29,10 @@ function render() {
   document.getElementById('noResults').style.display = rows.length ? 'none' : 'block';
 
   document.getElementById('tbody').innerHTML = rows.map((d, i) => {
-    // Link out to the course/certificate when a real url is set.
-    const name = d.url && d.url !== '#' ? `<a href="${d.url}" target="_blank" rel="noopener">${d.n}</a>` : d.n;
+    // Local detail page takes priority over an external course/certificate link.
+    const name = d.page
+      ? `<a href="${d.page}/">${d.n}</a>`
+      : (d.url && d.url !== '#' ? `<a href="${d.url}" target="_blank" rel="noopener">${d.n}</a>` : d.n);
     return `
       <tr>
         <td><span class="idx">${i + 1}</span></td>

@@ -47,6 +47,7 @@ tr:hover td { background: #16161a; }
 .cat-angular    { background:#501313; color:#F7C1C1; }
 .cat-aws        { background:#412402; color:#FAC775; }
 .cat-devops     { background:#042C53; color:#B5D4F4; }
+.cat-fullstack { background:#26215C; color:#CECBF6; }
 
 /* status badge: where each course currently stands */
 .status { display: inline-block; font-size: 14px; padding: 2px 8px; border-radius: 99px; white-space: nowrap; }
