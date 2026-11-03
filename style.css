@@ -27,8 +27,8 @@ body { background: var(--color-background-primary); color: var(--color-text-prim
 .section p { font-size: 20px; color: var(--color-text-secondary); line-height: 1.7; text-align: justify; }
 
 /* links */
-.links { display: flex; gap: 12px; flex-wrap: wrap; }
-.link { font-size: 18px; color: var(--color-text-secondary); text-decoration: none; padding: 6px 12px; border: 1px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); }
+.links { display: flex; gap: 10px; flex-wrap: nowrap; }
+.link { font-size: 17px; color: var(--color-text-secondary); text-decoration: none; padding: 6px 11px; border: 1px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); white-space: nowrap; }
 .link:hover { color: var(--color-text-primary); border-color: #3a3a44; }
 
 /* the email link is a button that copies the address: reset the button chrome so it matches the other links */
@@ -66,6 +66,16 @@ hr { border: none; border-top: 1px solid var(--color-border-tertiary); margin: 0
 /* pupil is centred on the eye via the negative margins; JS translates it toward the cursor */
 .pupil { position: absolute; top: 50%; left: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px; background: var(--color-background-primary); border-radius: 50%; }
 
+/* vortex state triggered when entering the Terminal button: drop the divider mask background
+   and accelerate the spin-and-shrink into the centre of the button */
+.eyes.is-vortex { background: transparent; transition: transform 0.65s cubic-bezier(0.55, 0.05, 0.68, 0.19); }
+.eyes.is-vortex .pupil { animation: pupil-spin 0.22s linear infinite; }
+
+@keyframes pupil-spin {
+  from { transform: rotate(0deg) translateX(6px); }
+  to   { transform: rotate(360deg) translateX(6px); }
+}
+
 /* no sliding or fading for visitors who ask for reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .copy-link::after, .copy-link::before, .toast { transition: none; }
@@ -76,4 +86,7 @@ hr { border: none; border-top: 1px solid var(--color-border-tertiary); margin: 0
   .eyes { display: none; }
   /* justified text stretches the spaces into gaps on a narrow column, so fall back to ragged-right */
   .tagline, .section p { text-align: left; }
+  /* stack the contact buttons vertically on mobile so the single-line row doesn't overflow */
+  .links { flex-direction: column; }
+  .link { text-align: center; }
 }

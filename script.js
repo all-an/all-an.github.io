@@ -2,10 +2,13 @@
 const MAX_PUPIL_OFFSET = 8;
 // How long the eyes take to glide to the Games button — keep in sync with the CSS transition.
 const EYE_TRAVEL_MS = 600;
+// How long the eyes take to spin and shrink into the Terminal vortex — keep in sync with .eyes.is-vortex.
+const EYE_VORTEX_MS = 650;
 
 const eyes = document.querySelector('.eyes');
 const pupils = document.querySelectorAll('.pupil');
 const gamesLink = document.getElementById('games-link');
+const terminalLink = document.getElementById('terminal-link');
 const copyEmailButton = document.getElementById('copy-email');
 const copyToast = document.getElementById('copy-toast');
 const copyToastTitle = document.getElementById('toast-title');
@@ -65,6 +68,33 @@ gamesLink?.addEventListener('click', (event) => {
 
   // Once the glide finishes, go to the Games page.
   setTimeout(() => { window.location.href = destination; }, EYE_TRAVEL_MS);
+});
+
+// On Terminal click, glide the eyes onto the Terminal button, then spin and shrink
+// them like they are being pulled into a vortex inside the button before navigating.
+terminalLink?.addEventListener('click', (event) => {
+  event.preventDefault();
+  eyesAreTraveling = true;
+  const destination = terminalLink.href;
+
+  // Slide the eyes from their current centre to the Terminal button's centre.
+  const target = centerOf(terminalLink);
+  const start = centerOf(eyes);
+  const dx = target.x - start.x;
+  const dy = target.y - start.y;
+  eyes.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+
+  // Look toward the Terminal button during the glide.
+  aimPupilsAt(target.x, target.y);
+
+  // Once the eyes arrive over the button, spin and shrink them into the vortex.
+  setTimeout(() => {
+    eyes.classList.add('is-vortex');
+    eyes.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) rotate(720deg) scale(0)`;
+  }, EYE_TRAVEL_MS);
+
+  // Navigate to the Terminal page as soon as the vortex animation completes.
+  setTimeout(() => { window.location.href = destination; }, EYE_TRAVEL_MS + EYE_VORTEX_MS);
 });
 
 // Shows the alert at the bottom of the page for COPY_TOAST_MS. `isError` swaps

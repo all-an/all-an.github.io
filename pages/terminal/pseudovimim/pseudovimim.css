@@ -1,0 +1,108 @@
+/* pseudovimim.css — In-terminal Vim interface styling */
+
+#vim-container {
+    display: none;
+    flex-direction: column;
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #e8e8e8;
+    user-select: none;
+}
+
+#vim-container.active {
+    display: flex;
+}
+
+/* Main scrollable buffer area */
+#vim-rows {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
+/* Individual buffer or tilde row */
+.vim-row {
+    display: flex;
+    min-height: 1.6em;
+    white-space: pre;
+}
+
+/* Active cursor row highlight */
+.vim-row.active-row .vim-gutter {
+    color: #00ff46;
+    font-weight: bold;
+}
+
+/* Right-aligned line number gutter */
+.vim-gutter {
+    width: 4.5ch;
+    padding-right: 1.5ch;
+    text-align: right;
+    color: #5e7a64;
+    flex-shrink: 0;
+    user-select: none;
+}
+
+/* Tilde rows below end-of-buffer */
+.vim-tilde {
+    color: #3b6e4c;
+    padding-left: 1ch;
+}
+
+/* Text content of a buffer line */
+.vim-line-text {
+    white-space: pre;
+}
+
+/* Inline Python evaluation result (Ctrl+E) shown at the end of the evaluated line */
+.vim-eval-result {
+    color: #38bdf8;
+    font-style: italic;
+    padding-left: 2ch;
+    white-space: pre;
+}
+
+.vim-eval-result.error {
+    color: #ff6060;
+}
+
+/* Cursor cell inside buffer text */
+.vim-cursor-normal {
+    background: #00ff46;
+    color: #0a0a0a;
+}
+
+.vim-cursor-insert {
+    background: rgba(0, 255, 70, 0.35);
+    border-left: 2px solid #00ff46;
+    color: #ffffff;
+}
+
+/* Status bar (second-to-last row in Vim) */
+#vim-statusbar {
+    display: flex;
+    justify-content: space-between;
+    background: #1c2b20;
+    color: #a0ffa0;
+    padding: 1px 10px;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+/* Command / mode line (bottom row in Vim) */
+#vim-cmdline {
+    min-height: 1.6em;
+    padding: 1px 4px;
+    color: #00ff46;
+    white-space: pre;
+    flex-shrink: 0;
+}
+
+#vim-cmdline.error {
+    color: #ff6060;
+}

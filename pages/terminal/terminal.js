@@ -1,0 +1,333 @@
+// terminal.js — Interactive Linux-style pseudo-terminal running over the Matrix rain
+
+(function () {
+
+// Prefix used to persist virtual files as plain strings in localStorage
+const STORAGE_FILE_PREFIX = 'vpos_file:';
+
+const output     = document.getElementById('term-output');
+const typed      = document.getElementById('term-typed');
+const termBody   = document.getElementById('term-body');
+const termShell  = document.getElementById('term-shell');
+const termPrompt = document.getElementById('term-prompt');
+const termTitle  = document.getElementById('term-title');
+
+let   inputBuf = '';      // current line being typed by the visitor
+const history  = [];      // executed commands (newest first)
+let   histIdx  = -1;      // current position in command history (-1 = live input)
+let   hostName = 'guest'; // guest segment shown after "virtualpseudoos@" in the prompt and titlebar
+
+// Default virtual files (stored as plain strings)
+const VIRTUAL_FILES = {
+    'about.txt': [
+        'Allan Pereira Abrahão — Software Developer',
+        'Interested in full stack development, programming languages,',
+        'cryptocurrencies, learning tools and games.',
+        '',
+        'Software engineer with a focus on building clean, purposeful products.',
+    ].join('\n'),
+    'skills.txt': [
+        'Software Development:',
+        '  - Programming Concepts',
+        '  - Clean Code Principles',
+        '  - Algorithms',
+        '  - AWS',
+        '  - Angular',
+        '  - Spring Boot',
+        '',
+        'Courses:     Java, Java / Angular / AWS',
+        'Mathematics: Mathematics reference',
+        'Languages:   English',
+    ].join('\n'),
+    'contact.txt': [
+        'Email:    allan8tech@gmail.com',
+        'LinkedIn: https://www.linkedin.com/in/allan-pereira-abrahao/',
+        'GitHub:   https://github.com/all-an',
+    ].join('\n'),
+    'projects.txt': [
+        'GitHub:   https://github.com/all-an',
+        'Skillset: ../skillset/skillset.html',
+        'Chess:    ../games/chess/front-chess-page/front-chess-page.html',
+    ].join('\n'),
+    'example.py': [
+        'def add(a, b):',
+        '    return a + b',
+        '',
+        'x = 10',
+        'y = 25',
+        'print("Sum:", add(x, y))',
+    ].join('\n'),
+};
+
+// Loads any user-saved files (stored as strings under STORAGE_FILE_PREFIX) from localStorage.
+function loadSavedFilesFromStorage() {
+    try {
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith(STORAGE_FILE_PREFIX)) {
+                const filename = key.slice(STORAGE_FILE_PREFIX.length);
+                const content  = localStorage.getItem(key);
+                if (filename && typeof content === 'string') {
+                    VIRTUAL_FILES[filename] = content;
+                }
+            }
+        }
+    } catch {
+        // Ignore storage read errors in restricted browsing contexts
+    }
+}
+
+loadSavedFilesFromStorage();
+
+// ── Boot message ──────────────────────────────────────────────────────────────
+const BOOT = [
+    'Welcome to VirtualPseudoOS v1.0.0 (tty1)',
+    'Type "help" to list available commands.',
+    '',
+];
+
+// Updates the live prompt and window titlebar when `hostName` changes.
+function updatePrompt() {
+    termPrompt.textContent = `virtualpseudoos@${hostName}:~$`;
+    termTitle.textContent  = `virtualpseudoos@${hostName}: ~`;
+}
+
+// Changes the guest name (`virtualpseudoos@<name>`) to whatever the user typed.
+function changeHostName(args) {
+    const newName = args.join('-').trim();
+    if (!newName) {
+        return ['Usage: hostname <name>'];
+    }
+    hostName = newName;
+    updatePrompt();
+    return [`Prompt updated to virtualpseudoos@${hostName}`];
+}
+
+// Executes a Python 3 file from VIRTUAL_FILES using Pyodide and prints stdout/stderr.
+function runPythonCommand(args) {
+    if (!args[0]) {
+        return ['Usage: python <file.py>'];
+    }
+    const filename = args[0];
+    if (typeof VIRTUAL_FILES[filename] === 'undefined') {
+        printLine(`python: can't open file '${filename}': [Errno 2] No such file or directory`, 'error');
+        return null;
+    }
+
+    const rawContent = VIRTUAL_FILES[filename];
+    const codeString = Array.isArray(rawContent) ? rawContent.join('\n') : String(rawContent);
+
+    printLine(`Running ${filename} with Python 3 (Pyodide)...`);
+    scrollBottom();
+
+    window.PyodideRunner.runPythonFile(codeString)
+        .then(({ outLines, errLines }) => {
+            outLines.forEach(line => printLine(line, 'output'));
+            errLines.forEach(line => printLine(line, 'error'));
+            scrollBottom();
+        })
+        .catch(err => {
+            printLine(`Pyodide error: ${err.message || err}`, 'error');
+            scrollBottom();
+        });
+
+    return null;
+}
+
+// ── Commands ──────────────────────────────────────────────────────────────────
+const COMMANDS = {
+
+    // Lists all supported shell commands and their descriptions.
+    help() {
+        return [
+            'Available commands:',
+            '  help              Show this help message',
+            '  vim [file]        Open PseudoVimim editor (Ctrl+E inside vim evaluates Python)',
+            '  python <file.py>  Run a Python 3 file using Pyodide',
+            '  ls                List files in the current directory',
+            '  cat <file>        Print the contents of a file',
+            '  hostname <name>   Change "guest" in virtualpseudoos@guest to <name>',
+            '  whoami            Print current user',
+            '  pwd               Print working directory',
+            '  date              Print current system date and time',
+            '  echo <text>       Print text to the terminal',
+            '  clear             Clear the terminal screen (or Ctrl+L)',
+            '  exit              Return to the main page',
+            '',
+        ];
+    },
+
+    // Launches the in-terminal PseudoVimim editor for a new or existing file.
+    vim(args) {
+        const filename = args[0] || '';
+        termShell.classList.add('hidden');
+        window.PseudoVimim.open(filename, VIRTUAL_FILES, (exitMsg) => {
+            termShell.classList.remove('hidden');
+            if (exitMsg) {
+                printLine(exitMsg);
+            }
+            scrollBottom();
+        });
+        return null;
+    },
+
+    // Runs a Python 3 script file via Pyodide (also aliased as `python3`).
+    python:  runPythonCommand,
+    python3: runPythonCommand,
+
+    // Lists all virtual files in /home/visitor.
+    ls() {
+        return [Object.keys(VIRTUAL_FILES).join('    '), ''];
+    },
+
+    // Prints the contents of a named virtual file, or an error if missing.
+    cat(args) {
+        if (!args[0]) {
+            return ['Usage: cat <filename>'];
+        }
+        const file = VIRTUAL_FILES[args[0]];
+        if (typeof file === 'undefined') {
+            return [`cat: ${args[0]}: No such file or directory`];
+        }
+        const lines = Array.isArray(file) ? file : String(file).split('\n');
+        return [...lines, ''];
+    },
+
+    // Changes the host segment after `virtualpseudoos@` (also aliased as `guest`).
+    hostname: changeHostName,
+    guest:    changeHostName,
+
+    // Prints the active guest name (the segment after `@`).
+    whoami() {
+        return [hostName];
+    },
+
+    // Prints the active working directory.
+    pwd() {
+        return ['/home/visitor'];
+    },
+
+    // Prints the current local timestamp.
+    date() {
+        return [new Date().toString()];
+    },
+
+    // Echoes the provided arguments back to the output area.
+    echo(args) {
+        return [args.join(' ')];
+    },
+
+    // Clears all previous lines from the terminal output container.
+    clear() {
+        output.innerHTML = '';
+        return null;
+    },
+
+    // Navigates back to the main portfolio page.
+    exit() {
+        window.location.href = '../../index.html';
+        return ['Logging out...'];
+    },
+};
+
+// ── Output helpers ────────────────────────────────────────────────────────────
+
+// Appends a single styled line to the terminal output area.
+function printLine(text, cls = 'output') {
+    const line       = document.createElement('span');
+    line.className   = `term-line ${cls}`;
+    line.textContent = text;
+    output.appendChild(line);
+}
+
+// Echoes the prompt and command string before printing command results.
+function printPromptEcho(text) {
+    printLine(`virtualpseudoos@${hostName}:~$ ${text}`, 'prompt');
+}
+
+// Scrolls the terminal body so the input row remains visible at the bottom.
+function scrollBottom() {
+    termBody.scrollTop = termBody.scrollHeight;
+}
+
+// ── Command execution ─────────────────────────────────────────────────────────
+
+// Parses and executes a raw command line string entered by the visitor.
+function runCommand(raw) {
+    const trimmed = raw.trim();
+    if (!trimmed) {
+        printPromptEcho('');
+        scrollBottom();
+        return;
+    }
+
+    history.unshift(trimmed);
+    histIdx = -1;
+
+    printPromptEcho(trimmed);
+
+    const [cmd, ...args] = trimmed.split(/\s+/);
+    const handler = COMMANDS[cmd.toLowerCase()];
+
+    if (!handler) {
+        printLine(`command not found: ${cmd}. Type "help" for available commands.`, 'error');
+    } else {
+        const lines = handler(args);
+        if (lines) lines.forEach(l => printLine(l));
+    }
+    scrollBottom();
+}
+
+// ── Keyboard input ────────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+    // Ctrl+L clears the terminal screen
+    if (e.ctrlKey && e.key.toLowerCase() === 'l') {
+        e.preventDefault();
+        output.innerHTML = '';
+        return;
+    }
+
+    switch (e.key) {
+        case 'Enter':
+            runCommand(inputBuf);
+            inputBuf = '';
+            break;
+
+        case 'Backspace':
+            inputBuf = inputBuf.slice(0, -1);
+            break;
+
+        case 'ArrowUp':
+            e.preventDefault();
+            if (histIdx < history.length - 1) {
+                histIdx++;
+                inputBuf = history[histIdx];
+            }
+            break;
+
+        case 'ArrowDown':
+            e.preventDefault();
+            if (histIdx > 0) {
+                histIdx--;
+                inputBuf = history[histIdx];
+            } else {
+                histIdx  = -1;
+                inputBuf = '';
+            }
+            break;
+
+        default:
+            // Only append printable single characters
+            if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
+                inputBuf += e.key;
+            }
+    }
+
+    typed.textContent = inputBuf;
+});
+
+// ── Boot sequence ─────────────────────────────────────────────────────────────
+BOOT.forEach(line => printLine(line));
+scrollBottom();
+
+})();

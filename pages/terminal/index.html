@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal — Allan Pereira Abrahão</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🟩%3C/text%3E%3C/svg%3E">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="pseudovimim/pseudovimim.css">
+</head>
+<body>
+
+    <!-- Matrix rain canvas injected by matrix.js -->
+
+    <!-- Floating terminal window -->
+    <div id="terminal">
+        <div id="term-titlebar">
+            <a class="term-dot red" href="../../index.html" title="Back to About" aria-label="Back to About"></a>
+            <span class="term-dot yellow"></span>
+            <span class="term-dot green"></span>
+            <span id="term-title">virtualpseudoos@guest: ~</span>
+            <a id="term-back" href="../../index.html">← about</a>
+        </div>
+        <div id="term-body">
+            <!-- Standard shell view -->
+            <div id="term-shell">
+                <div id="term-output"></div>
+                <div id="term-input-row">
+                    <span id="term-prompt">virtualpseudoos@guest:~$</span><span id="term-typed"></span><span id="term-cursor"></span>
+                </div>
+            </div>
+
+            <!-- In-terminal PseudoVimim editor view -->
+            <div id="vim-container">
+                <div id="vim-rows"></div>
+                <div id="vim-statusbar">
+                    <span id="vim-status-file"></span>
+                    <span id="vim-status-pos"></span>
+                </div>
+                <div id="vim-cmdline"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="matrix.js"></script>
+    <script src="pyodide-runner.js"></script>
+    <script src="pseudovimim/pseudovimim.js"></script>
+    <script src="terminal.js"></script>
+</body>
+</html>
