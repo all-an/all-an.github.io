@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Strict CORS & Anti-CSRF Cookie Hardening</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../security.html">&larr; back</a>
+  <h1>Strict CORS & Anti-CSRF Cookie Hardening</h1>
+  <p class="desc">Reflecting arbitrary <code>Origin</code> headers with <code>Access-Control-Allow-Credentials: true</code> lets malicious websites read authenticated API responses. Restrict CORS to an explicit origin allowlist, and when using cookies, set <code>HttpOnly</code>, <code>Secure</code>, and <code>SameSite=Strict</code>.</p>
+  <pre><code class="language-java">@Bean
+public CorsConfigurationSource corsConfigurationSource() {
+    CorsConfiguration config = new CorsConfiguration();
+    config.setAllowedOrigins(List.of("https://app.example.com")); // Never "*" with credentials
+    config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
+    config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+    config.setAllowCredentials(true);
+    config.setMaxAge(3600L);
+
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/api/**", config);
+    return source;
+}
+
+// Hardened session/refresh cookie construction:
+ResponseCookie cookie = ResponseCookie.from("__Host-refresh_token", tokenValue)
+    .httpOnly(true)       // Inaccessible to document.cookie (XSS defense)
+    .secure(true)         // Sent over HTTPS only
+    .path("/")
+    .sameSite("Strict")   // Blocks cross-site request forgery (CSRF)
+    .maxAge(Duration.ofDays(7))
+    .build();</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

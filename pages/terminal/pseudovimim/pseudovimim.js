@@ -87,7 +87,56 @@ function clampCursor() {
     }
 }
 
-// Builds a single buffer row DOM element with optional line number, cursor cell, and inline Ctrl+E result.
+// Returns the syntax highlighter (`PythonHighlight`, `CHighlight`, or `AsmHighlight`) matching `vimFilename`.
+function getActiveHighlighter() {
+    const lowerName = (vimFilename || '').toLowerCase();
+    if (lowerName.endsWith('.py') && window.PythonHighlight) {
+        return window.PythonHighlight;
+    }
+    if ((lowerName.endsWith('.c') || lowerName.endsWith('.h')) && window.CHighlight) {
+        return window.CHighlight;
+    }
+    if ((lowerName.endsWith('.asm') || lowerName.endsWith('.s')) && window.AsmHighlight) {
+        return window.AsmHighlight;
+    }
+    return null;
+}
+
+// Appends syntax-highlighted text (or plain text if no highlighter applies) to `parentEl`.
+function appendHighlightedSlice(parentEl, fullLineTokens, startCol, endCol, fallbackText) {
+    if (!fullLineTokens || fullLineTokens.length === 0) {
+        const slice = fallbackText.slice(startCol, endCol);
+        if (slice) {
+            parentEl.appendChild(document.createTextNode(slice));
+        }
+        return;
+    }
+
+    let offset = 0;
+    for (const tok of fullLineTokens) {
+        const tokStart = offset;
+        const tokEnd   = offset + tok.text.length;
+        offset         = tokEnd;
+
+        const overlapStart = Math.max(startCol, tokStart);
+        const overlapEnd   = Math.min(endCol, tokEnd);
+        if (overlapStart >= overlapEnd) {
+            continue;
+        }
+
+        const subText = tok.text.slice(overlapStart - tokStart, overlapEnd - tokStart);
+        if (tok.cls) {
+            const span = document.createElement('span');
+            span.className   = tok.cls;
+            span.textContent = subText;
+            parentEl.appendChild(span);
+        } else {
+            parentEl.appendChild(document.createTextNode(subText));
+        }
+    }
+}
+
+// Builds a single buffer row DOM element with optional line number, syntax highlight, cursor cell, and inline Ctrl+E result.
 function buildBufferRow(lineText, rowIndex) {
     const row = document.createElement('div');
     row.className = 'vim-row' + (rowIndex === vimCursorRow ? ' active-row' : '');
@@ -102,23 +151,26 @@ function buildBufferRow(lineText, rowIndex) {
     const content = document.createElement('span');
     content.className = 'vim-line-text';
 
-    if (rowIndex === vimCursorRow) {
-        const before = lineText.slice(0, vimCursorCol);
-        const atChar = vimCursorCol < lineText.length ? lineText[vimCursorCol] : ' ';
-        const after  = vimCursorCol < lineText.length ? lineText.slice(vimCursorCol + 1) : '';
+    const highlighter = getActiveHighlighter();
+    const lineTokens  = highlighter && lineText.length > 0 ? highlighter.tokenizeLine(lineText) : null;
 
-        content.appendChild(document.createTextNode(before));
+    if (rowIndex === vimCursorRow) {
+        const atChar = vimCursorCol < lineText.length ? lineText[vimCursorCol] : ' ';
+
+        appendHighlightedSlice(content, lineTokens, 0, vimCursorCol, lineText);
 
         const cursorSpan = document.createElement('span');
         cursorSpan.className   = vimMode === 'INSERT' ? 'vim-cursor-insert' : 'vim-cursor-normal';
         cursorSpan.textContent = atChar;
         content.appendChild(cursorSpan);
 
-        if (after) {
-            content.appendChild(document.createTextNode(after));
+        if (vimCursorCol < lineText.length) {
+            appendHighlightedSlice(content, lineTokens, vimCursorCol + 1, lineText.length, lineText);
         }
+    } else if (lineText.length > 0) {
+        appendHighlightedSlice(content, lineTokens, 0, lineText.length, lineText);
     } else {
-        content.textContent = lineText.length > 0 ? lineText : ' ';
+        content.textContent = ' ';
     }
 
     row.appendChild(content);
@@ -202,8 +254,40 @@ function saveBuffer(targetName) {
     return true;
 }
 
-// Evaluates the current Python line or function block on Ctrl+E and displays the result inline.
+// Evaluates the current Python, C, or Assembly line/block on Ctrl+E and displays the result inline.
 async function handleCtrlE() {
+    const lowerName = (vimFilename || '').toLowerCase();
+    const isCFile   = lowerName.endsWith('.c') || lowerName.endsWith('.h');
+    const isAsmFile = lowerName.endsWith('.asm') || lowerName.endsWith('.s');
+
+    if (isCFile || isAsmFile) {
+        if (!window.CasmRunner) {
+            setStatusMessage('C/ASM runner is not available', true);
+            renderVim();
+            return;
+        }
+        const lang = isAsmFile ? 'asm' : 'c';
+        setStatusMessage(`Evaluating ${lang.toUpperCase()}...`, false);
+        renderVim();
+
+        try {
+            const result = await window.CasmRunner.evaluateVimTarget(vimLines, vimCursorRow, lang);
+            if (result && result.text) {
+                vimInlineResults[result.targetRow] = {
+                    text:    result.text,
+                    isError: result.isError,
+                };
+                setStatusMessage(`Evaluated line ${result.targetRow + 1}`, false);
+            } else {
+                setStatusMessage('Nothing to evaluate on this line', false);
+            }
+        } catch (err) {
+            setStatusMessage(`Runner error: ${err.message || err}`, true);
+        }
+        renderVim();
+        return;
+    }
+
     if (!window.PyodideRunner) {
         setStatusMessage('Pyodide runner is not available', true);
         renderVim();

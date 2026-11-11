@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Projects / GitHub — Allan Pereira Abrahão</title>
+  <link rel="stylesheet" href="projects.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <!-- header: title + subtitle on the left, external GitHub profile + back link on the right -->
+  <div class="header">
+    <div class="header-titles">
+      <h1>Projects / GitHub</h1>
+      <span class="subtitle">Notable &amp; recently updated repositories across full-stack, crypto, systems, and AI.</span>
+    </div>
+    <div class="header-links">
+      <a class="back" href="https://github.com/all-an?tab=repositories&amp;q=&amp;type=public&amp;language=&amp;sort=" target="_blank" rel="noopener">All 153 on GitHub ↗</a>
+      <a class="back" href="../../index.html">← about</a>
+    </div>
+  </div>
+
+  <!-- profile overview card + language breakdown card, filled in by projects.js -->
+  <div class="overview-grid">
+    <div class="overview-card" id="profileCard"></div>
+    <div class="overview-card" id="langCard"></div>
+  </div>
+
+  <hr />
+
+  <!-- search box + category/language filters + result count -->
+  <div class="controls">
+    <input type="text" id="search" placeholder="Search projects, technologies, languages, descriptions..." />
+    <select id="catFilter">
+      <option value="">All categories</option>
+      <option value="backend">Backend &amp; Distributed</option>
+      <option value="crypto">Crypto &amp; Nano (XNO)</option>
+      <option value="systems">Systems, Editors &amp; Games</option>
+      <option value="python">Python, Automation &amp; AI</option>
+      <option value="profile">Profile &amp; Personal Site</option>
+    </select>
+    <select id="langFilter">
+      <option value="">All languages</option>
+      <option value="Java">Java</option>
+      <option value="Go">Go</option>
+      <option value="D">D</option>
+      <option value="Zig">Zig</option>
+      <option value="Rust">Rust</option>
+      <option value="Nim">Nim</option>
+      <option value="Python">Python</option>
+      <option value="TypeScript">TypeScript</option>
+      <option value="JavaScript">JavaScript</option>
+      <option value="Emacs Lisp">Emacs Lisp</option>
+      <option value="HTML">HTML</option>
+      <option value="JSON">JSON</option>
+    </select>
+    <span class="count" id="count"></span>
+  </div>
+
+  <!-- grouped project cards, filled in by projects.js -->
+  <div id="projectsContainer"></div>
+  <div class="no-results" id="noResults" style="display:none;">No projects match.</div>
+
+</div>
+
+<script src="projects-data.js"></script>
+<script src="projects.js"></script>
+</body>
+</html>

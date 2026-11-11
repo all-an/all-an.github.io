@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Server-Side Request Forgery (SSRF) Defense</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../security.html">&larr; back</a>
+  <h1>Server-Side Request Forgery (SSRF) Defense</h1>
+  <p class="desc">When a backend fetches a user-supplied URL (webhooks, avatar imports, PDF generators), an attacker can supply <code>http://169.254.169.254/latest/meta-data/iam/security-credentials/</code> or <code>http://127.0.0.1:6379</code> to steal cloud IAM keys or hit internal services. Validate the scheme, resolve DNS, and reject private/loopback/link-local IPs.</p>
+  <pre><code class="language-java">public final class SsrfSafeUrlValidator {
+
+    public static URI validateExternalHttpsUrl(String rawUrl) throws Exception {
+        URI uri = new URI(rawUrl);
+        if (!"https".equalsIgnoreCase(uri.getScheme()) || uri.getHost() == null) {
+            throw new SecurityException("Only HTTPS URLs with a valid host are allowed");
+        }
+
+        // Resolve all DNS records and block internal, loopback, and cloud metadata ranges
+        InetAddress[] addresses = InetAddress.getAllByName(uri.getHost());
+        for (InetAddress addr : addresses) {
+            if (addr.isLoopbackAddress()
+                    || addr.isSiteLocalAddress()   // 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16
+                    || addr.isLinkLocalAddress()   // 169.254.0.0/16 (AWS/GCP/Azure metadata!)
+                    || addr.isAnyLocalAddress()
+                    || addr.isMulticastAddress()) {
+                throw new SecurityException("Blocked SSRF attempt to internal address: " + addr.getHostAddress());
+            }
+        }
+        return uri;
+    }
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

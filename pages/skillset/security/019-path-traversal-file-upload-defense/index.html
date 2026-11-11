@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Path Traversal & Safe File Uploads</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../security.html">&larr; back</a>
+  <h1>Path Traversal & Safe File Uploads</h1>
+  <p class="desc">Using a client-supplied filename directly allows <code>../../etc/cron.d/pwn</code> path traversal or executable script uploads. Ignore the client filename when storing on disk (generate a random <code>UUID</code>), verify <code>Path.normalize().startsWith(baseDir)</code>, and check magic bytes.</p>
+  <pre><code class="language-java">public Path storeUploadedPdfSafely(Path baseUploadDir, MultipartFile file) throws IOException {
+    if (file.getSize() &gt; 10 * 1024 * 1024) {
+        throw new IllegalArgumentException("File exceeds 10 MB limit");
+    }
+
+    // Verify PDF magic bytes (%PDF-) rather than trusting the client Content-Type header
+    byte[] header = file.getInputStream().readNBytes(5);
+    if (!Arrays.equals(header, "%PDF-".getBytes(StandardCharsets.US_ASCII))) {
+        throw new SecurityException("Uploaded file is not a valid PDF");
+    }
+
+    // Generate an unguessable server filename and verify canonical containment
+    String safeFileName = UUID.randomUUID() + ".pdf";
+    Path target = baseUploadDir.resolve(safeFileName).normalize();
+    if (!target.startsWith(baseUploadDir.normalize())) {
+        throw new SecurityException("Path traversal attempt blocked");
+    }
+    Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+    return target;
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

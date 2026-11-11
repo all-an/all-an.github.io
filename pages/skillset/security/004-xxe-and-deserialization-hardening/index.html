@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>XXE & Deserialization Hardening</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../security.html">&larr; back</a>
+  <h1>XXE & Deserialization Hardening</h1>
+  <p class="desc">Default XML parsers expand external entities (<code>SYSTEM "file:///etc/passwd"</code>), leading to local file disclosure and SSRF. Raw Java <code>ObjectInputStream</code> deserialization executes gadget chains leading to Remote Code Execution (RCE). Disable DTDs in XML parsers and use typed JSON records or <code>ObjectInputFilter</code>.</p>
+  <pre><code class="language-java">// HARDENED XML PARSER: Disable DOCTYPE declarations and external entities (XXE defense)
+DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+dbf.setFeature("http://xml.org/sax/features/external-general-entities", false);
+dbf.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+dbf.setXIncludeAware(false);
+dbf.setExpandEntityReferences(false);
+
+// HARDENED JAVA DESERIALIZATION: Enforce a strict class allowlist filter (Java 9+)
+ObjectInputFilter allowlistFilter = ObjectInputFilter.Config.createFilter(
+    "com.example.dto.*;java.base/*;maxdepth=5;maxarray=1000;!*"
+);
+try (ObjectInputStream ois = new ObjectInputStream(inputStream)) {
+    ois.setObjectInputFilter(allowlistFilter);
+    SafePayload payload = (SafePayload) ois.readObject();
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

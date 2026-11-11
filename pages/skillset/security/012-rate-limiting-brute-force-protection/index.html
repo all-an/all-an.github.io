@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rate Limiting & Brute-Force Protection</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../security.html">&larr; back</a>
+  <h1>Rate Limiting & Brute-Force Protection</h1>
+  <p class="desc">Without rate limiting, attackers can run credential stuffing against <code>/login</code>, brute-force 6-digit OTP codes, or exhaust database connection pools. Enforce token-bucket rate limits keyed by client IP and authenticated user ID, returning <code>429 Too Many Requests</code>.</p>
+  <pre><code class="language-java">@Component
+public class LoginRateLimiter {
+
+    private final Map&lt;String, Bucket&gt; buckets = new ConcurrentHashMap&lt;&gt;();
+
+    // Allow at most 5 login attempts per minute per IP + username key
+    private Bucket newBucket(String key) {
+        Bandwidth limit = Bandwidth.builder()
+            .capacity(5)
+            .refillIntervally(5, Duration.ofMinutes(1))
+            .build();
+        return Bucket.builder().addLimit(limit).build();
+    }
+
+    public void checkLimitOrThrow(String clientIp, String username) {
+        String key = clientIp + ":" + username.toLowerCase();
+        Bucket bucket = buckets.computeIfAbsent(key, this::newBucket);
+        if (!bucket.tryConsume(1)) {
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Rate limit exceeded");
+        }
+    }
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

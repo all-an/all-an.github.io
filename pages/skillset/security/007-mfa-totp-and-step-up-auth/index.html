@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Multi-Factor Auth (TOTP) & Step-Up Auth</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../security.html">&larr; back</a>
+  <h1>Multi-Factor Auth (TOTP) & Step-Up Auth</h1>
+  <p class="desc">Stolen credentials or session tokens should not be enough to drain funds or export customer databases. Require Time-Based One-Time Passwords (RFC 6238 TOTP / WebAuthn) at login and enforce step-up verification before high-privilege operations.</p>
+  <pre><code class="language-java">@Service
+public class PayoutService {
+
+    private final TotpVerifier totpVerifier;
+    private final AuditLogger auditLogger;
+
+    @PreAuthorize("hasAuthority('SCOPE_payout:write')")
+    public PayoutReceipt executeHighValuePayout(
+            UserPrincipal principal,
+            BigDecimal amount,
+            String totpCode) {
+
+        // Step-up authentication required for payouts above threshold
+        if (amount.compareTo(new BigDecimal("1000.00")) &gt; 0) {
+            if (!totpVerifier.verifyCode(principal.userId(), totpCode)) {
+                auditLogger.logSecurityAlert("STEP_UP_MFA_FAILED", principal.userId());
+                throw new AccessDeniedException("Valid MFA code required for high-value payout");
+            }
+        }
+        return processTransfer(principal.userId(), amount);
+    }
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

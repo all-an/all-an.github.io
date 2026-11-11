@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Safe Error Handling & Tamper-Evident Audit Logs</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../security.html">&larr; back</a>
+  <h1>Safe Error Handling & Tamper-Evident Audit Logs</h1>
+  <p class="desc">Returning stack traces or SQL error messages to clients gives attackers schema names and library versions, while logging raw user input enables CRLF log injection and PII leaks. Return generic RFC 7807 <code>ProblemDetail</code> responses and sanitize/redact all logged values.</p>
+  <pre><code class="language-java">@RestControllerAdvice
+public class GlobalSecurityExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalSecurityExceptionHandler.class);
+
+    @ExceptionHandler(Exception.class)
+    public ProblemDetail handleUnexpected(Exception ex, HttpServletRequest req) {
+        String correlationId = UUID.randomUUID().toString();
+        // Sanitize CR/LF from request path to prevent log forging
+        String safePath = req.getRequestURI().replaceAll("[\r\n]", "_");
+        log.error("correlationId={} path={} unexpected error", correlationId, safePath, ex);
+
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            "An internal error occurred. Reference ID: " + correlationId
+        );
+        problem.setTitle("Internal Server Error");
+        return problem;
+    }
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

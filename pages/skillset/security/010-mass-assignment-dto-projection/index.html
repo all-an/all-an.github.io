@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mass Assignment & DTO Boundary Projection</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../security.html">&larr; back</a>
+  <h1>Mass Assignment & DTO Boundary Projection</h1>
+  <p class="desc">Binding incoming JSON directly to a JPA <code>@Entity</code> allows attackers to inject extra fields like <code>{"role":"ADMIN","balance":999999}</code> (Mass Assignment), and returning entities directly leaks internal fields like password hashes. Always use explicit Java <code>record</code> DTOs.</p>
+  <pre><code class="language-java">// VULNERABLE: Attacker sends {"username":"bob","role":"ADMIN","emailVerified":true}
+@PostMapping("/users")
+public User registerInsecure(@RequestBody User userEntity) {
+    return userRepository.save(userEntity);
+}
+
+// HARDENED: Dedicated request &amp; response records expose only the exact permitted fields
+public record RegisterUserRequest(
+    @NotBlank @Size(min = 3, max = 40) String username,
+    @NotBlank @Email String email,
+    @NotBlank @Size(min = 12, max = 128) String password
+) {}
+
+public record UserProfileResponse(UUID id, String username, String email) {
+    public static UserProfileResponse from(User u) {
+        return new UserProfileResponse(u.getId(), u.getUsername(), u.getEmail());
+    }
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Backend Security Best Practices</title>
+<style>
+:root {
+  --color-background-primary:   #111113;
+  --color-background-secondary: #1a1a1e;
+  --color-text-primary:         #e8e8ea;
+  --color-text-secondary:       #9898a0;
+  --color-text-tertiary:        #5e5e66;
+  --color-border-secondary:     #2e2e33;
+  --color-border-tertiary:      #232328;
+  --border-radius-md:           7px;
+  --font-mono:                  'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+}
+body { background: var(--color-background-primary); color: var(--color-text-primary); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+.wrap { max-width: 1200px; margin: 0 auto; padding: 2.5rem 2rem 3rem; }
+h1 { font-size: 28px; font-weight: 600; color: var(--color-text-primary); margin-bottom: 1.75rem; letter-spacing: -0.01em; }
+.controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 1.25rem; align-items: center; }
+input[type=text] { flex: 1; min-width: 220px; font-size: 18px; padding: 8px 12px; border-radius: var(--border-radius-md); border: 1px solid var(--color-border-secondary); background: var(--color-background-secondary); color: var(--color-text-primary); outline: none; }
+input[type=text]:focus { border-color: #3a3a44; }
+select { font-size: 18px; padding: 8px 12px; border-radius: var(--border-radius-md); border: 1px solid var(--color-border-secondary); background: var(--color-background-secondary); color: var(--color-text-primary); outline: none; cursor: pointer; }
+.count { font-size: 17px; color: var(--color-text-secondary); white-space: nowrap; }
+.tbl-wrap { overflow-x: auto; border-radius: var(--border-radius-md); border: 1px solid var(--color-border-tertiary); }
+table { width: 100%; border-collapse: collapse; font-size: 18px; table-layout: fixed; }
+th { text-align: left; font-weight: 500; font-size: 16px; color: var(--color-text-secondary); padding: 10px 14px; border-bottom: 1px solid var(--color-border-tertiary); background: var(--color-background-secondary); letter-spacing: 0.03em; text-transform: uppercase; }
+td { padding: 11px 14px; border-bottom: 1px solid var(--color-border-tertiary); vertical-align: top; color: var(--color-text-primary); }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #16161a; }
+tr.clickable { cursor: pointer; }
+.idx { font-family: var(--font-mono); font-size: 16px; color: var(--color-text-tertiary); padding-top: 3px; }
+.concept { font-weight: 500; font-size: 18px; }
+.concept a { color: inherit; text-decoration: none; }
+.concept a:hover { text-decoration: underline; }
+.cat { display: inline-block; font-size: 14px; padding: 2px 8px; border-radius: 99px; margin-top: 4px; white-space: nowrap; }
+.apis { display: flex; flex-wrap: wrap; gap: 5px; }
+.api { font-family: var(--font-mono); font-size: 15px; background: #1e1e23; border: 1px solid var(--color-border-tertiary); border-radius: 4px; padding: 2px 7px; color: var(--color-text-secondary); }
+.note { font-size: 16px; color: var(--color-text-tertiary); font-style: italic; line-height: 1.5; }
+.no-results { text-align: center; padding: 3rem; color: var(--color-text-secondary); font-size: 20px; }
+th:nth-child(1) { width: 4%; }
+th:nth-child(2) { width: 24%; }
+th:nth-child(3) { width: 14%; }
+th:nth-child(4) { width: 32%; }
+th:nth-child(5) { width: 26%; }
+
+@media (max-width: 600px) {
+  th:nth-child(3), td:nth-child(3),
+  th:nth-child(4), td:nth-child(4),
+  th:nth-child(5), td:nth-child(5) { display: none; }
+  th:nth-child(1) { width: 12%; }
+  th:nth-child(2) { width: 88%; }
+  .cat { display: none; }
+}
+
+.cat-injection { background:#501313; color:#F7C1C1; }
+.cat-auth      { background:#26215C; color:#CECBF6; }
+.cat-access    { background:#412402; color:#FAC775; }
+.cat-network   { background:#042C53; color:#B5D4F4; }
+.cat-crypto    { background:#173404; color:#C0DD97; }
+.cat-files     { background:#4A1B0C; color:#F5C4B3; }
+.cat-ops       { background:#04342C; color:#9FE1CB; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:1.75rem;">
+  <div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
+    <h1 style="margin-bottom:0;">Backend Security Best Practices</h1>
+    <span style="font-size:16px; color:var(--color-text-secondary); font-style:italic;">Foundational &amp; modern defenses against SQLi, BOLA/IDOR, SSRF, and data theft. Click a topic for Java examples.</span>
+  </div>
+  <a href="../skillset.html" style="font-size:18px; color:var(--color-text-secondary); text-decoration:none; white-space:nowrap;">&larr; skillset</a>
+</div>
+<div class="controls">
+  <input type="text" id="search" placeholder="Search vulnerabilities, defenses, Java APIs, OWASP categories..." />
+  <select id="catFilter">
+    <option value="">All categories</option>
+    <option value="injection">Injection &amp; Input</option>
+    <option value="auth">Authentication &amp; Tokens</option>
+    <option value="access">Access Control &amp; Data</option>
+    <option value="network">Network &amp; API Defense</option>
+    <option value="crypto">Cryptography &amp; Secrets</option>
+    <option value="files">Files &amp; Path Safety</option>
+    <option value="ops">Audit, Logs &amp; Errors</option>
+  </select>
+  <span class="count" id="count"></span>
+</div>
+<div class="tbl-wrap">
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Practice / Defense</th>
+      <th>Category</th>
+      <th>Key Java APIs / Standards</th>
+      <th>Why It Matters</th>
+    </tr>
+  </thead>
+  <tbody id="tbody"></tbody>
+</table>
+</div>
+<div class="no-results" id="noResults" style="display:none;">No security practices match.</div>
+</div>
+
+<script>
+// Backend security best practices with Java examples, ordered from input/injection defenses to crypto & audit logging.
+const DATA = [
+  {c:"SQL Injection & Parameterized Queries",url:"001-sql-injection-parameterized-queries/",cat:"injection",cl:"Injection & Input",apis:["PreparedStatement","@Query","@Param","Allowlist Sort"],t:"Never concatenate user input into SQL or JPQL strings. Bind parameters keep data separate from the query execution plan, neutralizing SQL injection completely."},
+  {c:"Command & OS Injection Prevention",url:"002-command-injection-prevention/",cat:"injection",cl:"Injection & Input",apis:["ProcessBuilder","Arg Array","Allowlist","No sh -c"],t:"Spawning a shell with user input allows attackers to chain arbitrary OS commands (; rm -rf). Pass arguments as an explicit list to ProcessBuilder without invoking a shell."},
+  {c:"Strict Input Validation & Allowlisting",url:"003-input-validation-allowlisting/",cat:"injection",cl:"Injection & Input",apis:["@Valid","@Pattern","@Positive","@Size"],t:"Validate every request boundary with strict allowlist patterns, length caps, and numeric ranges before business logic runs."},
+  {c:"XXE & Deserialization Hardening",url:"004-xxe-and-deserialization-hardening/",cat:"injection",cl:"Injection & Input",apis:["disallow-doctype-decl","ObjectInputFilter","Jackson DTOs"],t:"Disable external DTDs/entities in XML parsers to block file theft (XXE), and avoid raw ObjectInputStream deserialization of untrusted bytes."},
+  {c:"Adaptive Password Hashing (Argon2id / BCrypt)",url:"005-password-hashing-argon2-bcrypt/",cat:"auth",cl:"Authentication & Tokens",apis:["Argon2PasswordEncoder","BCryptPasswordEncoder","Work Factor"],t:"Fast hashes like SHA-256 can be brute-forced at billions of guesses per second on GPUs. Use salted, memory-hard Argon2id or BCrypt."},
+  {c:"JWT Hardening & Refresh Token Rotation",url:"006-jwt-hardening-and-refresh-rotation/",cat:"auth",cl:"Authentication & Tokens",apis:["RS256 / ES256","iss / aud / exp","Refresh Rotation"],t:"Use short-lived access tokens signed with asymmetric keys, validate issuer and audience claims, and rotate one-time refresh tokens to detect theft."},
+  {c:"Multi-Factor Auth (TOTP) & Step-Up Auth",url:"007-mfa-totp-and-step-up-auth/",cat:"auth",cl:"Authentication & Tokens",apis:["HMAC-SHA1 TOTP","RFC 6238","Step-Up Verification"],t:"Require a second factor (TOTP / WebAuthn) at login and enforce step-up re-authentication before high-risk operations like wire transfers or key changes."},
+  {c:"Constant-Time Secret Comparison",url:"008-constant-time-comparison/",cat:"auth",cl:"Authentication & Tokens",apis:["MessageDigest.isEqual","Timing Attack","HMAC"],t:"Standard String.equals returns on the first mismatched byte, leaking secret bytes via nanosecond response timing. Always compare MACs and tokens in constant time."},
+  {c:"Broken Object Level Authorization (BOLA / IDOR)",url:"009-bola-idor-prevention/",cat:"access",cl:"Access Control & Data",apis:["findByIdAndOwnerId","@AuthenticationPrincipal","Tenant Scope"],t:"OWASP API Security #1 risk: never fetch records by ID alone. Scope every database query and mutation to the authenticated principal’s ID or tenant."},
+  {c:"Mass Assignment & DTO Boundary Projection",url:"010-mass-assignment-dto-projection/",cat:"access",cl:"Access Control & Data",apis:["Java record DTO","No Entity Binding","Field Filtering"],t:"Binding JSON directly to JPA entities lets attackers overwrite internal fields like role='ADMIN' or balance. Use dedicated immutable record DTOs for requests and responses."},
+  {c:"Method-Level Authorization & Least Privilege",url:"011-method-level-authorization/",cat:"access",cl:"Access Control & Data",apis:["@EnableMethodSecurity","@PreAuthorize","RBAC / ABAC"],t:"Enforce authorization at the service layer with @PreAuthorize expressions so internal callers and new controllers cannot bypass URL-level rules."},
+  {c:"Rate Limiting & Brute-Force Protection",url:"012-rate-limiting-brute-force-protection/",cat:"network",cl:"Network & API Defense",apis:["Bucket4j","Token Bucket","429 Too Many Requests"],t:"Protect login, OTP, and expensive endpoints with per-IP and per-account token buckets to stop credential stuffing, enumeration, and application-layer DoS."},
+  {c:"Server-Side Request Forgery (SSRF) Defense",url:"013-ssrf-defense/",cat:"network",cl:"Network & API Defense",apis:["InetAddress","isSiteLocalAddress","169.254.169.254","Allowlist"],t:"When fetching user-supplied URLs or webhooks, resolve DNS and block loopback, private RFC 1918 networks, and cloud metadata IPs (169.254.169.254)."},
+  {c:"Strict CORS & Anti-CSRF Cookie Hardening",url:"014-cors-and-csrf-hardening/",cat:"network",cl:"Network & API Defense",apis:["CorsConfiguration","SameSite=Strict","HttpOnly","Secure"],t:"Never combine Access-Control-Allow-Origin: * with credentials. Restrict CORS to explicit trusted origins and harden session cookies with HttpOnly, Secure, and SameSite."},
+  {c:"HTTP Security Headers & TLS (HSTS, CSP)",url:"015-http-security-headers-tls/",cat:"network",cl:"Network & API Defense",apis:["Strict-Transport-Security","Content-Security-Policy","nosniff"],t:"Instruct browsers to enforce HTTPS (HSTS), block inline script injection (CSP), prevent MIME sniffing (X-Content-Type-Options), and deny clickjacking frames."},
+  {c:"Authenticated Encryption at Rest (AES-256-GCM)",url:"016-authenticated-encryption-aes-gcm/",cat:"crypto",cl:"Cryptography & Secrets",apis:["AES/GCM/NoPadding","GCMParameterSpec","SecureRandom IV"],t:"Encrypt sensitive columns (tax IDs, tokens) using authenticated AES-256-GCM with a fresh 96-bit SecureRandom IV per record so tampering is detected."},
+  {c:"Secrets Management & Zero Hardcoded Keys",url:"017-secrets-management-zero-hardcoded-keys/",cat:"crypto",cl:"Cryptography & Secrets",apis:["Vault / KMS","Environment Vars","Key Rotation"],t:"Never commit API keys, JWT signing keys, or DB passwords in source code or properties files. Inject secrets at runtime from a secrets manager."},
+  {c:"Webhook HMAC Verification & Replay Defense",url:"018-webhook-hmac-replay-protection/",cat:"crypto",cl:"Cryptography & Secrets",apis:["HmacSHA256","Timestamp Window","Idempotency Key"],t:"Verify incoming webhooks using HMAC-SHA256 over the timestamp + raw body, reject timestamps older than 5 minutes, and deduplicate event IDs in Redis."},
+  {c:"Path Traversal & Safe File Uploads",url:"019-path-traversal-file-upload-defense/",cat:"files",cl:"Files & Path Safety",apis:["Path.normalize","startsWith","UUID Filename","Magic Bytes"],t:"Never trust client filenames (../../etc/passwd). Generate a random UUID storage key, verify the normalized path stays inside the base directory, and check content types."},
+  {c:"Safe Error Handling & Tamper-Evident Audit Logs",url:"020-safe-errors-and-audit-logging/",cat:"ops",cl:"Audit, Logs & Errors",apis:["ProblemDetail","Log Sanitization","PII Redaction"],t:"Return generic RFC 7807 ProblemDetail errors to clients without stack traces, strip CR/LF from logged inputs to prevent log forging, and never log secrets or PII."},
+];
+
+const catClass = {
+  injection: "cat-injection",
+  auth:      "cat-auth",
+  access:    "cat-access",
+  network:   "cat-network",
+  crypto:    "cat-crypto",
+  files:     "cat-files",
+  ops:       "cat-ops"
+};
+const STATE_KEY = 'security-best-practices-index-state';
+
+function saveIndexState() {
+  sessionStorage.setItem(STATE_KEY, JSON.stringify({
+    search: document.getElementById('search').value,
+    category: document.getElementById('catFilter').value,
+    scrollY: window.scrollY,
+    pendingRestore: true,
+  }));
+}
+
+function consumeIndexState() {
+  const raw = sessionStorage.getItem(STATE_KEY);
+  if (!raw) return null;
+  try {
+    const state = JSON.parse(raw);
+    if (!state.pendingRestore) return null;
+    sessionStorage.removeItem(STATE_KEY);
+    return state;
+  } catch {
+    sessionStorage.removeItem(STATE_KEY);
+    return null;
+  }
+}
+
+function openConcept(url) {
+  saveIndexState();
+  location.href = url;
+}
+
+function renderApis(apis) {
+  return apis.map(a => '<span class="api">' + a + '</span>').join('');
+}
+
+function render() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const cat = document.getElementById('catFilter').value;
+  let rows = DATA;
+  if (cat) rows = rows.filter(d => d.cat === cat);
+  if (q) rows = rows.filter(d => (d.c + d.t + d.apis.join(' ')).toLowerCase().includes(q));
+  document.getElementById('count').textContent = rows.length + ' practices';
+  document.getElementById('noResults').style.display = rows.length ? 'none' : 'block';
+  document.getElementById('tbody').innerHTML = rows.map((d, i) => `
+    <tr class="clickable" onclick="openConcept('${d.url}')">
+      <td><span class="idx">${i + 1}</span></td>
+      <td><div class="concept"><a href="${d.url}" onclick="event.stopPropagation(); saveIndexState();">${d.c}</a></div><span class="cat ${catClass[d.cat]}">${d.cl}</span></td>
+      <td><span class="note">${d.cl}</span></td>
+      <td><div class="apis">${renderApis(d.apis)}</div></td>
+      <td><span class="note">${d.t}</span></td>
+    </tr>`).join('');
+}
+
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+
+const savedState = consumeIndexState();
+if (savedState) {
+  document.getElementById('search').value = savedState.search || '';
+  document.getElementById('catFilter').value = savedState.category || '';
+}
+
+document.getElementById('search').addEventListener('input', render);
+document.getElementById('catFilter').addEventListener('change', render);
+render();
+
+if (savedState) {
+  requestAnimationFrame(() => {
+    window.scrollTo({ top: savedState.scrollY || 0, behavior: 'auto' });
+  });
+}
+</script>
+</body>
+</html>

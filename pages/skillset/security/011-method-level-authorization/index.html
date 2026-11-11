@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Method-Level Authorization & Least Privilege</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../security.html">&larr; back</a>
+  <h1>Method-Level Authorization & Least Privilege</h1>
+  <p class="desc">Relying only on URL path matchers in a web filter leaves service methods exposed if called from another controller, GraphQL resolver, or scheduled task. Apply <code>@EnableMethodSecurity</code> and <code>@PreAuthorize</code> directly on service methods for defense in depth.</p>
+  <pre><code class="language-java">@Configuration
+@EnableMethodSecurity
+public class MethodSecurityConfig {}
+
+@Service
+public class AccountAdminService {
+
+    // Verifies role AND custom SpEL ownership/tenant rule before method execution
+    @PreAuthorize("hasRole('COMPLIANCE_OFFICER') and #tenantId == authentication.token.claims['tenant_id']")
+    public void freezeAccount(String tenantId, UUID accountId, String reason) {
+        accountRepository.updateStatus(tenantId, accountId, AccountStatus.FROZEN);
+    }
+
+    // PostAuthorize can also verify the returned object belongs to the caller
+    @PostAuthorize("returnObject.ownerId == authentication.name or hasRole('ADMIN')")
+    public AccountReport loadReport(UUID reportId) {
+        return reportRepository.findById(reportId).orElseThrow();
+    }
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

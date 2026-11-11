@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SQL Injection & Parameterized Queries</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../security.html">&larr; back</a>
+  <h1>SQL Injection & Parameterized Queries</h1>
+  <p class="desc">Concatenating untrusted input into SQL or JPQL strings lets attackers inject <code>' OR '1'='1</code> or <code>UNION SELECT</code> payloads to dump or destroy tables. Always use <code>PreparedStatement</code> or named <code>@Param</code> bindings, and validate dynamic sort columns against a strict allowlist.</p>
+  <pre><code class="language-java">// VULNERABLE: String concatenation allows SQL injection
+String unsafeSql = "SELECT * FROM users WHERE email = '" + email + "'";
+jdbcTemplate.queryForList(unsafeSql);
+
+// HARDENED (JDBC): Parameterized PreparedStatement binds input as a literal value
+String safeSql = "SELECT id, email, role FROM users WHERE email = ?";
+User user = jdbcTemplate.queryForObject(
+    safeSql,
+    (rs, rowNum) -&gt; new User(rs.getUUID("id"), rs.getString("email"), rs.getString("role")),
+    email
+);
+
+// HARDENED (Spring Data JPA): Named @Param binding + allowlisted sort column
+@Query("SELECT o FROM Order o WHERE o.customerId = :customerId AND o.status = :status")
+List&lt;Order&gt; findOrders(@Param("customerId") String customerId, @Param("status") OrderStatus status);</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

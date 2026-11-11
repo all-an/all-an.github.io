@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Broken Object Level Authorization (BOLA / IDOR)</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../security.html">&larr; back</a>
+  <h1>Broken Object Level Authorization (BOLA / IDOR)</h1>
+  <p class="desc">BOLA / IDOR is #1 on the OWASP API Security Top 10: an authenticated user changes <code>GET /invoices/1042</code> to <code>GET /invoices/1043</code> and reads another customer?s data. Always scope repository queries by both the resource ID and the authenticated principal?s owner/tenant ID.</p>
+  <pre><code class="language-java">// VULNERABLE: Looks up the invoice by primary key alone ? any logged-in user can read any invoice!
+@GetMapping("/invoices/{id}")
+public InvoiceDto getInvoiceInsecure(@PathVariable UUID id) {
+    return invoiceRepository.findById(id).map(InvoiceDto::from).orElseThrow();
+}
+
+// HARDENED: Enforces ownership in the SQL query itself + uses unguessable UUIDs
+public interface InvoiceRepository extends JpaRepository&lt;Invoice, UUID&gt; {
+    Optional&lt;Invoice&gt; findByIdAndOwnerId(UUID id, UUID ownerId);
+}
+
+@GetMapping("/invoices/{id}")
+public InvoiceDto getInvoiceSecure(
+        @PathVariable UUID id,
+        @AuthenticationPrincipal Jwt jwt) {
+    UUID currentUserId = UUID.fromString(jwt.getSubject());
+    return invoiceRepository.findByIdAndOwnerId(id, currentUserId)
+        .map(InvoiceDto::from)
+        .orElseThrow(() -&gt; new ResponseStatusException(HttpStatus.NOT_FOUND));
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

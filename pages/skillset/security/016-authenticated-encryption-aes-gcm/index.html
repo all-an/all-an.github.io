@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Authenticated Encryption at Rest (AES-256-GCM)</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../security.html">&larr; back</a>
+  <h1>Authenticated Encryption at Rest (AES-256-GCM)</h1>
+  <p class="desc">Never use <code>AES/ECB</code> (which leaks patterns) or unauthenticated <code>AES/CBC</code> (vulnerable to padding-oracle attacks). Use <code>AES/GCM/NoPadding</code> with a 256-bit key, a unique 12-byte <code>SecureRandom</code> IV per encryption, and a 128-bit authentication tag that detects any ciphertext tampering.</p>
+  <pre><code class="language-java">public final class AesGcmFieldEncryptor {
+    private static final String ALGO = "AES/GCM/NoPadding";
+    private static final int IV_BYTES = 12;     // 96-bit NIST recommended nonce
+    private static final int TAG_BITS = 128;    // 128-bit authentication tag
+    private final SecretKey key;
+    private final SecureRandom secureRandom = new SecureRandom();
+
+    public AesGcmFieldEncryptor(SecretKey key) { this.key = key; }
+
+    public byte[] encrypt(byte[] plaintext, byte[] associatedData) throws GeneralSecurityException {
+        byte[] iv = new byte[IV_BYTES];
+        secureRandom.nextBytes(iv);
+
+        Cipher cipher = Cipher.getInstance(ALGO);
+        cipher.init(Cipher.ENCRYPT_MODE, key, new GCMParameterSpec(TAG_BITS, iv));
+        if (associatedData != null) cipher.updateAAD(associatedData);
+        byte[] ciphertext = cipher.doFinal(plaintext);
+
+        return ByteBuffer.allocate(iv.length + ciphertext.length).put(iv).put(ciphertext).array();
+    }
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Webhook HMAC Verification & Replay Defense</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../security.html">&larr; back</a>
+  <h1>Webhook HMAC Verification & Replay Defense</h1>
+  <p class="desc">Incoming webhooks (Stripe, GitHub, payment gateways) can be forged or replayed by an attacker unless you verify the <code>HMAC-SHA256</code> signature over <code>timestamp + "." + rawBody</code>, reject timestamps outside a 5-minute window, and record the event ID in Redis to block duplicates.</p>
+  <pre><code class="language-java">public void verifyWebhookOrThrow(String signatureHeader, String timestampHeader, String rawBody) {
+    long timestamp = Long.parseLong(timestampHeader);
+    long now = Instant.now().getEpochSecond();
+    if (Math.abs(now - timestamp) &gt; 300) { // 5-minute replay tolerance window
+        throw new SecurityException("Webhook timestamp outside tolerance window");
+    }
+
+    String signedPayload = timestampHeader + "." + rawBody;
+    String expectedHmac = computeHmacSha256Hex(webhookSecret, signedPayload);
+
+    if (!MessageDigest.isEqual(
+            expectedHmac.getBytes(StandardCharsets.UTF_8),
+            signatureHeader.getBytes(StandardCharsets.UTF_8))) {
+        throw new SecurityException("Invalid webhook HMAC signature");
+    }
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

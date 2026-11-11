@@ -59,6 +59,45 @@
     white-space: pre;
 }
 
+/* Lightweight syntax highlighting classes for Python, C, and Assembly in PseudoVimim */
+.hl-string {
+    color: #86efac;
+}
+
+.hl-comment {
+    color: #64748b;
+    font-style: italic;
+}
+
+.hl-keyword {
+    color: #f472b6;
+    font-weight: bold;
+}
+
+.hl-def {
+    color: #60a5fa;
+    font-weight: bold;
+}
+
+.hl-var {
+    color: #fde047;
+}
+
+.hl-reg-gp {
+    color: #fb923c;
+    font-weight: bold;
+}
+
+.hl-reg-ptr {
+    color: #22d3ee;
+    font-weight: bold;
+}
+
+.hl-reg-ext {
+    color: #c084fc;
+    font-weight: bold;
+}
+
 /* Inline Python evaluation result (Ctrl+E) shown at the end of the evaluated line */
 .vim-eval-result {
     color: #38bdf8;

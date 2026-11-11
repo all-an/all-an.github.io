@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Secrets Management & Zero Hardcoded Keys</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../security.html">&larr; back</a>
+  <h1>Secrets Management & Zero Hardcoded Keys</h1>
+  <p class="desc">Hardcoding database passwords, AWS keys, or JWT secrets in Java source or committed <code>application.yml</code> files guarantees compromise when a repository is cloned or leaked. Inject secrets at runtime from a vault or environment variables and validate their presence on startup.</p>
+  <pre><code class="language-java"># application.yml ? Never commit real credentials; require external environment injection
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD} # Injected via Vault / AWS Secrets Manager / K8s Secret
+
+// Type-safe, validated secret binding that fails startup if a required secret is missing or weak:
+@ConfigurationProperties(prefix = "security.hmac")
+@Validated
+public record WebhookSecretProperties(
+    @NotBlank @Size(min = 32, message = "Signing secret must be at least 256 bits")
+    String signingSecret
+) {}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

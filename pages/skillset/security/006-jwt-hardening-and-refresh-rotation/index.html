@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JWT Hardening & Refresh Token Rotation</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../security.html">&larr; back</a>
+  <h1>JWT Hardening & Refresh Token Rotation</h1>
+  <p class="desc">Avoid long-lived JWT access tokens or weak symmetric secrets susceptible to offline brute force. Sign access tokens with asymmetric keys (<code>RS256</code>/<code>ES256</code>), keep TTL short (5?15 min), validate <code>iss</code> and <code>aud</code> claims, and rotate one-time refresh tokens with reuse detection.</p>
+  <pre><code class="language-java">@Bean
+public JwtDecoder jwtDecoder(RSAPublicKey publicKey) {
+    NimbusJwtDecoder decoder = NimbusJwtDecoder.withPublicKey(publicKey)
+        .signatureAlgorithm(SignatureAlgorithm.RS256)
+        .build();
+
+    OAuth2TokenValidator&lt;Jwt&gt; withIssuer = JwtValidators.createDefaultWithIssuer("https://auth.example.com");
+    OAuth2TokenValidator&lt;Jwt&gt; withAudience = new JwtClaimValidator&lt;List&lt;String&gt;&gt;(
+        JwtClaimNames.AUD, aud -&gt; aud != null &amp;&amp; aud.contains("payments-api")
+    );
+    decoder.setJwtValidator(new DelegatingOAuth2TokenValidator&lt;&gt;(withIssuer, withAudience));
+    return decoder;
+}
+
+// Refresh token reuse detection: if a consumed token is presented again, revoke the entire token family!
+if (refreshToken.isAlreadyConsumed()) {
+    refreshTokenRepository.revokeFamily(refreshToken.getFamilyId());
+    throw new SecurityException("Compromised refresh token family revoked");
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

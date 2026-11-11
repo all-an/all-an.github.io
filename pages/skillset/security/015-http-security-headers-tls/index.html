@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HTTP Security Headers & TLS (HSTS, CSP)</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../security.html">&larr; back</a>
+  <h1>HTTP Security Headers & TLS (HSTS, CSP)</h1>
+  <p class="desc">Security headers instruct browsers to refuse protocol downgrade attacks (<code>Strict-Transport-Security</code>), block XSS script execution (<code>Content-Security-Policy</code>), prevent MIME-sniffing (<code>X-Content-Type-Options: nosniff</code>), and forbid clickjacking iframes (<code>X-Frame-Options: DENY</code>).</p>
+  <pre><code class="language-java">@Bean
+public SecurityFilterChain securityHeadersFilterChain(HttpSecurity http) throws Exception {
+    http.headers(headers -&gt; headers
+        .httpStrictTransportSecurity(hsts -&gt; hsts
+            .includeSubDomains(true)
+            .preload(true)
+            .maxAgeInSeconds(31536000)) // 1 year HSTS
+        .contentSecurityPolicy(csp -&gt; csp
+            .policyDirectives("default-src 'self'; frame-ancestors 'none'; object-src 'none'"))
+        .contentTypeOptions(Customizer.withDefaults()) // X-Content-Type-Options: nosniff
+        .frameOptions(frame -&gt; frame.deny())           // X-Frame-Options: DENY
+        .referrerPolicy(ref -&gt; ref
+            .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+    );
+    return http.build();
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

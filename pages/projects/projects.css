@@ -1,0 +1,190 @@
+:root {
+  --color-background-primary:   #111113;
+  --color-background-secondary: #1a1a1e;
+  --color-text-primary:         #e8e8ea;
+  --color-text-secondary:       #9898a0;
+  --color-text-tertiary:        #5e5e66;
+  --color-border-secondary:     #2e2e33;
+  --color-border-tertiary:      #232328;
+  --border-radius-md:           7px;
+  --font-mono:                  'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--color-background-primary);
+  color: var(--color-text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.wrap { max-width: 1120px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
+
+/* header row: title + subtitle on the left, github + back links on the right */
+.header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 2rem; }
+.header-titles { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.header-links { display: flex; align-items: baseline; gap: 16px; }
+h1 { font-size: 32px; font-weight: 700; letter-spacing: -0.02em; }
+.subtitle { font-size: 17px; color: var(--color-text-secondary); font-style: italic; }
+.back { font-size: 18px; color: var(--color-text-secondary); text-decoration: none; white-space: nowrap; }
+.back:hover { color: var(--color-text-primary); }
+
+/* section label and divider matching index.html and skillset.html */
+.section { margin-bottom: 2.25rem; }
+.section-label { font-size: 15px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-text-tertiary); margin-bottom: 0.85rem; }
+hr { border: none; border-top: 1px solid var(--color-border-tertiary); margin: 2rem 0; }
+
+/* top overview grid: profile summary card + language breakdown card */
+.overview-grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 16px; margin-bottom: 2rem; }
+.overview-card {
+  background: var(--color-background-secondary);
+  border: 1px solid var(--color-border-tertiary);
+  border-radius: var(--border-radius-md);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.profile-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.profile-name { font-size: 21px; font-weight: 600; color: var(--color-text-primary); }
+.profile-handle { font-family: var(--font-mono); font-size: 15px; color: var(--color-text-secondary); text-decoration: none; }
+.profile-handle:hover { color: var(--color-text-primary); text-decoration: underline; }
+.profile-role { font-size: 16px; color: var(--color-text-secondary); line-height: 1.5; }
+.profile-stat { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; color: var(--color-text-secondary); }
+.profile-stat strong { font-family: var(--font-mono); font-size: 16px; color: #C0DD97; background: #173404; padding: 2px 9px; border-radius: 99px; }
+
+/* tech stack and language chips */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  background: #1e1e23;
+  border: 1px solid var(--color-border-tertiary);
+  border-radius: 4px;
+  padding: 3px 8px;
+  color: var(--color-text-secondary);
+}
+
+/* language breakdown table inside the second overview card */
+.lang-list { display: flex; flex-direction: column; gap: 7px; }
+.lang-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--color-border-tertiary);
+  font-size: 15px;
+}
+.lang-row:last-child { border-bottom: none; padding-bottom: 0; }
+.lang-name { color: var(--color-text-primary); font-weight: 500; }
+.lang-count { font-family: var(--font-mono); font-size: 14px; color: var(--color-text-secondary); white-space: nowrap; }
+
+/* search box + category/language filters + result count (matches courses/java.css) */
+.controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 1.75rem; align-items: center; }
+input[type=text] {
+  flex: 1;
+  min-width: 220px;
+  font-size: 17px;
+  padding: 8px 12px;
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--color-border-secondary);
+  background: var(--color-background-secondary);
+  color: var(--color-text-primary);
+  outline: none;
+}
+input[type=text]:focus { border-color: #3a3a44; }
+select {
+  font-size: 17px;
+  padding: 8px 12px;
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--color-border-secondary);
+  background: var(--color-background-secondary);
+  color: var(--color-text-primary);
+  outline: none;
+  cursor: pointer;
+}
+.count { font-size: 16px; color: var(--color-text-secondary); white-space: nowrap; }
+
+/* category group heading */
+.cat-group { margin-bottom: 2.25rem; }
+.cat-group-title {
+  font-size: 16px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
+  margin-bottom: 0.9rem;
+}
+
+/* responsive grid of project cards */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 14px;
+}
+
+/* individual project card: dark card matching the courses & main page border/hover chrome */
+.project-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  background: var(--color-background-secondary);
+  border: 1px solid var(--color-border-tertiary);
+  border-radius: var(--border-radius-md);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+.project-card:hover {
+  border-color: #3a3a44;
+  background: #1e1e24;
+  transform: translateY(-1px);
+}
+
+.card-top { display: flex; flex-direction: column; gap: 8px; }
+.card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.project-title {
+  font-family: var(--font-mono);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  word-break: break-word;
+}
+.project-card:hover .project-title { text-decoration: underline; }
+.ext-arrow { font-size: 14px; color: var(--color-text-tertiary); flex: none; }
+.project-card:hover .ext-arrow { color: var(--color-text-primary); }
+
+.project-desc {
+  font-size: 16px;
+  color: var(--color-text-secondary);
+  line-height: 1.55;
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 6px;
+  border-top: 1px solid var(--color-border-tertiary);
+}
+
+/* category pill badges — same palette as courses/java.css and springboot.html */
+.cat { display: inline-block; font-size: 13px; padding: 2px 9px; border-radius: 99px; white-space: nowrap; }
+.cat-backend { background: #26215C; color: #CECBF6; }
+.cat-crypto  { background: #412402; color: #FAC775; }
+.cat-systems { background: #042C53; color: #B5D4F4; }
+.cat-python  { background: #173404; color: #C0DD97; }
+.cat-profile { background: #3E0D3E; color: #E0A6E6; }
+
+.no-results { text-align: center; padding: 3rem; color: var(--color-text-secondary); font-size: 20px; }
+
+/* mobile layout */
+@media (max-width: 760px) {
+  .overview-grid { grid-template-columns: 1fr; }
+  .cards-grid { grid-template-columns: 1fr; }
+}

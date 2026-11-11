@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Adaptive Password Hashing (Argon2id / BCrypt)</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../security.html">&larr; back</a>
+  <h1>Adaptive Password Hashing (Argon2id / BCrypt)</h1>
+  <p class="desc">Fast cryptographic hashes like <code>MD5</code> or unsalted <code>SHA-256</code> can be cracked at billions of hashes per second on GPUs. Always store passwords using a memory-hard, automatically salted key-derivation function such as <code>Argon2id</code> (OWASP #1 recommendation) or <code>BCrypt</code>.</p>
+  <pre><code class="language-java">@Configuration
+public class PasswordSecurityConfig {
+
+    // Argon2id resists both GPU cracking (memory-hard) and side-channel timing attacks
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        int saltLength = 16;   // 128-bit random salt per password
+        int hashLength = 32;   // 256-bit output tag
+        int parallelism = 1;
+        int memoryKb = 65536;  // 64 MB memory cost
+        int iterations = 3;
+        return new Argon2PasswordEncoder(saltLength, hashLength, parallelism, memoryKb, iterations);
+    }
+}
+
+// Usage in registration &amp; login verification:
+String passwordHash = passwordEncoder.encode(rawPassword);
+boolean matches = passwordEncoder.matches(candidatePassword, user.getPasswordHash());</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

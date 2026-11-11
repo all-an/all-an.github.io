@@ -34,6 +34,7 @@ const VIRTUAL_FILES = {
         '  - AWS',
         '  - Angular',
         '  - Spring Boot',
+        '  - Security',
         '',
         'Courses:     Java, Java / Angular / AWS',
         'Mathematics: Mathematics reference',
@@ -56,6 +57,44 @@ const VIRTUAL_FILES = {
         'x = 10',
         'y = 25',
         'print("Sum:", add(x, y))',
+    ].join('\n'),
+    'example.c': [
+        '#include <stdio.h>',
+        '',
+        'int factorial(int n) {',
+        '    if (n <= 1) return 1;',
+        '    return n * factorial(n - 1);',
+        '}',
+        '',
+        'int main() {',
+        '    int result = factorial(5);',
+        '    printf("5! = %d\\n", result);',
+        '    return 0;',
+        '}',
+    ].join('\n'),
+    'example.asm': [
+        '; x86-64 NASM Assembly example',
+        'section .data',
+        '    msg db "Hello from x86-64 Assembly!", 10',
+        '    len equ $ - msg',
+        '',
+        'section .text',
+        '    global _start',
+        '',
+        '_start:',
+        '    mov rax, 1      ; sys_write',
+        '    mov rdi, 1      ; stdout',
+        '    mov rsi, msg    ; buffer address',
+        '    mov rdx, len    ; buffer length',
+        '    syscall',
+        '',
+        '    mov rbx, 42     ; compute value in rbx',
+        '    add rbx, 8',
+        '    print rbx',
+        '',
+        '    mov rax, 60     ; sys_exit',
+        '    xor rdi, rdi',
+        '    syscall',
     ].join('\n'),
 };
 
@@ -134,6 +173,68 @@ function runPythonCommand(args) {
     return null;
 }
 
+// Executes a C source file from VIRTUAL_FILES using CasmRunner and prints stdout/stderr.
+function runCCommand(args) {
+    if (!args[0]) {
+        return ['Usage: c <file.c> (or gcc <file.c>)'];
+    }
+    const filename = args[0];
+    if (typeof VIRTUAL_FILES[filename] === 'undefined') {
+        printLine(`c: can't open file '${filename}': No such file or directory`, 'error');
+        return null;
+    }
+
+    const rawContent = VIRTUAL_FILES[filename];
+    const codeString = Array.isArray(rawContent) ? rawContent.join('\n') : String(rawContent);
+
+    printLine(`Running ${filename} with C interpreter...`);
+    scrollBottom();
+
+    window.CasmRunner.runCFile(codeString)
+        .then(({ outLines, errLines }) => {
+            outLines.forEach(line => printLine(line, 'output'));
+            errLines.forEach(line => printLine(line, 'error'));
+            scrollBottom();
+        })
+        .catch(err => {
+            printLine(`C error: ${err.message || err}`, 'error');
+            scrollBottom();
+        });
+
+    return null;
+}
+
+// Executes an x86-64 Assembly file from VIRTUAL_FILES using CasmRunner and prints stdout/stderr.
+function runAsmCommand(args) {
+    if (!args[0]) {
+        return ['Usage: asm <file.asm> (or nasm <file.asm>)'];
+    }
+    const filename = args[0];
+    if (typeof VIRTUAL_FILES[filename] === 'undefined') {
+        printLine(`asm: can't open file '${filename}': No such file or directory`, 'error');
+        return null;
+    }
+
+    const rawContent = VIRTUAL_FILES[filename];
+    const codeString = Array.isArray(rawContent) ? rawContent.join('\n') : String(rawContent);
+
+    printLine(`Running ${filename} with x86-64 Assembly interpreter...`);
+    scrollBottom();
+
+    window.CasmRunner.runAsmFile(codeString)
+        .then(({ outLines, errLines }) => {
+            outLines.forEach(line => printLine(line, 'output'));
+            errLines.forEach(line => printLine(line, 'error'));
+            scrollBottom();
+        })
+        .catch(err => {
+            printLine(`ASM error: ${err.message || err}`, 'error');
+            scrollBottom();
+        });
+
+    return null;
+}
+
 // ── Commands ──────────────────────────────────────────────────────────────────
 const COMMANDS = {
 
@@ -142,8 +243,10 @@ const COMMANDS = {
         return [
             'Available commands:',
             '  help              Show this help message',
-            '  vim [file]        Open PseudoVimim editor (Ctrl+E inside vim evaluates Python)',
+            '  vim [file]        Open PseudoVimim editor (Ctrl+E evaluates Python, C, or ASM)',
             '  python <file.py>  Run a Python 3 file using Pyodide',
+            '  c <file.c>        Run a C file (also aliased as gcc or cc)',
+            '  asm <file.asm>    Run an x86-64 Assembly file (also aliased as nasm)',
             '  ls                List files in the current directory',
             '  cat <file>        Print the contents of a file',
             '  hostname <name>   Change "guest" in virtualpseudoos@guest to <name>',
@@ -174,6 +277,15 @@ const COMMANDS = {
     // Runs a Python 3 script file via Pyodide (also aliased as `python3`).
     python:  runPythonCommand,
     python3: runPythonCommand,
+
+    // Runs a C source file via CasmRunner (also aliased as `gcc` and `cc`).
+    c:   runCCommand,
+    gcc: runCCommand,
+    cc:  runCCommand,
+
+    // Runs an x86-64 Assembly source file via CasmRunner (also aliased as `nasm`).
+    asm:  runAsmCommand,
+    nasm: runAsmCommand,
 
     // Lists all virtual files in /home/visitor.
     ls() {
@@ -250,6 +362,50 @@ function scrollBottom() {
     termBody.scrollTop = termBody.scrollHeight;
 }
 
+// Computes the longest shared prefix across a non-empty array of strings.
+function findCommonPrefix(strings) {
+    let prefix = strings[0];
+    for (let i = 1; i < strings.length; i++) {
+        while (!strings[i].startsWith(prefix)) {
+            prefix = prefix.slice(0, -1);
+        }
+    }
+    return prefix;
+}
+
+// Completes command names (first token) or filenames from VIRTUAL_FILES (subsequent tokens) on Tab.
+function handleTabCompletion() {
+    const lastSpaceIdx = inputBuf.lastIndexOf(' ');
+    const isCommandPos = lastSpaceIdx === -1;
+    const prefixPart   = isCommandPos ? '' : inputBuf.slice(0, lastSpaceIdx + 1);
+    const partial      = isCommandPos ? inputBuf : inputBuf.slice(lastSpaceIdx + 1);
+
+    const candidates = isCommandPos
+        ? Object.keys(COMMANDS)
+        : Object.keys(VIRTUAL_FILES);
+
+    const matches = candidates.filter(name => name.startsWith(partial));
+    if (matches.length === 0) {
+        return;
+    }
+
+    if (matches.length === 1) {
+        const suffix = isCommandPos ? ' ' : '';
+        inputBuf = prefixPart + matches[0] + suffix;
+        return;
+    }
+
+    // Multiple matches: complete up to the longest common prefix, or list matches if already there
+    const common = findCommonPrefix(matches);
+    if (common.length > partial.length) {
+        inputBuf = prefixPart + common;
+    } else {
+        printPromptEcho(inputBuf);
+        printLine(matches.join('    '), 'output');
+        scrollBottom();
+    }
+}
+
 // ── Command execution ─────────────────────────────────────────────────────────
 
 // Parses and executes a raw command line string entered by the visitor.
@@ -288,6 +444,11 @@ document.addEventListener('keydown', e => {
     }
 
     switch (e.key) {
+        case 'Tab':
+            e.preventDefault();
+            handleTabCompletion();
+            break;
+
         case 'Enter':
             runCommand(inputBuf);
             inputBuf = '';

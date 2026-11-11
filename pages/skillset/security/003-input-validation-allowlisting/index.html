@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Strict Input Validation & Allowlisting</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../security.html">&larr; back</a>
+  <h1>Strict Input Validation & Allowlisting</h1>
+  <p class="desc">Every HTTP request, header, path variable, and message payload is untrusted. Enforce declarative Jakarta Bean Validation constraints (<code>@Valid</code>, <code>@Pattern</code>, <code>@Size</code>, <code>@Positive</code>) on immutable request records so malformed inputs fail fast at the controller boundary.</p>
+  <pre><code class="language-java">public record CreateTransferRequest(
+    @NotBlank
+    @Pattern(regexp = "^[A-Z]{2}[0-9]{2}[A-Z0-9]{11,30}$", message = "Invalid IBAN format")
+    String destinationIban,
+
+    @NotNull
+    @Positive
+    @DecimalMax("50000.00")
+    BigDecimal amount,
+
+    @Size(max = 140)
+    String reference
+) {}
+
+@RestController
+@RequestMapping("/transfers")
+@Validated
+public class TransferController {
+    @PostMapping
+    public ResponseEntity&lt;TransferDto&gt; create(@Valid @RequestBody CreateTransferRequest req) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.transfer(req));
+    }
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
