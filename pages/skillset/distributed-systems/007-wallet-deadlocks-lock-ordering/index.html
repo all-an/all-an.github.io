@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Concurrent Wallet Transfers &amp; Deterministic Lock Ordering</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../distributed-systems.html">&larr; back</a>
+  <h1>Concurrent Wallet Transfers &amp; Deterministic Lock Ordering</h1>
+  <p class="desc">When Alice transfers $10 to Bob at the exact same millisecond that Bob transfers $20 to Alice, locking <code>fromAccount</code> then <code>toAccount</code> causes Thread 1 to lock Alice and wait for Bob while Thread 2 locks Bob and waits for Alice—a classic database deadlock. Always acquire locks in a deterministic global order (e.g., ascending UUID/ID).</p>
+  <pre><code class="language-java">// BROKEN: Locking in parameter order (fromId, then toId) deadlocks on A-&gt;B + B-&gt;A
+@Transactional
+public void transferDeadlockProne(UUID fromId, UUID toId, long cents) {
+    Account from = accountRepo.findByIdForUpdate(fromId).orElseThrow(); // T1 locks A, T2 locks B
+    Account to   = accountRepo.findByIdForUpdate(toId).orElseThrow();   // T1 waits B, T2 waits A -&gt; DEADLOCK!
+    from.debit(cents);
+    to.credit(cents);
+}
+
+// PRODUCTION-SAFE: Acquire locks in deterministic ascending ID order
+@Transactional(rollbackFor = Exception.class)
+public void transferDeadlockFree(UUID fromId, UUID toId, long cents) {
+    if (fromId.equals(toId)) {
+        throw new IllegalArgumentException("Cannot transfer to the same account");
+    }
+    UUID firstLockId  = fromId.compareTo(toId) &lt; 0 ? fromId : toId;
+    UUID secondLockId = fromId.compareTo(toId) &lt; 0 ? toId : fromId;
+
+    // Both T1 (A-&gt;B) and T2 (B-&gt;A) lock Account A first, then Account B — zero deadlock cycle!
+    Account first  = accountRepo.findByIdForUpdate(firstLockId).orElseThrow();
+    Account second = accountRepo.findByIdForUpdate(secondLockId).orElseThrow();
+
+    Account from = fromId.equals(firstLockId) ? first : second;
+    Account to   = toId.equals(firstLockId)   ? first : second;
+
+    from.debit(cents);
+    to.credit(cents);
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

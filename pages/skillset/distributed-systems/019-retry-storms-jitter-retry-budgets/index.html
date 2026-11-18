@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Retry Storms, Exponential Backoff with Full Jitter &amp; Retry Budgets</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../distributed-systems.html">&larr; back</a>
+  <h1>Retry Storms, Exponential Backoff with Full Jitter &amp; Retry Budgets</h1>
+  <p class="desc">If 5,000 clients fail when a database or microservice blips at <code>t = 0</code> and all retry at fixed <code>1000ms</code> intervals, they slam the recovering service in synchronized waves every second (a <strong>Retry Storm</strong>). Always randomize sleep intervals using <strong>Exponential Backoff with Full Jitter</strong> and cap total retries with a process-wide <strong>Retry Budget</strong>.</p>
+  <pre><code class="language-java">// PRODUCTION-SAFE: Exponential Backoff with Full Jitter + Process-Wide Retry Budget
+public class ResilientRetrier {
+    private static final long BASE_DELAY_MS = 100;
+    private static final long MAX_DELAY_MS  = 10_000;
+    // Allow at most 10% of total requests to be retries so we never amplify an outage
+    private final AtomicInteger retryTokens = new AtomicInteger(100);
+
+    public &lt;T&gt; T executeWithJitter(Callable&lt;T&gt; action, int maxAttempts) throws Exception {
+        // Every normal request deposits 1 token (capped at 100); each retry withdraws 10 tokens
+        retryTokens.updateAndGet(cur -&gt; Math.min(100, cur + 1));
+
+        for (int attempt = 1; ; attempt++) {
+            try {
+                return action.call();
+            } catch (TransientNetworkException ex) {
+                if (attempt &gt;= maxAttempts || retryTokens.addAndGet(-10) &lt; 0) {
+                    retryTokens.updateAndGet(cur -&gt; Math.max(0, cur));
+                    throw ex; // Retry budget exhausted or max attempts reached — fail fast!
+                }
+                long expCap = Math.min(MAX_DELAY_MS, BASE_DELAY_MS * (1L &lt;&lt; (attempt - 1)));
+                // Full Jitter: uniform random sleep between 0 and expCap desynchronizes callers
+                long sleepMs = ThreadLocalRandom.current().nextLong(0, expCap + 1);
+                Thread.sleep(sleepMs);
+            }
+        }
+    }
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

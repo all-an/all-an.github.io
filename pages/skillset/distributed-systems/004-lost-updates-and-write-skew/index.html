@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lost Updates, Check-Then-Act &amp; Write Skew Prevention</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../distributed-systems.html">&larr; back</a>
+  <h1>Lost Updates, Check-Then-Act &amp; Write Skew Prevention</h1>
+  <p class="desc">Under <code>READ_COMMITTED</code> or even <code>REPEATABLE_READ</code> (Snapshot Isolation), two transactions can read the same set of rows, modify different rows, and break a cross-row business invariant (<strong>Write Skew</strong>—e.g., two doctors on call both clicking "go off shift" at the same instant). Prevent write skew using <code>Isolation.SERIALIZABLE</code> or by locking a shared parent/schedule row.</p>
+  <pre><code class="language-java">// BROKEN UNDER SNAPSHOT ISOLATION (Write Skew):
+// Doctor Alice and Doctor Bob both see count(onCall) == 2, and both set their own row to false -&gt; 0 doctors on call!
+@Transactional(isolation = Isolation.REPEATABLE_READ)
+public void leaveShiftBroken(UUID shiftId, UUID doctorId) {
+    long activeDoctors = onCallRepo.countByShiftIdAndOnCallTrue(shiftId);
+    if (activeDoctors &lt;= 1) throw new IllegalStateException("At least one doctor must remain on call");
+    onCallRepo.setOnCallFalse(shiftId, doctorId);
+}
+
+// PRODUCTION-SAFE: Materialize the conflict by locking the parent Shift row (or use Isolation.SERIALIZABLE)
+@Transactional
+public void leaveShiftSafe(UUID shiftId, UUID doctorId) {
+    // 1. Lock the parent Shift row so concurrent shift changes serialize
+    shiftRepo.findByIdForUpdate(shiftId).orElseThrow();
+
+    // 2. Now the count and update execute under mutual exclusion
+    long activeDoctors = onCallRepo.countByShiftIdAndOnCallTrue(shiftId);
+    if (activeDoctors &lt;= 1) {
+        throw new IllegalStateException("Cannot leave shift: last doctor on call");
+    }
+    onCallRepo.setOnCallFalse(shiftId, doctorId);
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

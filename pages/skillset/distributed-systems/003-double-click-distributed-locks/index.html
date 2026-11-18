@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Double-Click &amp; Simultaneous Requests (Distributed Locks)</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../distributed-systems.html">&larr; back</a>
+  <h1>Double-Click &amp; Simultaneous Requests (Distributed Locks)</h1>
+  <p class="desc">When a user double-clicks a checkout button or an external webhook fires twice across multiple Kubernetes pods, a JVM-local <code>synchronized</code> block offers zero protection. Use a distributed lock (e.g., Redisson <code>RLock</code> or PostgreSQL transaction-scoped advisory locks <code>pg_try_advisory_xact_lock</code>) keyed by the user or resource ID.</p>
+  <pre><code class="language-java">// OPTION 1: PostgreSQL Transaction-Scoped Advisory Lock (zero extra infrastructure, auto-released on commit/rollback)
+@Transactional
+public PayoutResult processPayoutWithAdvisoryLock(long merchantId, BigDecimal amount) {
+    Boolean acquired = jdbcTemplate.queryForObject(
+        "SELECT pg_try_advisory_xact_lock(?)", Boolean.class, merchantId
+    );
+    if (!Boolean.TRUE.equals(acquired)) {
+        throw new ConcurrentOperationException("Payout already in progress for merchant " + merchantId);
+    }
+    return executePayout(merchantId, amount);
+}
+
+// OPTION 2: Redis Distributed Lock via Redisson across microservices
+public PayoutResult processPayoutWithRedisLock(long merchantId, BigDecimal amount) {
+    RLock lock = redissonClient.getLock("lock:payout:merchant:" + merchantId);
+    try {
+        if (!lock.tryLock(500, 10_000, TimeUnit.MILLISECONDS)) {
+            throw new ConcurrentOperationException("Duplicate concurrent request rejected");
+        }
+        return executePayout(merchantId, amount);
+    } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new IllegalStateException("Interrupted while acquiring lock", e);
+    } finally {
+        if (lock.isHeldByCurrentThread()) {
+            lock.unlock();
+        }
+    }
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

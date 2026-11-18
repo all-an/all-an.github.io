@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Double-Charging Prevention &amp; Idempotency Keys</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../distributed-systems.html">&larr; back</a>
+  <h1>Double-Charging Prevention &amp; Idempotency Keys</h1>
+  <p class="desc">If a client sends a <code>POST /payments</code> request and the mobile connection drops before the HTTP 200 response arrives, the client must retry. Without an <code>Idempotency-Key</code>, retrying charges the customer credit card a second time. Claim the idempotency key in a database table with a <code>UNIQUE(account_id, idempotency_key)</code> constraint and return the stored response on retries.</p>
+  <pre><code class="language-java">// PRODUCTION-SAFE: Atomic Idempotency-Key claim + payload fingerprint check
+@Transactional
+public PaymentResponse chargeCard(UUID accountId, String idempotencyKey, ChargeRequest req) {
+    String requestHash = sha256Hex(req.amountCents() + ":" + req.currency() + ":" + req.cardToken());
+
+    // 1. Attempt atomic insert; ON CONFLICT DO NOTHING detects concurrent or completed retries
+    int inserted = jdbcTemplate.update("""
+        INSERT INTO idempotency_records (account_id, idempotency_key, request_hash, status, created_at)
+        VALUES (?, ?, ?, 'IN_PROGRESS', now())
+        ON CONFLICT (account_id, idempotency_key) DO NOTHING
+        """, accountId, idempotencyKey, requestHash);
+
+    if (inserted == 0) {
+        IdempotencyRecord existing = idempotencyRepo.findByAccountAndKeyForUpdate(accountId, idempotencyKey);
+        if (!existing.getRequestHash().equals(requestHash)) {
+            throw new UnprocessableEntityException("Idempotency-Key reused with different payment parameters");
+        }
+        if ("COMPLETED".equals(existing.getStatus())) {
+            return objectMapper.readValue(existing.getResponseJson(), PaymentResponse.class);
+        }
+        throw new ConflictException("Payment with this Idempotency-Key is currently in progress");
+    }
+
+    // 2. Execute charge once and persist response inside the record
+    PaymentResponse response = executeLedgerDebitAndCharge(accountId, req);
+    idempotencyRepo.markCompleted(accountId, idempotencyKey, objectMapper.writeValueAsString(response));
+    return response;
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Floating-Point Money Bugs &amp; Minor Units (BigDecimal / Cents)</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../distributed-systems.html">&larr; back</a>
+  <h1>Floating-Point Money Bugs &amp; Minor Units (BigDecimal / Cents)</h1>
+  <p class="desc">Binary floating-point types (<code>float</code> and <code>double</code>) cannot represent base-10 fractions like <code>0.10</code> exactly, causing <code>0.1 + 0.2 == 0.30000000000000004</code> and penny rounding leaks across invoices. Always store and compute monetary amounts as integer minor units (<code>long</code> cents) or <code>BigDecimal</code> constructed from strings with explicit <code>RoundingMode</code>.</p>
+  <pre><code class="language-java">// BROKEN: IEEE-754 double arithmetic leaks pennies and fails equality checks
+double price = 19.99;
+double tax   = price * 0.0725; // Unpredictable binary fraction rounding
+
+// PRODUCTION-SAFE OPTION 1: Represent money in integer minor units (e.g. cents)
+public record MoneyCents(long amountCents, String currency) {
+    public MoneyCents add(MoneyCents other) {
+        if (!this.currency.equals(other.currency)) throw new IllegalArgumentException("Currency mismatch");
+        return new MoneyCents(Math.addExact(this.amountCents, other.amountCents), currency);
+    }
+}
+
+// PRODUCTION-SAFE OPTION 2: BigDecimal from String (never new BigDecimal(double)!) + explicit RoundingMode
+public static BigDecimal calculateTotalWithTax(String unitPriceStr, int quantity, String taxRateStr) {
+    BigDecimal unitPrice = new BigDecimal(unitPriceStr);
+    BigDecimal subtotal  = unitPrice.multiply(BigDecimal.valueOf(quantity));
+    BigDecimal taxRate   = new BigDecimal(taxRateStr);
+    BigDecimal tax       = subtotal.multiply(taxRate).setScale(2, RoundingMode.HALF_EVEN); // Banker's rounding
+    return subtotal.add(tax).setScale(2, RoundingMode.HALF_EVEN);
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

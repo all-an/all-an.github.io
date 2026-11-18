@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Poison Pill Messages, Dead-Letter Queues (DLQ) &amp; Backoff</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../distributed-systems.html">&larr; back</a>
+  <h1>Poison Pill Messages, Dead-Letter Queues (DLQ) &amp; Backoff</h1>
+  <p class="desc">A single corrupt or schema-incompatible message ("Poison Pill") that throws a deserialization or validation exception will block an entire Kafka partition or RabbitMQ queue forever if retried infinitely. Configure non-blocking retry topics or bounded exponential backoff, classify non-retryable exceptions, and route poison pills to a Dead-Letter Queue (DLQ).</p>
+  <pre><code class="language-java">// PRODUCTION-SAFE: Spring Kafka @RetryableTopic with exponential backoff + automatic DLT routing
+@Component
+public class InvoiceEventConsumer {
+
+    @RetryableTopic(
+        attempts = "4",
+        backoff = @Backoff(delay = 1000, multiplier = 2.0, maxDelay = 10000, random = true),
+        exclude = { JsonProcessingException.class, IllegalArgumentException.class }, // Don't retry poison pills!
+        dltStrategy = DltStrategy.FAIL_ON_ERROR
+    )
+    @KafkaListener(topics = "billing.invoices", groupId = "invoice-worker")
+    public void handleInvoice(String rawJson) throws JsonProcessingException {
+        InvoiceCommand cmd = objectMapper.readValue(rawJson, InvoiceCommand.class);
+        billingService.generateInvoice(cmd);
+    }
+
+    // Dead-Letter Topic handler records the failed payload for alerting and manual replay
+    @DltHandler
+    public void handleDeadLetter(
+            String rawPayload,
+            @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
+            @Header(KafkaHeaders.EXCEPTION_MESSAGE) String errorMessage) {
+        deadLetterRepo.save(new DeadLetterRecord(UUID.randomUUID(), topic, rawPayload, errorMessage, Instant.now()));
+    }
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

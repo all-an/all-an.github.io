@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stale Cache After DB Rollback &amp; Post-Commit Invalidation</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../distributed-systems.html">&larr; back</a>
+  <h1>Stale Cache After DB Rollback &amp; Post-Commit Invalidation</h1>
+  <p class="desc">If a service updates Redis inside a <code>@Transactional</code> method and the database transaction subsequently fails and rolls back, Redis permanently serves uncommitted phantom data. Conversely, if you evict Redis <em>before</em> the DB transaction commits, a concurrent reader can miss the cache and repopulate Redis with the old DB value milliseconds before commit. Always evict or update cache inside an <code>AFTER_COMMIT</code> listener.</p>
+  <pre><code class="language-java">// BROKEN: Evicting or writing Redis before the SQL transaction commits
+@Transactional
+public void updatePriceBroken(UUID productId, long newPriceCents) {
+    productRepo.updatePrice(productId, newPriceCents);
+    redisTemplate.delete("product:" + productId); // Concurrent reader can repopulate old DB value before commit!
+}
+
+// PRODUCTION-SAFE: Publish a domain event and evict Redis strictly AFTER_COMMIT
+public record ProductPriceChangedEvent(UUID productId) {}
+
+@Transactional(rollbackFor = Exception.class)
+public void updatePriceSafe(UUID productId, long newPriceCents) {
+    productRepo.updatePrice(productId, newPriceCents);
+    // Registered with current transaction; only fires if the SQL transaction commits
+    eventPublisher.publishEvent(new ProductPriceChangedEvent(productId));
+}
+
+@Component
+public class ProductCacheInvalidator {
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onPriceChangedAfterCommit(ProductPriceChangedEvent event) {
+        redisTemplate.delete("product:" + event.productId());
+    }
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

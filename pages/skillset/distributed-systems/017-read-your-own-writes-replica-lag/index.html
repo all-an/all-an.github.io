@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Read-Your-Own-Writes Anomaly &amp; Read-Replica Lag Routing</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../distributed-systems.html">&larr; back</a>
+  <h1>Read-Your-Own-Writes Anomaly &amp; Read-Replica Lag Routing</h1>
+  <p class="desc">When writes go to a primary database and reads go to asynchronous read replicas, a user who updates their address and immediately reloads the page within 100ms often sees their old address—making them think the save failed. Pin a user or session to the primary database for a brief window after any write (or compare PostgreSQL WAL LSNs) to guarantee Read-Your-Own-Writes consistency.</p>
+  <pre><code class="language-java">// PRODUCTION-SAFE: Route reads to Primary if the current user performed a write within the last 5 seconds
+public class ReplicaAwareRoutingDataSource extends AbstractRoutingDataSource {
+    @Override
+    protected Object determineCurrentLookupKey() {
+        if (TransactionSynchronizationManager.isCurrentTransactionReadOnly()
+                &amp;&amp; !RecentWriteTracker.hasRecentWriteForCurrentUser()) {
+            return "REPLICA";
+        }
+        return "PRIMARY";
+    }
+}
+
+public final class RecentWriteTracker {
+    private static final Cache&lt;UUID, Boolean&gt; RECENT_WRITERS = Caffeine.newBuilder()
+        .expireAfterWrite(Duration.ofSeconds(5)) // Covers typical async replication lag window
+        .build();
+
+    public static void markUserWrote(UUID userId) {
+        RECENT_WRITERS.put(userId, Boolean.TRUE);
+    }
+
+    public static boolean hasRecentWriteForCurrentUser() {
+        UUID userId = SecurityContextUtil.currentUserIdOrNull();
+        return userId != null &amp;&amp; RECENT_WRITERS.getIfPresent(userId) != null;
+    }
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

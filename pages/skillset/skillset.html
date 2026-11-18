@@ -66,8 +66,9 @@
       <a class="link" href="angular/angular.html">Angular</a>
       <a class="link" href="springboot/springboot.html">Spring Boot</a>
       <a class="link" href="security/security.html">Security</a>
+      <a class="link" href="distributed-systems/distributed-systems.html">Distributed Systems</a>
     </div>
-    <!-- Running total of all entries across the seven programming lists, filled in by script. -->
+    <!-- Running total of all entries across the eight programming lists, filled in by script. -->
     <p class="list-total" id="listTotal" style="display: none;"></p>
   </div>
 
@@ -78,6 +79,7 @@
     <div class="links">
       <a class="link" href="courses/java/java.html">Java</a>
       <a class="link" href="courses/java-angular-aws/java-angular-aws.html">Java / Angular / AWS</a>
+      <a class="link" href="../terminal/index.html?course=java">Code in Java</a>
     </div>
   </div>
 
@@ -112,8 +114,9 @@
     { url: 'algorithms/algorithms-data.js',  marker: /\{n:"/g },      // Algorithms
     { url: 'aws/aws.js',                     marker: /\{n:"/g },      // AWS
     { url: 'angular/angular.html',           marker: /\{c:"/g },      // Angular
-    { url: 'springboot/springboot.html',     marker: /\{c:"/g },      // Spring Boot
-    { url: 'security/security.html',         marker: /\{c:"/g },      // Security
+    { url: 'springboot/springboot.html',                   marker: /\{c:"/g },      // Spring Boot
+    { url: 'security/security.html',                       marker: /\{c:"/g },      // Security
+    { url: 'distributed-systems/distributed-systems.html', marker: /\{c:"/g },      // Distributed Systems
   ];
 
   // Fetch one source and return how many entries its marker matches.
@@ -129,7 +132,7 @@
       const counts = await Promise.all(LIST_SOURCES.map(countEntries));
       const total = counts.reduce((sum, n) => sum + n, 0);
       const el = document.getElementById('listTotal');
-      el.textContent = total + ' items across the seven lists';
+      el.textContent = total + ' items across the eight lists';
       el.style.display = 'block';
     } catch {
       // Counting is a nice-to-have; silently skip it if the data can't be read.

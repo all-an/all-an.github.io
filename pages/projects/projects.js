@@ -45,12 +45,19 @@ function buildProjectCard(project) {
   const stackTags = project.stack
     .map((tag) => `<span class="chip">${tag}</span>`)
     .join('');
+  // Optional status pill shown next to the project title when a project has a status field.
+  const statusPill = project.status
+    ? `<span class="status-pill">${project.status}</span>`
+    : '';
 
   return `
     <a class="project-card" href="${project.url}" target="_blank" rel="noopener">
       <div class="card-top">
         <div class="card-header">
-          <span class="project-title">${project.name}</span>
+          <div class="card-title-group">
+            <span class="project-title">${project.name}</span>
+            ${statusPill}
+          </div>
           <span class="ext-arrow" aria-hidden="true">↗</span>
         </div>
         <p class="project-desc">${project.desc}</p>
@@ -85,6 +92,7 @@ function renderProjects() {
         p.name,
         p.desc,
         p.lang,
+        p.status || '',
         p.stack.join(' '),
         CATEGORIES[p.cat].title,
       ]

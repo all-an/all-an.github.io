@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cross-Service Rollbacks &amp; Saga Pattern (Orchestration + Compensation)</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../distributed-systems.html">&larr; back</a>
+  <h1>Cross-Service Rollbacks &amp; Saga Pattern (Orchestration + Compensation)</h1>
+  <p class="desc">When a checkout spans separate <strong>Order</strong>, <strong>Inventory</strong>, and <strong>Payment</strong> microservices with isolated databases, you cannot use a single ACID transaction, and Two-Phase Commit (2PC) creates availability bottlenecks. Use a <strong>Saga Orchestrator</strong> that executes forward steps with idempotency keys and runs compensating transactions in reverse order if any step fails.</p>
+  <pre><code class="language-java">// PRODUCTION-SAFE: Saga Orchestrator with explicit backward compensating transactions
+public OrderResult executeCheckoutSaga(CheckoutCommand cmd) {
+    UUID sagaId = cmd.orderId();
+    boolean stockReserved = false;
+    boolean paymentCaptured = false;
+
+    try {
+        // Step 1: Reserve inventory (idempotent by sagaId)
+        inventoryClient.reserveStock(sagaId, cmd.sku(), cmd.quantity());
+        stockReserved = true;
+
+        // Step 2: Charge customer payment method (idempotent by sagaId)
+        paymentClient.capturePayment(sagaId, cmd.customerId(), cmd.amountCents());
+        paymentCaptured = true;
+
+        // Step 3: Confirm shipment &amp; mark order completed
+        shipmentClient.createShipment(sagaId, cmd.shippingAddress());
+        return OrderResult.confirmed(sagaId);
+
+    } catch (Exception ex) {
+        // Backward recovery: run idempotent compensating actions in reverse order
+        if (paymentCaptured) {
+            safelyCompensate(() -&gt; paymentClient.refundPayment(sagaId));
+        }
+        if (stockReserved) {
+            safelyCompensate(() -&gt; inventoryClient.releaseReservation(sagaId));
+        }
+        orderRepo.markCancelled(sagaId, ex.getMessage());
+        return OrderResult.failed(sagaId, ex.getMessage());
+    }
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

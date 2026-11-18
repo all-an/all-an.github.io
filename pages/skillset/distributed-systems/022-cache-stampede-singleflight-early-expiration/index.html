@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cache Stampede / Thundering Herd &amp; Singleflight Rebuild</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../distributed-systems.html">&larr; back</a>
+  <h1>Cache Stampede / Thundering Herd &amp; Singleflight Rebuild</h1>
+  <p class="desc">When a heavily-read cache key (e.g., homepage catalog under 10,000 req/s) expires at a single instant, thousands of threads simultaneously miss the cache and execute the same expensive SQL query, crashing the database. Coalesce concurrent in-flight misses using a <strong>Singleflight</strong> map of <code>CompletableFuture</code> or use Caffeine’s <code>refreshAfterWrite</code> to reload keys asynchronously before they expire.</p>
+  <pre><code class="language-java">// PRODUCTION-SAFE OPTION 1: Caffeine AsyncCache + refreshAfterWrite (coalesces misses automatically)
+AsyncLoadingCache&lt;UUID, ProductCatalogDto&gt; catalogCache = Caffeine.newBuilder()
+    .maximumSize(10_000)
+    .refreshAfterWrite(Duration.ofMinutes(1)) // Serves slightly stale value while 1 thread reloads in background!
+    .expireAfterWrite(Duration.ofMinutes(5))
+    .buildAsync((catalogId, executor) -&gt; CompletableFuture.supplyAsync(
+        () -&gt; loadCatalogFromDatabase(catalogId), executor
+    ));
+
+// PRODUCTION-SAFE OPTION 2: Explicit Singleflight coalescer for distributed Redis cache misses
+private final ConcurrentHashMap&lt;String, CompletableFuture&lt;ProductDto&gt;&gt; inFlight = new ConcurrentHashMap&lt;&gt;();
+
+public ProductDto getProductSingleflight(UUID id) {
+    String key = "product:" + id;
+    ProductDto cached = redisCache.get(key);
+    if (cached != null) return cached;
+
+    // 1,000 concurrent cache misses for the same ID share a single DB query!
+    CompletableFuture&lt;ProductDto&gt; future = inFlight.computeIfAbsent(key, k -&gt;
+        CompletableFuture.supplyAsync(() -&gt; {
+            ProductDto fresh = productRepo.findDtoById(id);
+            redisCache.set(key, fresh, Duration.ofMinutes(10));
+            return fresh;
+        }).whenComplete((res, ex) -&gt; inFlight.remove(key))
+    );
+    return future.join();
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

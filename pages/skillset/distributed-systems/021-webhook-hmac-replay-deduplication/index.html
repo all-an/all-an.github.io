@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Webhook Spoofing, Replay Attacks &amp; Event Deduplication</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../distributed-systems.html">&larr; back</a>
+  <h1>Webhook Spoofing, Replay Attacks &amp; Event Deduplication</h1>
+  <p class="desc">Webhook receivers (Stripe, Adyen, GitHub) are public endpoints callable by anyone on the internet. Always verify the <code>HMAC-SHA256</code> signature computed over <code>timestamp + "." + rawBody</code> using constant-time comparison (<code>MessageDigest.isEqual</code>), reject timestamps older than 5 minutes to prevent replay attacks, and deduplicate by the provider event ID.</p>
+  <pre><code class="language-java">// PRODUCTION-SAFE: Constant-time HMAC verification + 5-minute replay window + event ID deduplication
+public void handleWebhook(String signatureHeader, String timestampHeader, byte[] rawBody) {
+    long timestampSec = Long.parseLong(timestampHeader);
+    long nowSec       = Instant.now().getEpochSecond();
+    if (Math.abs(nowSec - timestampSec) &gt; 300) {
+        throw new SecurityException("Webhook timestamp outside 5-minute replay tolerance");
+    }
+
+    byte[] signedPayload = (timestampHeader + "." + new String(rawBody, StandardCharsets.UTF_8))
+        .getBytes(StandardCharsets.UTF_8);
+    byte[] expectedMac = computeHmacSha256(webhookSecretKey, signedPayload);
+    byte[] providedMac = HexFormat.of().parseHex(signatureHeader);
+
+    // Constant-time comparison prevents byte-by-byte timing side-channel attacks
+    if (!MessageDigest.isEqual(expectedMac, providedMac)) {
+        throw new SecurityException("Invalid webhook HMAC signature");
+    }
+
+    WebhookEvent evt = objectMapper.readValue(rawBody, WebhookEvent.class);
+    Boolean isFirstSeen = redisTemplate.opsForValue()
+        .setIfAbsent("webhook:dedup:" + evt.id(), "1", Duration.ofHours(24));
+    if (!Boolean.TRUE.equals(isFirstSeen)) {
+        return; // Already processed this webhook event ID
+    }
+    processVerifiedWebhook(evt);
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

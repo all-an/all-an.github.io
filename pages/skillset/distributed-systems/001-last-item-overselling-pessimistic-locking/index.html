@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Last-Item Inventory Overselling &amp; Pessimistic Locking</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../distributed-systems.html">&larr; back</a>
+  <h1>Last-Item Inventory Overselling &amp; Pessimistic Locking</h1>
+  <p class="desc">When two users simultaneously buy the last item in stock, a plain <code>findById</code> reads <code>stock = 1</code> in both transactions before either writes <code>stock = 0</code>, resulting in two confirmed orders for one physical item. Use <code>SELECT ... FOR UPDATE</code> (<code>LockModeType.PESSIMISTIC_WRITE</code>) with a lock timeout so the second transaction waits until the first commits and then sees <code>stock = 0</code>.</p>
+  <pre><code class="language-java">// BROKEN: Check-Then-Act race condition — two threads both read stock=1 and oversell
+@Transactional
+public Order checkoutBroken(UUID productId, int qty) {
+    Product p = productRepo.findById(productId).orElseThrow();
+    if (p.getStock() &lt; qty) {
+        throw new OutOfStockException();
+    }
+    p.setStock(p.getStock() - qty); // Both threads write 1 - 1 = 0!
+    return orderRepo.save(new Order(productId, qty));
+}
+
+// PRODUCTION-SAFE: Pessimistic row-level exclusive lock (SELECT ... FOR UPDATE)
+public interface ProductRepository extends JpaRepository&lt;Product, UUID&gt; {
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @QueryHints(@QueryHint(name = "jakarta.persistence.lock.timeout", value = "3000"))
+    @Query("SELECT p FROM Product p WHERE p.id = :id")
+    Optional&lt;Product&gt; findByIdForUpdate(@Param("id") UUID id);
+}
+
+@Transactional
+public Order checkoutSafe(UUID productId, int qty) {
+    // Second buyer blocks here until the first transaction commits, then sees stock = 0
+    Product p = productRepo.findByIdForUpdate(productId).orElseThrow();
+    if (p.getStock() &lt; qty) {
+        throw new OutOfStockException("Sold out while waiting for lock");
+    }
+    p.setStock(p.getStock() - qty);
+    return orderRepo.save(new Order(productId, qty));
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

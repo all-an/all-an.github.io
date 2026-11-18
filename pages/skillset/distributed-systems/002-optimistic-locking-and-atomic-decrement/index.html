@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Optimistic Locking (@Version / CAS) &amp; Atomic SQL Decrement</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../distributed-systems.html">&larr; back</a>
+  <h1>Optimistic Locking (@Version / CAS) &amp; Atomic SQL Decrement</h1>
+  <p class="desc">Holding pessimistic locks across long business workflows reduces throughput. Instead, use JPA <code>@Version</code> for optimistic compare-and-swap (CAS) detection, or push the check and decrement into a single atomic SQL <code>UPDATE ... WHERE stock &gt;= :qty</code> statement that never allows negative stock.</p>
+  <pre><code class="language-java">// OPTION 1: JPA Optimistic Locking (@Version column automatically checked on UPDATE)
+@Entity
+public class Product {
+    @Id private UUID id;
+    private int stock;
+    @Version private long version; // UPDATE products SET stock=?, version=version+1 WHERE id=? AND version=?
+}
+
+// OPTION 2 (FASTEST FOR HOT INVENTORY): Single atomic conditional UPDATE in PostgreSQL
+public interface ProductRepository extends JpaRepository&lt;Product, UUID&gt; {
+    @Modifying
+    @Query("UPDATE Product p SET p.stock = p.stock - :qty WHERE p.id = :id AND p.stock &gt;= :qty")
+    int tryDecrementStock(@Param("id") UUID id, @Param("qty") int qty);
+}
+
+@Transactional
+public Order checkoutAtomic(UUID productId, int qty) {
+    // Database executes the check and decrement atomically on the row lock
+    int updatedRows = productRepo.tryDecrementStock(productId, qty);
+    if (updatedRows == 0) {
+        throw new OutOfStockException("Insufficient stock for product " + productId);
+    }
+    return orderRepo.save(new Order(productId, qty));
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

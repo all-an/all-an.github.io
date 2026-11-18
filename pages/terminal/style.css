@@ -1,3 +1,83 @@
+/* Mobile warning — hidden on desktop, phone-frame styled on mobile/small screens */
+#mobile-warning {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    #mobile-warning {
+        display: flex;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.92);
+        z-index: 200;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Courier New', Courier, monospace;
+    }
+
+    /* Phone-frame card matching desktop games */
+    #mobile-warning .phone-frame {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        gap: 1rem;
+        padding: 2.5rem 1.8rem;
+        width: calc(100% - 40px);
+        max-width: 340px;
+        background: #000;
+        border: 2px solid #00ff46;
+        border-radius: 36px;
+        box-shadow: 0 0 40px rgba(0, 255, 70, 0.2);
+        position: relative;
+    }
+
+    /* Decorative speaker notch */
+    #mobile-warning .phone-frame::before {
+        content: '';
+        position: absolute;
+        top: 14px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60px;
+        height: 6px;
+        background: #00ff46;
+        border-radius: 3px;
+        opacity: 0.4;
+    }
+
+    #mobile-warning h2 {
+        font-size: 1.6rem;
+        color: #00ff46;
+        letter-spacing: 4px;
+        text-shadow: 0 0 16px #00ff46;
+        margin-bottom: 0.5rem;
+    }
+
+    #mobile-warning p {
+        color: #aaa;
+        font-size: 0.9rem;
+        letter-spacing: 1px;
+        line-height: 1.6;
+    }
+
+    #mobile-warning a {
+        margin-top: 1rem;
+        color: #00ff46;
+        text-decoration: none;
+        letter-spacing: 2px;
+        font-size: 0.85rem;
+        border: 1px solid #00ff46;
+        padding: 0.5rem 1.2rem;
+        transition: background 0.2s;
+    }
+
+    #mobile-warning a:hover {
+        background: rgba(0, 255, 70, 0.1);
+    }
+}
+
 * {
     margin: 0;
     padding: 0;

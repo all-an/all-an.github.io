@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flash Sale Traffic Spikes, Rate Limiting &amp; Load Shedding</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../distributed-systems.html">&larr; back</a>
+  <h1>Flash Sale Traffic Spikes, Rate Limiting &amp; Load Shedding</h1>
+  <p class="desc">During a flash sale or ticket drop, accepting 50,000 concurrent requests into an unbounded queue causes every request to time out while the server still wastes CPU processing requests the client already abandoned. Enforce per-user Token Bucket rate limits at the edge and use a non-blocking concurrency limiter to shed excess load immediately with <code>503 Service Unavailable</code>.</p>
+  <pre><code class="language-java">// PRODUCTION-SAFE: Non-blocking concurrency load shedder + per-user rate limit filter
+@Component
+public class LoadSheddingFilter extends OncePerRequestFilter {
+    // Cap active in-flight checkout requests to match DB connection pool capacity
+    private final Semaphore inFlightCheckoutPermits = new Semaphore(60);
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
+            throws ServletException, IOException {
+        if (!req.getRequestURI().startsWith("/api/v1/checkout")) {
+            chain.doFilter(req, res);
+            return;
+        }
+        // Fail fast (0ms wait) when saturated instead of queueing until OOM
+        if (!inFlightCheckoutPermits.tryAcquire()) {
+            res.setStatus(HttpStatus.SERVICE_UNAVAILABLE.value());
+            res.setHeader("Retry-After", "2");
+            res.getWriter().write("{"error":"Server at capacity, please retry shortly"}");
+            return;
+        }
+        try {
+            chain.doFilter(req, res);
+        } finally {
+            inFlightCheckoutPermits.release();
+        }
+    }
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

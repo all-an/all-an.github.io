@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Order of operations</title>
+  <link rel="stylesheet" href="../topic.css" />
+</head>
+<body data-field="arith">
+<div class="wrap">
+
+  <a class="back" href="../math.html">← mathematics</a>
+  <h1>Order of operations</h1>
+  <div class="field-tag">Arithmetic</div>
+
+  <section>
+    <h2>The idea</h2>
+    <p>Operator precedence conventions (PEMDAS / BODMAS) ensure every arithmetic expression has a single unambiguous value.</p>
+  </section>
+
+  <section>
+    <h2>Key properties &amp; formulas</h2>
+    <p>Parentheses evaluate innermost first, followed by exponents, then multiplication/division left-to-right, and finally addition/subtraction left-to-right.</p>
+    <div class="formula">2 + 3 × 4² = 2 + 3 × 16 = 2 + 48 = 50   ≠   (2 + 3 × 4)²</div>
+    <p><strong>Historical &amp; theoretical context:</strong> Operator precedence convention. Core concepts include <code>PEMDAS</code>, <code>precedence</code>, <code>grouping</code>.</p>
+  </section>
+
+  <section>
+    <h2>Try it — interactive explorer</h2>
+    <p>Adjust the parameters below to explore how the values, curves, or distributions respond in real time.</p>
+    <div class="demo" id="demo"></div>
+  </section>
+
+  <section>
+    <h2>Exercises — solve them in JavaScript</h2>
+    <p>Write your answer in the editor, then press <strong>Run</strong>. Your function is checked against several test cases — green means it passed. Stuck? Each exercise has a worked solution you can reveal.</p>
+    <div id="exercises"></div>
+  </section>
+
+</div>
+<script src="../topic.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

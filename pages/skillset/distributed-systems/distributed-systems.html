@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Distributed Systems &amp; Production Edge Cases</title>
+<style>
+:root {
+  --color-background-primary:   #111113;
+  --color-background-secondary: #1a1a1e;
+  --color-text-primary:         #e8e8ea;
+  --color-text-secondary:       #9898a0;
+  --color-text-tertiary:        #5e5e66;
+  --color-border-secondary:     #2e2e33;
+  --color-border-tertiary:      #232328;
+  --border-radius-md:           7px;
+  --font-mono:                  'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+}
+body { background: var(--color-background-primary); color: var(--color-text-primary); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+.wrap { max-width: 1200px; margin: 0 auto; padding: 2.5rem 2rem 3rem; }
+h1 { font-size: 28px; font-weight: 600; color: var(--color-text-primary); margin-bottom: 1.75rem; letter-spacing: -0.01em; }
+.controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 1.25rem; align-items: center; }
+input[type=text] { flex: 1; min-width: 220px; font-size: 18px; padding: 8px 12px; border-radius: var(--border-radius-md); border: 1px solid var(--color-border-secondary); background: var(--color-background-secondary); color: var(--color-text-primary); outline: none; }
+input[type=text]:focus { border-color: #3a3a44; }
+select { font-size: 18px; padding: 8px 12px; border-radius: var(--border-radius-md); border: 1px solid var(--color-border-secondary); background: var(--color-background-secondary); color: var(--color-text-primary); outline: none; cursor: pointer; }
+.count { font-size: 17px; color: var(--color-text-secondary); white-space: nowrap; }
+.tbl-wrap { overflow-x: auto; border-radius: var(--border-radius-md); border: 1px solid var(--color-border-tertiary); }
+table { width: 100%; border-collapse: collapse; font-size: 18px; table-layout: fixed; }
+th { text-align: left; font-weight: 500; font-size: 16px; color: var(--color-text-secondary); padding: 10px 14px; border-bottom: 1px solid var(--color-border-tertiary); background: var(--color-background-secondary); letter-spacing: 0.03em; text-transform: uppercase; }
+td { padding: 11px 14px; border-bottom: 1px solid var(--color-border-tertiary); vertical-align: top; color: var(--color-text-primary); }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #16161a; }
+tr.clickable { cursor: pointer; }
+.idx { font-family: var(--font-mono); font-size: 16px; color: var(--color-text-tertiary); padding-top: 3px; }
+.concept { font-weight: 500; font-size: 18px; }
+.concept a { color: inherit; text-decoration: none; }
+.concept a:hover { text-decoration: underline; }
+.cat { display: inline-block; font-size: 14px; padding: 2px 8px; border-radius: 99px; margin-top: 4px; white-space: nowrap; }
+.apis { display: flex; flex-wrap: wrap; gap: 5px; }
+.api { font-family: var(--font-mono); font-size: 15px; background: #1e1e23; border: 1px solid var(--color-border-tertiary); border-radius: 4px; padding: 2px 7px; color: var(--color-text-secondary); }
+.note { font-size: 16px; color: var(--color-text-tertiary); font-style: italic; line-height: 1.5; }
+.no-results { text-align: center; padding: 3rem; color: var(--color-text-secondary); font-size: 20px; }
+th:nth-child(1) { width: 4%; }
+th:nth-child(2) { width: 25%; }
+th:nth-child(3) { width: 15%; }
+th:nth-child(4) { width: 30%; }
+th:nth-child(5) { width: 26%; }
+
+@media (max-width: 600px) {
+  th:nth-child(3), td:nth-child(3),
+  th:nth-child(4), td:nth-child(4),
+  th:nth-child(5), td:nth-child(5) { display: none; }
+  th:nth-child(1) { width: 12%; }
+  th:nth-child(2) { width: 88%; }
+  .cat { display: none; }
+}
+
+.cat-concurrency  { background:#501313; color:#F7C1C1; }
+.cat-transactions { background:#26215C; color:#CECBF6; }
+.cat-messaging    { background:#412402; color:#FAC775; }
+.cat-distributed  { background:#042C53; color:#B5D4F4; }
+.cat-resilience   { background:#173404; color:#C0DD97; }
+.cat-caching      { background:#4A1B0C; color:#F5C4B3; }
+.cat-isolation    { background:#04342C; color:#9FE1CB; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:1.75rem;">
+  <div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
+    <h1 style="margin-bottom:0;">Distributed Systems &amp; Production Edge Cases</h1>
+    <span style="font-size:16px; color:var(--color-text-secondary); font-style:italic;">Battle-tested patterns for race conditions, double-charging, ledger integrity, outbox messaging, sagas, and high-load resilience. Click a topic for Java examples.</span>
+  </div>
+  <a href="../skillset.html" style="font-size:18px; color:var(--color-text-secondary); text-decoration:none; white-space:nowrap;">&larr; skillset</a>
+</div>
+<div class="controls">
+  <input type="text" id="search" placeholder="Search race conditions, transactions, Kafka/RabbitMQ, sagas, Java APIs..." />
+  <select id="catFilter">
+    <option value="">All categories</option>
+    <option value="concurrency">Concurrency &amp; Race Conditions</option>
+    <option value="transactions">Transactions, Money &amp; Ledgers</option>
+    <option value="messaging">Messaging, Queues &amp; Events</option>
+    <option value="distributed">Distributed Consistency &amp; Sagas</option>
+    <option value="resilience">Resilience, Overload &amp; APIs</option>
+    <option value="caching">Caching &amp; High-Read Anomalies</option>
+    <option value="isolation">Multi-Tenancy, Isolation &amp; Audit</option>
+  </select>
+  <span class="count" id="count"></span>
+</div>
+<div class="tbl-wrap">
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Scenario &amp; Engineering Pattern</th>
+      <th>Category</th>
+      <th>Key Java APIs / Techniques</th>
+      <th>Why It Matters</th>
+    </tr>
+  </thead>
+  <tbody id="tbody"></tbody>
+</table>
+</div>
+<div class="no-results" id="noResults" style="display:none;">No distributed systems patterns match.</div>
+</div>
+
+<script>
+// Production edge cases and distributed systems engineering patterns with Java examples.
+const DATA = [
+  {c:"Last-Item Inventory Overselling (Pessimistic Locking)",url:"001-last-item-overselling-pessimistic-locking/",cat:"concurrency",cl:"Concurrency & Race Conditions",apis:["SELECT ... FOR UPDATE","PESSIMISTIC_WRITE","LockTimeout"],t:"When two buyers checkout the last item simultaneously, reading stock in Java before decrementing causes both to see stock=1 and oversell. Acquire a row-level exclusive lock with SELECT ... FOR UPDATE."},
+  {c:"Optimistic Locking (@Version / CAS) & Atomic Decrement",url:"002-optimistic-locking-and-atomic-decrement/",cat:"concurrency",cl:"Concurrency & Race Conditions",apis:["@Version","OptimisticLockException","UPDATE ... WHERE stock >= :qty"],t:"Avoid holding row locks across slow reads by verifying a @Version column on write, or push the guard into a single atomic SQL UPDATE that checks stock >= quantity."},
+  {c:"Double-Click & Simultaneous Requests (Distributed Locks)",url:"003-double-click-distributed-locks/",cat:"concurrency",cl:"Concurrency & Race Conditions",apis:["Redisson RLock","pg_try_advisory_xact_lock","Lease TTL"],t:"A user double-clicking 'Pay' or two pods handling concurrent webhooks can run the same workflow twice. Coordinate mutual exclusion across JVM nodes with Redis or PostgreSQL advisory locks."},
+  {c:"Lost Updates, Check-Then-Act & Write Skew",url:"004-lost-updates-and-write-skew/",cat:"concurrency",cl:"Concurrency & Race Conditions",apis:["Serializable","Materialized Conflict","Compare-And-Swap"],t:"Under Read Committed or Repeatable Read, two transactions reading disjoint rows that violate a shared invariant (e.g. at least one doctor on call) both commit—requiring Serializable or lock materialization."},
+  {c:"Double-Charging Prevention (Idempotency Keys)",url:"005-double-charging-idempotency-keys/",cat:"transactions",cl:"Transactions, Money & Ledgers",apis:["Idempotency-Key","UNIQUE(client_id, key)","Payload Hash"],t:"Network timeouts force clients to retry payment requests. Store the client's Idempotency-Key and response atomically so retries return the original receipt without charging twice."},
+  {c:"Partial Failure Mid-Transfer (ACID Isolation & Savepoints)",url:"006-partial-failure-acid-isolation-savepoints/",cat:"transactions",cl:"Transactions, Money & Ledgers",apis:["@Transactional","Isolation.REPEATABLE_READ","Savepoint"],t:"If debiting Account A succeeds but crediting Account B throws an exception, the entire unit of work must roll back cleanly—including checked exceptions via rollbackFor = Exception.class."},
+  {c:"Concurrent Wallet Transfers Deadlocking (Lock Ordering)",url:"007-wallet-deadlocks-lock-ordering/",cat:"transactions",cl:"Transactions, Money & Ledgers",apis:["Deterministic Lock Order","Comparable.compareTo","Deadlock Avoidance"],t:"If User A transfers to User B while User B transfers to User A, locking source-then-destination deadlocks the database. Always acquire row locks in ascending account ID order."},
+  {c:"Double-Entry Ledger Pattern (Immutable Credits & Debits)",url:"008-double-entry-ledger-pattern/",cat:"transactions",cl:"Transactions, Money & Ledgers",apis:["Append-Only LedgerEntry","Debit / Credit Pair","Zero-Sum Invariant"],t:"Never overwrite a mutable balance column in isolation. Record every money movement as an immutable pair of debit and credit ledger entries whose sum is always zero."},
+  {c:"Floating-Point Money Bugs (Fixed-Point & Minor Units)",url:"009-floating-point-money-minor-units/",cat:"transactions",cl:"Transactions, Money & Ledgers",apis:["BigDecimal","RoundingMode.HALF_EVEN","long minorUnits (cents)"],t:"IEEE-754 double arithmetic produces 0.1 + 0.2 = 0.30000000000000004, silently creating or destroying pennies. Represent money as integer minor units (cents) or BigDecimal with explicit scale."},
+  {c:"Dual-Write Bug (Transactional Outbox Pattern)",url:"010-dual-write-transactional-outbox/",cat:"messaging",cl:"Messaging, Queues & Events",apis:["outbox_events Table","Same DB Transaction","Debezium CDC / Relay"],t:"Saving an order to PostgreSQL and publishing to Kafka/RabbitMQ in one method loses events if the broker is unreachable or crashes after commit. Write the event into an outbox table in the same SQL transaction."},
+  {c:"Duplicate Message Delivery (Idempotent Consumer / Inbox)",url:"011-duplicate-delivery-idempotent-consumer/",cat:"messaging",cl:"Messaging, Queues & Events",apis:["processed_messages","INSERT ON CONFLICT","At-Least-Once"],t:"Kafka and RabbitMQ guarantee at-least-once delivery, meaning consumers will receive duplicate messages after rebalances or ack timeouts. Deduplicate by message_id inside the consumer's DB transaction."},
+  {c:"Out-of-Order Events (Partition Keys & State Guards)",url:"012-out-of-order-events-partition-keys/",cat:"messaging",cl:"Messaging, Queues & Events",apis:["Kafka Partition Key","Event Version / Sequence","State Machine Guard"],t:"Without a partition key, OrderCancelled can be consumed before OrderCreated on a different partition. Route by aggregate ID and reject or buffer events whose version lags behind aggregate state."},
+  {c:"Poison Pill Messages (Dead-Letter Queues & Backoff)",url:"013-poison-pill-dlq-exponential-backoff/",cat:"messaging",cl:"Messaging, Queues & Events",apis:["@RetryableTopic","DeadLetterPublishingRecoverer","BackOff"],t:"A malformed message that throws an unrecoverable exception will block a partition forever if retried infinitely. Cap retries with exponential backoff and route poison pills to a DLQ for inspection."},
+  {c:"Competing Consumers & SKIP LOCKED Work Queues",url:"014-competing-consumers-skip-locked/",cat:"messaging",cl:"Messaging, Queues & Events",apis:["FOR UPDATE SKIP LOCKED","Visibility Timeout","Worker Claim"],t:"When multiple worker nodes poll a database table for pending jobs, plain SELECT picks the same rows. Use FOR UPDATE SKIP LOCKED so each worker claims distinct jobs without blocking others."},
+  {c:"Cross-Service Rollbacks (Saga Pattern & Compensation)",url:"015-microservices-rollback-saga-pattern/",cat:"distributed",cl:"Distributed Consistency & Sagas",apis:["Saga Orchestrator","Compensating Action","Idempotent Rollback"],t:"You cannot span a single ACID database transaction across Order, Payment, and Inventory microservices. Coordinate multi-step workflows with a Saga that executes compensating reversals on failure."},
+  {c:"Stock Reservation Before Payment (Two-Phase TCC + TTL)",url:"016-two-phase-reservation-tcc-ttl/",cat:"distributed",cl:"Distributed Consistency & Sagas",apis:["Try-Confirm-Cancel (TCC)","Reservation expires_at","TTL Sweeper"],t:"Deducting inventory only after a slow payment gateway responds causes overselling; deducting before payment locks stock forever if the user abandons checkout. Hold a time-bounded reservation (TTL)."},
+  {c:"Read-Your-Own-Writes Lag on Read Replicas",url:"017-read-your-own-writes-replica-lag/",cat:"distributed",cl:"Distributed Consistency & Sagas",apis:["AbstractRoutingDataSource","Primary Pinning","Replica LSN"],t:"When a user updates their profile and immediately refreshes, reading from an asynchronous read replica may return stale data from 200ms ago. Route the user to the primary DB for a short window after writes."},
+  {c:"Slow Payment Gateway Hanging Threads (Timeouts & Circuit Breakers)",url:"018-slow-gateway-timeouts-bulkheads-circuit-breaker/",cat:"resilience",cl:"Resilience, Overload & APIs",apis:["Resilience4j @CircuitBreaker","@Bulkhead","HttpClient Timeout"],t:"A single degraded downstream API without strict connect/read timeouts and bulkhead limits will exhaust the entire Tomcat/virtual thread pool and cascade failure across the whole application."},
+  {c:"Retry Storms & Thundering Retries (Exponential Backoff + Jitter)",url:"019-retry-storms-jitter-retry-budgets/",cat:"resilience",cl:"Resilience, Overload & APIs",apis:["Full Jitter","ThreadLocalRandom","Retry Budget"],t:"When a recovering service blips, thousands of clients retrying on fixed 1s intervals hammer it in synchronized waves. Add full random jitter to backoff delays and enforce a global retry budget."},
+  {c:"Flash Sale Meltdown (Rate Limiting, Load Shedding & Backpressure)",url:"020-flash-sale-rate-limiting-load-shedding/",cat:"resilience",cl:"Resilience, Overload & APIs",apis:["Bucket4j Token Bucket","Semaphore Load Shed","HTTP 429 / 503"],t:"During a 100x traffic spike, queueing unbounded requests drives latency to minutes until OOM. Enforce token-bucket rate limits at the edge and shed excess load fast with HTTP 429/503."},
+  {c:"Webhook Spoofing & Replay Attacks (HMAC + Timestamp + Dedup)",url:"021-webhook-hmac-replay-deduplication/",cat:"resilience",cl:"Resilience, Overload & APIs",apis:["HmacSHA256","MessageDigest.isEqual","Timestamp Tolerance"],t:"Payment and shipping webhooks are public HTTP endpoints. Verify the raw payload HMAC in constant time, reject timestamps outside a 5-minute window, and deduplicate event IDs."},
+  {c:"Cache Stampede / Thundering Herd (Singleflight & Early Expiry)",url:"022-cache-stampede-singleflight-early-expiration/",cat:"caching",cl:"Caching & High-Read Anomalies",apis:["Caffeine refreshAfterWrite","CompletableFuture","Singleflight"],t:"When a hot cache key expires under 10,000 req/s, all threads miss the cache simultaneously and stampede the database. Coalesce concurrent misses into a single in-flight loader or refresh asynchronously."},
+  {c:"Stale Cache After DB Rollback (Post-Commit Invalidation)",url:"023-stale-cache-after-rollback-invalidation/",cat:"caching",cl:"Caching & High-Read Anomalies",apis:["@TransactionalEventListener","AFTER_COMMIT","Cache-Aside"],t:"Updating or evicting Redis inside a @Transactional method before the database commits leaves poisoned cache data if the transaction rolls back—or lets a concurrent reader repopulate stale data."},
+  {c:"Cross-User & Cross-Tenant Data Leaks (Scoped Queries & RLS)",url:"024-cross-user-data-leak-bola-rls/",cat:"isolation",cl:"Multi-Tenancy, Isolation & Audit",apis:["findByIdAndOwnerId","PostgreSQL RLS","SET LOCAL tenant_id"],t:"Never query by primary key alone (findById). Enforce owner/tenant predicates on every repository query and back them with PostgreSQL Row-Level Security (RLS) policies as a defense-in-depth barrier."},
+  {c:"Forensics & State Reconstruction (Event Sourcing & Audit Logs)",url:"025-negative-balance-forensics-event-sourcing/",cat:"isolation",cl:"Multi-Tenancy, Isolation & Audit",apis:["Immutable DomainEvent","Aggregate Version","Hash-Chained Audit"],t:"When a bug or race corrupts state, a mutable table overwrites the evidence. Append-only domain events and tamper-evident audit logs let you replay exact history and prove how every state change occurred."},
+];
+
+const catClass = {
+  concurrency:  "cat-concurrency",
+  transactions: "cat-transactions",
+  messaging:    "cat-messaging",
+  distributed:  "cat-distributed",
+  resilience:   "cat-resilience",
+  caching:      "cat-caching",
+  isolation:    "cat-isolation"
+};
+const STATE_KEY = 'distributed-systems-index-state';
+
+function saveIndexState() {
+  sessionStorage.setItem(STATE_KEY, JSON.stringify({
+    search: document.getElementById('search').value,
+    category: document.getElementById('catFilter').value,
+    scrollY: window.scrollY,
+    pendingRestore: true,
+  }));
+}
+
+function consumeIndexState() {
+  const raw = sessionStorage.getItem(STATE_KEY);
+  if (!raw) return null;
+  try {
+    const state = JSON.parse(raw);
+    if (!state.pendingRestore) return null;
+    sessionStorage.removeItem(STATE_KEY);
+    return state;
+  } catch {
+    sessionStorage.removeItem(STATE_KEY);
+    return null;
+  }
+}
+
+function openConcept(url) {
+  saveIndexState();
+  location.href = url;
+}
+
+function renderApis(apis) {
+  return apis.map(a => '<span class="api">' + a + '</span>').join('');
+}
+
+function render() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const cat = document.getElementById('catFilter').value;
+  let rows = DATA;
+  if (cat) rows = rows.filter(d => d.cat === cat);
+  if (q) rows = rows.filter(d => (d.c + d.t + d.cl + d.apis.join(' ')).toLowerCase().includes(q));
+  document.getElementById('count').textContent = rows.length + ' patterns';
+  document.getElementById('noResults').style.display = rows.length ? 'none' : 'block';
+  document.getElementById('tbody').innerHTML = rows.map((d, i) => `
+    <tr class="clickable" onclick="openConcept('${d.url}')">
+      <td><span class="idx">${i + 1}</span></td>
+      <td><div class="concept"><a href="${d.url}" onclick="event.stopPropagation(); saveIndexState();">${d.c}</a></div><span class="cat ${catClass[d.cat]}">${d.cl}</span></td>
+      <td><span class="note">${d.cl}</span></td>
+      <td><div class="apis">${renderApis(d.apis)}</div></td>
+      <td><span class="note">${d.t}</span></td>
+    </tr>`).join('');
+}
+
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+
+const savedState = consumeIndexState();
+if (savedState) {
+  document.getElementById('search').value = savedState.search || '';
+  document.getElementById('catFilter').value = savedState.category || '';
+}
+
+document.getElementById('search').addEventListener('input', render);
+document.getElementById('catFilter').addEventListener('change', render);
+render();
+
+if (savedState) {
+  requestAnimationFrame(() => {
+    window.scrollTo({ top: savedState.scrollY || 0, behavior: 'auto' });
+  });
+}
+</script>
+</body>
+</html>

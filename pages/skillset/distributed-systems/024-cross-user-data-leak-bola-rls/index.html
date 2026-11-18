@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cross-User Data Access, BOLA/IDOR &amp; PostgreSQL Row-Level Security (RLS)</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../distributed-systems.html">&larr; back</a>
+  <h1>Cross-User Data Access, BOLA/IDOR &amp; PostgreSQL Row-Level Security (RLS)</h1>
+  <p class="desc">In multi-user and multi-tenant SaaS applications, a single forgotten <code>WHERE tenant_id = :tenantId</code> clause exposes another customer’s private invoices or medical records. Enforce tenant/owner scoping in every repository method and configure PostgreSQL <strong>Row-Level Security (RLS)</strong> with transaction-local session variables (<code>SET LOCAL</code>) so the database itself refuses cross-tenant reads.</p>
+  <pre><code class="language-java">// LAYER 1 (Application Repository): Never expose unscoped findById(id) on tenant resources
+public interface InvoiceRepository extends JpaRepository&lt;Invoice, UUID&gt; {
+    @Query("SELECT i FROM Invoice i WHERE i.id = :id AND i.tenantId = :tenantId")
+    Optional&lt;Invoice&gt; findByIdAndTenantId(@Param("id") UUID id, @Param("tenantId") UUID tenantId);
+}
+
+// LAYER 2 (Database Defense-in-Depth): Bind tenantId to PostgreSQL transaction-local context for RLS
+// SQL Policy: CREATE POLICY tenant_isolation ON invoices USING (tenant_id = current_setting('app.tenant_id')::uuid);
+@Aspect
+@Component
+public class TenantRlsAspect {
+    @Before("@annotation(org.springframework.transaction.annotation.Transactional)")
+    public void bindTenantToDatabaseTransaction() {
+        UUID tenantId = TenantContext.getCurrentTenantId();
+        // SET LOCAL scopes the setting strictly to the current SQL transaction (safe with HikariCP pooling!)
+        jdbcTemplate.execute("SELECT set_config('app.tenant_id', '" + tenantId + "', true)");
+    }
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

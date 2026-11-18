@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Duplicate Message Delivery &amp; Idempotent Consumer (Inbox Pattern)</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../distributed-systems.html">&larr; back</a>
+  <h1>Duplicate Message Delivery &amp; Idempotent Consumer (Inbox Pattern)</h1>
+  <p class="desc">Message brokers (Kafka, RabbitMQ, SQS) guarantee <strong>at-least-once delivery</strong>: if a consumer processes a message and crashes milliseconds before committing its offset, the broker redelivers the message. Make every consumer idempotent by inserting the <code>message_id</code> into a <code>processed_messages</code> table inside the same database transaction as the business side effect.</p>
+  <pre><code class="language-java">// PRODUCTION-SAFE: Idempotent Consumer (Inbox Table) deduplicating by unique eventId
+@KafkaListener(topics = "payments.settled", groupId = "fulfillment-service")
+@Transactional(rollbackFor = Exception.class)
+public void onPaymentSettled(PaymentSettledEvent event) {
+    // 1. Try inserting the event ID into processed_messages inside the same DB transaction
+    int inserted = jdbcTemplate.update("""
+        INSERT INTO processed_messages (message_id, consumer_group, processed_at)
+        VALUES (?, 'fulfillment-service', now())
+        ON CONFLICT (message_id, consumer_group) DO NOTHING
+        """, event.eventId());
+
+    if (inserted == 0) {
+        // Duplicate delivery detected — safely acknowledge and skip side effects
+        log.info("Skipping already-processed message {}", event.eventId());
+        return;
+    }
+
+    // 2. Execute business mutation atomically with the inbox record
+    shipmentService.scheduleShipmentForOrder(event.orderId());
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

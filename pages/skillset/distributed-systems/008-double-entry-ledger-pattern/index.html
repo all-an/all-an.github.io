@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Immutable Double-Entry Ledger Pattern (Debit / Credit)</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../distributed-systems.html">&larr; back</a>
+  <h1>Immutable Double-Entry Ledger Pattern (Debit / Credit)</h1>
+  <p class="desc">In fintech and payment systems, updating a single <code>balance = balance - 100</code> column destroys audit history and makes discrepancies impossible to reconcile. Instead, model money using an append-only <strong>Double-Entry Bookkeeping Ledger</strong> where every transaction inserts balanced debit and credit lines that sum to zero.</p>
+  <pre><code class="language-java">// PRODUCTION-SAFE: Append-only double-entry ledger where every transfer sums to 0
+public record LedgerLine(UUID accountId, long signedAmountCents) {}
+
+@Transactional(rollbackFor = Exception.class)
+public UUID recordDoubleEntryTransfer(
+        UUID idempotencyKey, UUID sourceAccountId, UUID destAccountId, long amountCents) {
+    if (amountCents &lt;= 0) throw new IllegalArgumentException("Amount must be positive");
+
+    // 1. Lock accounts in deterministic order and verify available funds
+    lockAccountsInOrder(sourceAccountId, destAccountId);
+    long currentBalance = ledgerRepo.getBalanceForUpdate(sourceAccountId);
+    if (currentBalance &lt; amountCents) {
+        throw new InsufficientFundsException("Available: " + currentBalance);
+    }
+
+    // 2. Insert immutable journal transaction + balanced debit (-amount) and credit (+amount) entries
+    UUID journalId = UUID.randomUUID();
+    ledgerRepo.insertJournal(journalId, idempotencyKey, Instant.now());
+    ledgerRepo.insertEntry(journalId, sourceAccountId, -amountCents); // DEBIT
+    ledgerRepo.insertEntry(journalId, destAccountId,   +amountCents); // CREDIT
+
+    // 3. Update materialized balance cache in the same ACID transaction
+    accountRepo.addBalance(sourceAccountId, -amountCents);
+    accountRepo.addBalance(destAccountId,   +amountCents);
+    return journalId;
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

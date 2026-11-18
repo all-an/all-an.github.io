@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Forensics &amp; State Reconstruction via Event Sourcing &amp; Audit Logs</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../distributed-systems.html">&larr; back</a>
+  <h1>Forensics &amp; State Reconstruction via Event Sourcing &amp; Audit Logs</h1>
+  <p class="desc">When a production incident occurs ("Why is this customer’s wallet balance -$40?"), a single mutable row with <code>updated_at</code> cannot tell you what happened. By persisting state transitions as an immutable, versioned stream of domain events with an optimistic concurrency check on <code>UNIQUE(aggregate_id, version)</code>, you gain both race-condition protection and a 100% replayable forensic audit trail.</p>
+  <pre><code class="language-java">// PRODUCTION-SAFE: Append-only Event Store with optimistic stream version check + deterministic replay
+public sealed interface WalletEvent permits FundsDeposited, FundsWithdrawn {}
+public record FundsDeposited(long amountCents, String ref) implements WalletEvent {}
+public record FundsWithdrawn(long amountCents, String ref) implements WalletEvent {}
+
+@Transactional(rollbackFor = Exception.class)
+public void withdraw(UUID walletId, long amountCents, String ref) {
+    List&lt;StoredEvent&gt; history = eventStoreRepo.loadStream(walletId);
+    long currentVersion = history.size();
+
+    // Reconstruct exact state by replaying immutable historical events
+    long balance = 0;
+    for (StoredEvent evt : history) {
+        balance = switch (deserialize(evt)) {
+            case FundsDeposited d -&gt; balance + d.amountCents();
+            case FundsWithdrawn w -&gt; balance - w.amountCents();
+        };
+    }
+    if (balance &lt; amountCents) {
+        throw new InsufficientFundsException("Balance " + balance + " &lt; " + amountCents);
+    }
+
+    // UNIQUE(aggregate_id, version) constraint guarantees no concurrent event was inserted since read!
+    eventStoreRepo.appendEvent(walletId, currentVersion + 1, "FundsWithdrawn",
+        objectMapper.writeValueAsString(new FundsWithdrawn(amountCents, ref)));
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

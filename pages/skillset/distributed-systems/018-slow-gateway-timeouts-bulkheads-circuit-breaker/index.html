@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Slow Third-Party Gateways, Timeouts, Bulkheads &amp; Circuit Breakers</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../distributed-systems.html">&larr; back</a>
+  <h1>Slow Third-Party Gateways, Timeouts, Bulkheads &amp; Circuit Breakers</h1>
+  <p class="desc">The most dangerous failure mode in production is not a downstream service returning HTTP 500 immediately—it is a service accepting TCP connections and hanging for 60 seconds. Without hard connect/read timeouts, a bulkhead concurrency cap, and a circuit breaker, every worker thread blocks on the slow dependency and takes down unrelated endpoints.</p>
+  <pre><code class="language-java">// PRODUCTION-SAFE: Explicit connect/read timeouts + Resilience4j Bulkhead &amp; CircuitBreaker
+@Configuration
+public class HttpClientConfig {
+    @Bean
+    public RestClient paymentRestClient() {
+        HttpClient jdkClient = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofMillis(1500))
+            .build();
+        JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(jdkClient);
+        factory.setReadTimeout(Duration.ofMillis(3000)); // Never allow unbounded socket reads!
+        return RestClient.builder().requestFactory(factory).baseUrl("https://api.psp.example").build();
+    }
+}
+
+@Service
+public class PaymentGatewayClient {
+    @Bulkhead(name = "pspBulkhead", type = Bulkhead.Type.SEMAPHORE)
+    @CircuitBreaker(name = "pspCircuitBreaker", fallbackMethod = "fallbackCharge")
+    public GatewayResponse authorize(ChargeCommand cmd) {
+        return paymentRestClient.post()
+            .uri("/v1/charges")
+            .header("Idempotency-Key", cmd.idempotencyKey())
+            .body(cmd)
+            .retrieve()
+            .body(GatewayResponse.class);
+    }
+
+    private GatewayResponse fallbackCharge(ChargeCommand cmd, Throwable ex) {
+        return GatewayResponse.queuedForAsyncRetry(cmd.idempotencyKey(), ex.getMessage());
+    }
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dual-Write Bug &amp; Transactional Outbox Pattern</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../distributed-systems.html">&larr; back</a>
+  <h1>Dual-Write Bug &amp; Transactional Outbox Pattern</h1>
+  <p class="desc">Saving an entity to PostgreSQL and calling <code>kafkaTemplate.send(...)</code> inside the same method is a classic <strong>Dual-Write Bug</strong>: if the DB commits and the JVM crashes before Kafka acknowledges (or if Kafka is down), downstream services never learn about the order. Insert the event into an <code>outbox_events</code> table inside the exact same SQL transaction, then relay it asynchronously.</p>
+  <pre><code class="language-java">// BROKEN (Dual-Write Bug): If Kafka fails after DB commit, Order exists in DB but event is lost forever!
+@Transactional
+public void placeOrderBroken(Order order) {
+    orderRepo.save(order);
+    kafkaTemplate.send("orders.events", order.getId().toString(), toEventJson(order));
+}
+
+// PRODUCTION-SAFE: Transactional Outbox Pattern — both Order and OutboxEvent commit atomically
+@Transactional(rollbackFor = Exception.class)
+public void placeOrderSafe(Order order) {
+    orderRepo.save(order);
+    OutboxEvent outbox = new OutboxEvent(
+        UUID.randomUUID(),
+        "Order",
+        order.getId().toString(),
+        "OrderCreated",
+        toEventJson(order),
+        Instant.now()
+    );
+    outboxRepo.save(outbox); // Committed in the exact same PostgreSQL transaction!
+}
+
+// Background Relay (or use Debezium CDC on the outbox_events WAL):
+@Scheduled(fixedDelay = 500)
+@Transactional
+public void publishPendingOutboxEvents() {
+    List&lt;OutboxEvent&gt; batch = outboxRepo.lockNextUnpublishedBatch(100); // FOR UPDATE SKIP LOCKED
+    for (OutboxEvent evt : batch) {
+        kafkaTemplate.send("orders.events", evt.getAggregateId(), evt.getPayload()).join();
+        evt.markPublished(Instant.now());
+    }
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

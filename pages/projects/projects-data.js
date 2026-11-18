@@ -7,7 +7,7 @@ const PROFILE = {
   handle: 'all-an',
   githubUrl: 'https://github.com/all-an?tab=repositories&q=&type=public&language=&sort=',
   role: 'Full Stack Software Developer at Aubay Portugal',
-  publicRepos: 153,
+  publicRepos: 154,
   techStack: [
     'Java (Spring Boot, Quarkus, GraalVM)',
     'Angular',
@@ -17,6 +17,7 @@ const PROFILE = {
     'Go',
     'Rust',
     'Zig',
+    'Odin',
     'D',
     'Nim',
     'C#',
@@ -29,7 +30,7 @@ const PROFILE = {
   ],
 };
 
-// Public repository counts by primary language across all 153 public repos.
+// Public repository counts by primary language across all 154 public repos.
 const LANGUAGE_BREAKDOWN = [
   { language: 'Java', count: '30' },
   { language: 'HTML / Web', count: '13' },
@@ -38,7 +39,7 @@ const LANGUAGE_BREAKDOWN = [
   { language: 'TypeScript', count: '6' },
   { language: 'Python', count: '4' },
   { language: 'Go / Rust / Nim', count: '2 each' },
-  { language: 'Zig / D / C / C++ / Emacs Lisp / PHP / RobotFramework', count: '1 each' },
+  { language: 'Zig / D / Odin / C / C++ / Emacs Lisp / PHP / RobotFramework', count: '1 each' },
   { language: 'Markdown / Docs / Multi-language / Forks', count: '71' },
 ];
 
@@ -68,6 +69,11 @@ const CATEGORIES = {
     title: '5. Profile & Personal Site',
     badge: 'Profile & Web',
     cssClass: 'cat-profile',
+  },
+  inProgress: {
+    title: '6. In Progress',
+    badge: 'In Progress',
+    cssClass: 'cat-in-progress',
   },
 };
 
@@ -305,5 +311,16 @@ const PROJECTS = [
     stack: ['HTML', 'CSS', 'JavaScript', 'GitHub Pages'],
     desc: 'Personal GitHub Pages site featuring interactive learning tools, skillset references, chess, and terminal.',
     url: 'https://github.com/all-an/all-an.github.io',
+  },
+
+  // 6. In Progress
+  {
+    name: 'ymirjdk',
+    cat: 'inProgress',
+    lang: 'Odin',
+    status: 'In Progress',
+    stack: ['Odin', 'JDK', 'JVM', 'Bytecode', 'Systems Programming'],
+    desc: 'Java Development Kit (JDK) and Virtual Machine implementation written from scratch in the Odin programming language.',
+    url: 'https://github.com/all-an/ymirjdk',
   },
 ];

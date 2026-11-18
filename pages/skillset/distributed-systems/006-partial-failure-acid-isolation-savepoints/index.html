@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Partial Failure Mid-Transfer, ACID Isolation &amp; Savepoints</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../distributed-systems.html">&larr; back</a>
+  <h1>Partial Failure Mid-Transfer, ACID Isolation &amp; Savepoints</h1>
+  <p class="desc">By default, Spring’s <code>@Transactional</code> only rolls back on unchecked <code>RuntimeException</code> and <code>Error</code>—meaning a thrown checked exception commits a half-finished transfer! Always set <code>rollbackFor = Exception.class</code>, and use JDBC/Spring <code>Savepoint</code> when you want a non-critical sub-step to roll back without aborting the outer transaction.</p>
+  <pre><code class="language-java">// DANGER: Spring @Transactional commits by default if a checked exception is thrown!
+// PRODUCTION-SAFE: Explicitly specify rollbackFor = Exception.class
+@Transactional(rollbackFor = Exception.class, isolation = Isolation.READ_COMMITTED, timeout = 5)
+public TransferReceipt transferFunds(UUID fromId, UUID toId, long amountCents) throws ComplianceException {
+    accountRepo.debit(fromId, amountCents);
+    accountRepo.credit(toId, amountCents);
+
+    if (complianceService.isFlagged(toId, amountCents)) {
+        // Because rollbackFor = Exception.class is set, both debit and credit roll back cleanly
+        throw new ComplianceException("Transfer blocked by compliance check");
+    }
+    return new TransferReceipt(UUID.randomUUID(), fromId, toId, amountCents);
+}
+
+// PARTIAL ROLLBACK WITH SAVEPOINT: Keep core order even if optional loyalty bonus fails
+public void placeOrderWithOptionalBonus(Order order) {
+    transactionTemplate.executeWithoutResult(status -&gt; {
+        orderRepo.save(order);
+        Object savepoint = status.createSavepoint();
+        try {
+            loyaltyService.grantBonusPoints(order.getCustomerId(), order.getTotalCents());
+        } catch (RuntimeException ex) {
+            status.rollbackToSavepoint(savepoint); // Rolls back bonus only; order remains valid
+        } finally {
+            status.releaseSavepoint(savepoint);
+        }
+    });
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

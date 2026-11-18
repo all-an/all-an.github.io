@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Competing Consumers &amp; FOR UPDATE SKIP LOCKED Work Queues</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../distributed-systems.html">&larr; back</a>
+  <h1>Competing Consumers &amp; FOR UPDATE SKIP LOCKED Work Queues</h1>
+  <p class="desc">When multiple worker instances poll a relational table for pending jobs or outbox tasks, a standard <code>SELECT ... WHERE status = 'PENDING' LIMIT 50</code> causes every worker to fetch the exact same 50 rows. Use <code>FOR UPDATE SKIP LOCKED</code> so PostgreSQL locks available rows for each worker and silently skips rows already locked by sibling workers.</p>
+  <pre><code class="language-java">// PRODUCTION-SAFE: High-throughput concurrent job claiming in PostgreSQL with SKIP LOCKED
+@Transactional
+public List&lt;JobRecord&gt; claimNextBatch(String workerId, int batchSize) {
+    // Workers never block each other and never claim the same job twice
+    return jdbcTemplate.query("""
+        UPDATE background_jobs
+        SET status = 'PROCESSING',
+            locked_by = ?,
+            locked_until = now() + interval '5 minutes',
+            attempt_count = attempt_count + 1
+        WHERE id IN (
+            SELECT id
+            FROM background_jobs
+            WHERE (status = 'PENDING' OR (status = 'PROCESSING' AND locked_until &lt; now()))
+              AND attempt_count &lt; max_attempts
+            ORDER BY scheduled_at ASC
+            FOR UPDATE SKIP LOCKED
+            LIMIT ?
+        )
+        RETURNING id, payload_json, attempt_count
+        """,
+        (rs, rowNum) -&gt; new JobRecord(
+            rs.getObject("id", UUID.class),
+            rs.getString("payload_json"),
+            rs.getInt("attempt_count")
+        ),
+        workerId, batchSize
+    );
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

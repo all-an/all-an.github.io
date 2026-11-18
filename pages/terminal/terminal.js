@@ -96,6 +96,22 @@ const VIRTUAL_FILES = {
         '    xor rdi, rdi',
         '    syscall',
     ].join('\n'),
+    'Example.java': [
+        'public class Example {',
+        '    static int fibonacci(int n) {',
+        '        if (n <= 1) {',
+        '            return n;',
+        '        }',
+        '        return fibonacci(n - 1) + fibonacci(n - 2);',
+        '    }',
+        '',
+        '    public static void main(String[] args) {',
+        '        for (int i = 0; i < 7; i++) {',
+        '            System.out.printf("fib(%d) = %d%n", i, fibonacci(i));',
+        '        }',
+        '    }',
+        '}',
+    ].join('\n'),
 };
 
 // Loads any user-saved files (stored as strings under STORAGE_FILE_PREFIX) from localStorage.
@@ -235,6 +251,37 @@ function runAsmCommand(args) {
     return null;
 }
 
+// Executes a Java source file from VIRTUAL_FILES using JavaRunner and prints stdout/stderr.
+function runJavaCommand(args) {
+    if (!args[0]) {
+        return ['Usage: java <File.java> (or javac <File.java>)'];
+    }
+    const filename = args[0].endsWith('.java') ? args[0] : `${args[0]}.java`;
+    if (typeof VIRTUAL_FILES[filename] === 'undefined') {
+        printLine(`java: can't open file '${args[0]}': No such file or directory`, 'error');
+        return null;
+    }
+
+    const rawContent = VIRTUAL_FILES[filename];
+    const codeString = Array.isArray(rawContent) ? rawContent.join('\n') : String(rawContent);
+
+    printLine(`Running ${filename} with Java interpreter...`);
+    scrollBottom();
+
+    window.JavaRunner.runJavaFile(codeString)
+        .then(({ outLines, errLines }) => {
+            outLines.forEach(line => printLine(line, 'output'));
+            errLines.forEach(line => printLine(line, 'error'));
+            scrollBottom();
+        })
+        .catch(err => {
+            printLine(`Java error: ${err.message || err}`, 'error');
+            scrollBottom();
+        });
+
+    return null;
+}
+
 // ── Commands ──────────────────────────────────────────────────────────────────
 const COMMANDS = {
 
@@ -243,10 +290,11 @@ const COMMANDS = {
         return [
             'Available commands:',
             '  help              Show this help message',
-            '  vim [file]        Open PseudoVimim editor (Ctrl+E evaluates Python, C, or ASM)',
+            '  vim [file]        Open PseudoVimim editor (Ctrl+E evaluates Python, C, ASM, or Java)',
             '  python <file.py>  Run a Python 3 file using Pyodide',
             '  c <file.c>        Run a C file (also aliased as gcc or cc)',
             '  asm <file.asm>    Run an x86-64 Assembly file (also aliased as nasm)',
+            '  java <File.java>  Run a Java source file (also aliased as javac)',
             '  ls                List files in the current directory',
             '  cat <file>        Print the contents of a file',
             '  hostname <name>   Change "guest" in virtualpseudoos@guest to <name>',
@@ -286,6 +334,10 @@ const COMMANDS = {
     // Runs an x86-64 Assembly source file via CasmRunner (also aliased as `nasm`).
     asm:  runAsmCommand,
     nasm: runAsmCommand,
+
+    // Runs a Java source file via JavaRunner (also aliased as `javac`).
+    java:  runJavaCommand,
+    javac: runJavaCommand,
 
     // Lists all virtual files in /home/visitor.
     ls() {
@@ -490,5 +542,16 @@ document.addEventListener('keydown', e => {
 // ── Boot sequence ─────────────────────────────────────────────────────────────
 BOOT.forEach(line => printLine(line));
 scrollBottom();
+
+const courseParam = new URLSearchParams(window.location.search).get('course');
+if (courseParam === 'java' && window.JavaCourse) {
+    window.JavaCourse.setupTerminal({
+        commands:     COMMANDS,
+        virtualFiles: VIRTUAL_FILES,
+        termShell,
+        printLine,
+        scrollBottom,
+    });
+}
 
 })();

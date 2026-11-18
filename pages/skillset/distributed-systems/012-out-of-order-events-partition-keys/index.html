@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Out-of-Order Events, Partition Keys &amp; State Machine Guards</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../distributed-systems.html">&larr; back</a>
+  <h1>Out-of-Order Events, Partition Keys &amp; State Machine Guards</h1>
+  <p class="desc">If events for the same order are published to Kafka without a partition key, <code>OrderCancelled</code> can land on Partition 2 and be consumed <em>before</em> <code>OrderCreated</code> on Partition 0. Always use the aggregate ID (<code>orderId</code>) as the Kafka message key so all events for an entity stay ordered in one partition, and guard state transitions with monotonic version numbers.</p>
+  <pre><code class="language-java">// 1. PRODUCER: Always set aggregateId as the Kafka partition key to preserve per-entity order
+public void publishOrderEvent(OrderEvent event) {
+    // Same orderId always hashes to the same Kafka partition
+    kafkaTemplate.send("orders.lifecycle", event.orderId().toString(), event);
+}
+
+// 2. CONSUMER: Enforce state machine transition rules and monotonic event sequence numbers
+@Transactional
+public void applyOrderEvent(OrderEvent incoming) {
+    OrderProjection proj = projectionRepo.findByIdForUpdate(incoming.orderId())
+        .orElseGet(() -&gt; new OrderProjection(incoming.orderId(), OrderState.NONE, 0L));
+
+    // Ignore stale/out-of-order events that have a lower or equal sequence number
+    if (incoming.sequenceNumber() &lt;= proj.getLastSequenceNumber()) {
+        log.warn("Ignoring stale event seq={} (current={})", incoming.sequenceNumber(), proj.getLastSequenceNumber());
+        return;
+    }
+
+    // Guard invalid state transitions (e.g. cannot transition SHIPPED -&gt; CANCELLED)
+    if (!proj.getState().canTransitionTo(incoming.targetState())) {
+        throw new IllegalStateTransitionException(proj.getState(), incoming.targetState());
+    }
+
+    proj.setState(incoming.targetState());
+    proj.setLastSequenceNumber(incoming.sequenceNumber());
+    projectionRepo.save(proj);
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

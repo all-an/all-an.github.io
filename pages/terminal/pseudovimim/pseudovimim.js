@@ -6,8 +6,8 @@
 const STORAGE_FILE_PREFIX = 'vpos_file:';
 // Number of spaces inserted when pressing Tab in Insert mode
 const TAB_SPACES = '    ';
-// Minimum number of visible rows so tilde (~) padding fills the viewport
-const MIN_VISIBLE_ROWS = 18;
+// Minimum number of visible rows so tilde (~) padding fills the viewport without overflowing
+const MIN_VISIBLE_ROWS = 13;
 // Maximum undo snapshots kept in memory per editing session
 const MAX_UNDO_STACK = 50;
 
@@ -29,6 +29,7 @@ let vimUndoStack     = [];        // stack of previous buffer snapshots for `u`
 let vimInlineResults = {};        // map of rowIndex -> { text, isError } from Ctrl+E evaluations
 let vimFilesRef      = null;      // reference to the terminal's VIRTUAL_FILES map
 let vimOnExit        = null;      // callback invoked when quitting PseudoVimim
+let vimActiveCourse  = null;      // active course controller (e.g. window.OdinCourse) when in course mode
 
 // DOM elements inside `#vim-container`
 const container  = document.getElementById('vim-container');
@@ -98,6 +99,9 @@ function getActiveHighlighter() {
     }
     if ((lowerName.endsWith('.asm') || lowerName.endsWith('.s')) && window.AsmHighlight) {
         return window.AsmHighlight;
+    }
+    if (lowerName.endsWith('.java') && window.JavaHighlight) {
+        return window.JavaHighlight;
     }
     return null;
 }
@@ -254,11 +258,50 @@ function saveBuffer(targetName) {
     return true;
 }
 
-// Evaluates the current Python, C, or Assembly line/block on Ctrl+E and displays the result inline.
+// Evaluates the current Python, C, Assembly, or Java line/block on Ctrl+E and displays the result inline.
 async function handleCtrlE() {
-    const lowerName = (vimFilename || '').toLowerCase();
-    const isCFile   = lowerName.endsWith('.c') || lowerName.endsWith('.h');
-    const isAsmFile = lowerName.endsWith('.asm') || lowerName.endsWith('.s');
+    const lowerName  = (vimFilename || '').toLowerCase();
+    const isCFile    = lowerName.endsWith('.c') || lowerName.endsWith('.h');
+    const isAsmFile  = lowerName.endsWith('.asm') || lowerName.endsWith('.s');
+    const isJavaFile = lowerName.endsWith('.java');
+
+    if (isJavaFile) {
+        if (!window.JavaRunner) {
+            setStatusMessage('Java runner is not available', true);
+            renderVim();
+            return;
+        }
+        setStatusMessage('Evaluating Java...', false);
+        renderVim();
+
+        try {
+            let result = await window.JavaRunner.evaluateVimTarget(vimLines, vimCursorRow);
+            if (vimActiveCourse && typeof vimActiveCourse.formatEvalResult === 'function') {
+                result = vimActiveCourse.formatEvalResult(result);
+            }
+            if (result && result.text) {
+                vimInlineResults[result.targetRow] = {
+                    text:    result.text,
+                    isError: result.isError,
+                };
+                if (result.isError) {
+                    setStatusMessage(result.text, true);
+                } else {
+                    setStatusMessage(`Evaluated line ${result.targetRow + 1}`, false);
+                }
+            } else {
+                setStatusMessage('Nothing to evaluate on this line', false);
+            }
+        } catch (err) {
+            const errMsg = `Java error: ${err.message || err}`;
+            setStatusMessage(
+                vimActiveCourse ? `${errMsg} — type :hint` : errMsg,
+                true
+            );
+        }
+        renderVim();
+        return;
+    }
 
     if (isCFile || isAsmFile) {
         if (!window.CasmRunner) {
@@ -394,7 +437,103 @@ function executeExCommand(rawCmd) {
             break;
 
         case 'help':
-            setStatusMessage('Keys: i/a/o/O (insert), Esc (normal), Ctrl+E (eval Python), hjkl/0/$/w/b/gg/G, x/dd/yy/p/u, :w :q :wq', false);
+            if (vimActiveCourse) {
+                setStatusMessage(`E492: Not an editor command: ${trimmed}`, true);
+            } else {
+                setStatusMessage('Keys: i/a/o/O (insert), Esc (normal), Ctrl+E (eval), hjkl/0/$/w/b/gg/G, x/dd/yy/p/u, :w :q :wq', false);
+            }
+            renderVim();
+            break;
+
+        case 'next':
+            if (vimActiveCourse && typeof vimActiveCourse.nextStep === 'function') {
+                const stepResult = vimActiveCourse.nextStep();
+                if (stepResult.advanced) {
+                    pushUndoSnapshot();
+                    vimLines         = stepResult.lines;
+                    vimCursorRow     = vimLines.length - 1;
+                    vimCursorCol     = 0;
+                    vimInlineResults = {};
+                    vimDirty         = false;
+                    if (vimFilesRef && vimFilename) {
+                        vimFilesRef[vimFilename] = vimLines.join('\n');
+                    }
+                    clampCursor();
+                    setStatusMessage('', false);
+                } else {
+                    setStatusMessage('Already at the final part (20/20)', false);
+                }
+            } else {
+                setStatusMessage(`E492: Not an editor command: ${trimmed}`, true);
+            }
+            renderVim();
+            break;
+
+        case 'prev':
+            if (vimActiveCourse && typeof vimActiveCourse.prevStep === 'function') {
+                const stepResult = vimActiveCourse.prevStep();
+                if (stepResult.advanced) {
+                    pushUndoSnapshot();
+                    vimLines         = stepResult.lines;
+                    vimCursorRow     = vimLines.length - 1;
+                    vimCursorCol     = 0;
+                    vimInlineResults = {};
+                    vimDirty         = false;
+                    if (vimFilesRef && vimFilename) {
+                        vimFilesRef[vimFilename] = vimLines.join('\n');
+                    }
+                    clampCursor();
+                    setStatusMessage('', false);
+                } else {
+                    setStatusMessage('Already at the first screen', false);
+                }
+            } else {
+                setStatusMessage(`E492: Not an editor command: ${trimmed}`, true);
+            }
+            renderVim();
+            break;
+
+        case 'part':
+            if (vimActiveCourse && typeof vimActiveCourse.goToPart === 'function') {
+                const stepResult = vimActiveCourse.goToPart(argStr);
+                if (stepResult.advanced) {
+                    pushUndoSnapshot();
+                    vimLines         = stepResult.lines;
+                    vimCursorRow     = vimLines.length - 1;
+                    vimCursorCol     = 0;
+                    vimInlineResults = {};
+                    vimDirty         = false;
+                    if (vimFilesRef && vimFilename) {
+                        vimFilesRef[vimFilename] = vimLines.join('\n');
+                    }
+                    clampCursor();
+                    setStatusMessage('', false);
+                } else {
+                    setStatusMessage('Usage: :part <1-20>', true);
+                }
+            } else {
+                setStatusMessage(`E492: Not an editor command: ${trimmed}`, true);
+            }
+            renderVim();
+            break;
+
+        case 'hint':
+            if (vimActiveCourse && typeof vimActiveCourse.showHintPopup === 'function') {
+                vimActiveCourse.showHintPopup();
+                setStatusMessage('Hint opened (press Esc to close)', false);
+            } else {
+                setStatusMessage(`E492: Not an editor command: ${trimmed}`, true);
+            }
+            renderVim();
+            break;
+
+        case 'score':
+            if (vimActiveCourse && typeof vimActiveCourse.showScorePopup === 'function') {
+                vimActiveCourse.showScorePopup();
+                setStatusMessage('Score opened (press Esc to close)', false);
+            } else {
+                setStatusMessage(`E492: Not an editor command: ${trimmed}`, true);
+            }
             renderVim();
             break;
 
@@ -801,6 +940,16 @@ document.addEventListener('keydown', e => {
     e.preventDefault();
     e.stopImmediatePropagation();
 
+    // If the course hint mini-terminal popup is open, Esc or Enter closes it
+    if (vimActiveCourse && typeof vimActiveCourse.isHintOpen === 'function' && vimActiveCourse.isHintOpen()) {
+        if (e.key === 'Escape' || e.key === 'Enter' || e.key === 'q') {
+            vimActiveCourse.hideHintPopup();
+            setStatusMessage('', false);
+            renderVim();
+        }
+        return;
+    }
+
     // Ctrl+E evaluates the current Python line or function block inline
     if (e.ctrlKey && e.key.toLowerCase() === 'e') {
         handleCtrlE();
@@ -818,12 +967,13 @@ document.addEventListener('keydown', e => {
 
 // Public API exposed to terminal.js for launching PseudoVimim.
 window.PseudoVimim = {
-    open(filename, virtualFiles, onExitCallback) {
+    open(filename, virtualFiles, onExitCallback, options = {}) {
         vimIsActive      = true;
         vimMode          = 'NORMAL';
         vimFilename      = (filename || '').trim();
         vimFilesRef      = virtualFiles;
         vimOnExit        = onExitCallback;
+        vimActiveCourse  = options.course || null;
         vimCursorRow     = 0;
         vimCursorCol     = 0;
         vimDirty         = false;
@@ -832,20 +982,26 @@ window.PseudoVimim = {
         vimUndoStack     = [];
         vimInlineResults = {};
 
-        if (vimFilename && virtualFiles && typeof virtualFiles[vimFilename] !== 'undefined') {
+        if (vimActiveCourse) {
+            if (!vimActiveCourse.isStarted()) {
+                vimLines = vimActiveCourse.getInitialLines();
+            }
+            setStatusMessage('', false);
+        } else if (vimFilename && virtualFiles && typeof virtualFiles[vimFilename] !== 'undefined') {
             const raw = virtualFiles[vimFilename];
             vimLines  = Array.isArray(raw) ? [...raw] : String(raw).split('\n');
             if (vimLines.length === 0) vimLines = [''];
-            setStatusMessage(`"${vimFilename}" ${vimLines.length}L — Ctrl+E to eval Python`, false);
+            setStatusMessage(`"${vimFilename}" ${vimLines.length}L — Ctrl+E to eval`, false);
         } else if (vimFilename) {
             vimLines = [''];
-            setStatusMessage(`"${vimFilename}" [New File] — Ctrl+E to eval Python`, false);
+            setStatusMessage(`"${vimFilename}" [New File] — Ctrl+E to eval`, false);
         } else {
             vimLines = [''];
-            setStatusMessage('PseudoVimim — i (insert), Ctrl+E (eval Python), :w <file> (save), :wq, :q!', false);
+            setStatusMessage('PseudoVimim — i (insert), Ctrl+E (eval), :w <file> (save), :wq, :q!', false);
         }
 
         container.classList.add('active');
+        container.classList.toggle('course-mode', Boolean(vimActiveCourse));
         renderVim();
     },
 

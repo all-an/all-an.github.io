@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reserving Stock Before Payment (Two-Phase TCC + TTL Expiration)</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../distributed-systems.html">&larr; back</a>
+  <h1>Reserving Stock Before Payment (Two-Phase TCC + TTL Expiration)</h1>
+  <p class="desc">If you deduct stock only after a slow external payment completes, concurrent buyers will oversell; if you deduct stock before payment and the user closes their browser tab, that stock is locked forever. Implement a <strong>Two-Phase Reservation (Try-Confirm-Cancel)</strong> with an <code>expires_at</code> TTL so abandoned holds automatically return to available stock.</p>
+  <pre><code class="language-java">// PHASE 1 (TRY): Hold inventory for 10 minutes while user completes 3DS / payment gateway
+@Transactional
+public UUID tryReserveInventory(UUID productId, int qty, Duration ttl) {
+    int updated = jdbcTemplate.update("""
+        UPDATE products
+        SET available_stock = available_stock - ?,
+            reserved_stock  = reserved_stock + ?
+        WHERE id = ? AND available_stock &gt;= ?
+        """, qty, qty, productId, qty);
+    if (updated == 0) throw new OutOfStockException("Not enough available stock");
+
+    UUID reservationId = UUID.randomUUID();
+    jdbcTemplate.update("""
+        INSERT INTO stock_reservations (id, product_id, qty, status, expires_at)
+        VALUES (?, ?, ?, 'HELD', now() + (? || ' seconds')::interval)
+        """, reservationId, productId, qty, ttl.toSeconds());
+    return reservationId;
+}
+
+// PHASE 2A (CONFIRM on payment success) &amp; SWEEPER (CANCEL on payment failure or TTL expiry)
+@Scheduled(fixedDelay = 15_000)
+@Transactional
+public void releaseExpiredReservations() {
+    jdbcTemplate.update("""
+        WITH expired AS (
+            UPDATE stock_reservations
+            SET status = 'EXPIRED'
+            WHERE status = 'HELD' AND expires_at &lt; now()
+            RETURNING product_id, qty
+        )
+        UPDATE products p
+        SET available_stock = p.available_stock + e.qty,
+            reserved_stock  = p.reserved_stock  - e.qty
+        FROM expired e
+        WHERE p.id = e.product_id
+        """);
+}</code></pre>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
